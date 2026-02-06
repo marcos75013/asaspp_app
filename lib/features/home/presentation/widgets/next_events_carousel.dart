@@ -110,9 +110,9 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: () {
-                      final activeType = _types[_currentIndex];
-                      // TODO : navigation point de rendez-vous
+                      context.push('/covoiturage/join');
                     },
+
                     // icon: const Icon(Icons.place_outlined),
                     label: const Text("je m'y infiltre"),
                     style: OutlinedButton.styleFrom(

@@ -2,6 +2,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 
 import '../../features/carpool/presentation/pages/create_carpool_screen.dart';
+import '../../features/carpool/presentation/pages/join_carpool_screen.dart';
 import '../../features/home/data/models/next_event_model.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../features/home/presentation/pages/home_page.dart';
@@ -25,6 +26,11 @@ final GoRouter appRouter = GoRouter(
         return CreateCarpoolScreen(diveType: type);
       },
     ),
+    GoRoute(
+      path: '/covoiturage/join',
+      builder: (context, state) => const JoinCarpoolScreen(),
+    ),
+
   ],
 );
 

@@ -127,6 +127,7 @@ class _LoginFormState extends State<LoginForm> {
                             : const Text(
                           "Se connecter",
                           style: TextStyle(
+                            color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                           ),

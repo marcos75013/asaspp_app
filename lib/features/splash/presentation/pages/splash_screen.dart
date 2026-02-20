@@ -16,10 +16,9 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
 
-    // ⏱️ Splash ASASPP
     Timer(const Duration(seconds: 3), () {
       if (!mounted) return;
-      context.go('/home');
+      context.go('/login');
     });
   }
 
@@ -29,25 +28,18 @@ class _SplashScreenState extends State<SplashScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          /// 🌊 IMAGE DE FOND
           Image.asset(
             'assets/pngs/bg_mer.png',
             fit: BoxFit.cover,
           ),
-
-          /// 🫧 BULLES ANIMÉES
           const BubblesLayer(),
-
-          /// 🌑 VOILE POUR LISIBILITÉ
           Container(
             color: Colors.black.withOpacity(0.25),
           ),
-
-          /// 🐠 LOGO CENTRÉ (PLUS GRAND)
           Center(
             child: Image.asset(
               'assets/pngs/logo_asaspp.png',
-              width: 650, // ⬅️ plus grand qu’avant
+              width: 350,
             ),
           ),
         ],

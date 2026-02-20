@@ -10,6 +10,8 @@ import '../../features/home/presentation/pages/home_page.dart';
 import '../../main_scaffold.dart';
 import '../../features/annonces/presentation/pages/ad_detail_page.dart';
 import '../../features/quiz/presentation/pages/quiz_page.dart';
+import '../../features/auth/presentation/pages/login_screen.dart';
+
 
 
 
@@ -54,6 +56,11 @@ final GoRouter appRouter = GoRouter(
         return QuizGamePage(level: level);
       },
     ),
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const LoginScreen(),
+    ),
+
 
 
 

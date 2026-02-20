@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../splash/presentation/widget/bubbles_layer.dart';
 import '../widgets/next_events_carousel.dart';
@@ -13,7 +14,6 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
 
-      /// 🧭 APP BAR TRANSPARENTE
       appBar: AppBar(
         toolbarHeight: 100,
         centerTitle: true,
@@ -28,21 +28,17 @@ class HomePage extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          /// 🌊 IMAGE DE FOND
           Image.asset(
             'assets/pngs/bg_mer.png',
             fit: BoxFit.cover,
           ),
 
-          /// 🫧 BULLES ANIMÉES
           const BubblesLayer(),
 
-          /// 🌑 VOILE DE LISIBILITÉ
           Container(
             color: Colors.black.withOpacity(0.18),
           ),
 
-          /// 📜 CONTENU
           SafeArea(
             child: SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
@@ -52,18 +48,59 @@ class HomePage extends StatelessWidget {
                 children: [
                   const SizedBox(height: 16),
 
-                  /// 👋 BIENVENUE
                   const WelcomeSection(),
 
-                  const SizedBox(height: 12), // ⬅️ réduit
+                  const SizedBox(height: 12),
 
-                  /// 🎠 PROCHAINS ÉVÉNEMENTS
                   const NextEventsCarousel(),
 
-                  const SizedBox(height: 4), // ⬅️ réduit
+                  const SizedBox(height: 12),
 
-                  /// 📣 MESSAGE DU CLUB
                   const ClubMessageCard(),
+
+                  const SizedBox(height: 20),
+
+                  /// 🧠 NOUVELLE CARD QUIZ
+                  GestureDetector(
+                    onTap: () {
+                      context.go('/quiz');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.quiz,
+                            color: Colors.white,
+                            size: 32,
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Text(
+                              "Quiz Plongée Plaisir 📘",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 32),
                 ],

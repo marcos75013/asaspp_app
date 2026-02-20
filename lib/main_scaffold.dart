@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 
 import 'core/theme/app_colors.dart';
+import 'features/annonces/presentation/pages/ads_page.dart';
+import 'features/events/presentation/pages/about_us_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
-import 'features/events/presentation/pages/events_page.dart';
 import 'features/gallery/presentation/pages/gallery_page.dart';
-import 'features/planning/presentation/pages/ads_page.dart'; // ⬅️ nouvelle page
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -19,7 +19,7 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   final List<Widget> _pages = const [
     HomePage(),
-    EventsPage(),
+    AboutUsPage(),
     GalleryPage(),
     AdsPage(), // ⬅️ Petites annonces
   ];

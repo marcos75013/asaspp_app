@@ -1,0 +1,62 @@
+import 'package:go_router/go_router.dart';
+import 'package:flutter/material.dart';
+import '../../features/annonces/presentation/data/models/ad_model.dart';
+import '../../features/carpool/presentation/pages/create_carpool_screen.dart';
+import '../../features/carpool/presentation/pages/join_carpool_screen.dart';
+import '../../features/home/data/models/next_event_model.dart';
+import '../../features/quiz/presentation/pages/quiz_game_page.dart';
+import '../../features/splash/presentation/pages/splash_screen.dart';
+import '../../features/home/presentation/pages/home_page.dart';
+import '../../main_scaffold.dart';
+import '../../features/annonces/presentation/pages/ad_detail_page.dart';
+import '../../features/quiz/presentation/pages/quiz_page.dart';
+
+
+
+final GoRouter appRouter = GoRouter(
+  initialLocation: '/splash',
+  routes: [
+    GoRoute(
+      path: '/splash',
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: '/home',
+      builder: (context, state) => const MainScaffold(),
+    ),
+    GoRoute(
+      path: '/covoiturage/create',
+      builder: (context, state) {
+        final type = state.extra as DiveType;
+        return CreateCarpoolScreen(diveType: type);
+      },
+    ),
+    GoRoute(
+      path: '/covoiturage/join',
+      builder: (context, state) => const JoinCarpoolScreen(),
+    ),
+
+    GoRoute(
+      path: '/annonce/detail',
+      builder: (context, state) {
+        final ad = state.extra as AdModel;
+        return AdDetailPage(ad: ad);
+      },
+    ),
+    GoRoute(
+      path: '/quiz',
+      builder: (context, state) => const QuizPage(),
+    ),
+    GoRoute(
+      path: '/quiz/game',
+      builder: (context, state) {
+        final level = state.extra as int;
+        return QuizGamePage(level: level);
+      },
+    ),
+
+
+
+
+  ],
+);

@@ -22,7 +22,7 @@ class LoginScreen extends StatelessWidget {
             ),
 
             /// 🫧 Bulles animées
-            const BubblesLayer(),
+            // const BubblesLayer(),
 
             /// 🌑 Voile sombre
             Container(

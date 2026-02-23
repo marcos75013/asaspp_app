@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class AboutUsPage extends StatelessWidget {
@@ -16,6 +15,7 @@ class AboutUsPage extends StatelessWidget {
             child: Image.asset(
               'assets/pngs/bg_mer.png',
               fit: BoxFit.cover,
+              filterQuality: FilterQuality.low,
             ),
           ),
 
@@ -61,27 +61,26 @@ class AboutUsPage extends StatelessWidget {
                       Image.asset(
                         'assets/pngs/logo_asaspp.png',
                         height: 70,
+                        filterQuality: FilterQuality.low,
                       ),
                     ],
                   ),
 
                   const SizedBox(height: 24),
 
-                  /// 🧊 INTRO
                   _GlassCard(
                     child: Text(
                       'Une association de passionnés de plongée, '
                           'unis par l’envie de partager des moments uniques '
                           'sous l’eau et hors de l’eau.',
                       style: theme.textTheme.bodyLarge?.copyWith(
-                        color: Colors.white70,
+                        color: Colors.white,
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 24),
 
-                  /// ⭐ VALUES
                   _GlassCard(
                     child: Column(
                       children: const [
@@ -106,7 +105,6 @@ class AboutUsPage extends StatelessWidget {
 
                   const SizedBox(height: 24),
 
-                  /// 🤿 ACTIVITIES
                   _GlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -135,7 +133,6 @@ class AboutUsPage extends StatelessWidget {
 
                   const SizedBox(height: 32),
 
-                  /// 🏛 ORGANIGRAMME
                   _GlassCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -187,9 +184,6 @@ class AboutUsPage extends StatelessWidget {
     );
   }
 }
-
-/// ================= MODAL =================
-
 void _openOrgModal(
     BuildContext context, {
       required String title,
@@ -208,43 +202,58 @@ void _openOrgModal(
           return ClipRRect(
             borderRadius:
             const BorderRadius.vertical(top: Radius.circular(28)),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Container(
-                color: Colors.white.withOpacity(0.92),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 12),
-                    Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade400,
-                        borderRadius: BorderRadius.circular(2),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: ListView.separated(
-                        controller: controller,
-                        padding: const EdgeInsets.all(16),
-                        itemCount: members.length,
-                        separatorBuilder: (_, __) =>
-                        const SizedBox(height: 12),
-                        itemBuilder: (_, index) =>
-                            _MemberTile(member: members[index]),
-                      ),
-                    ),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(28)),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Colors.white.withOpacity(0.97),
+                    Colors.white.withOpacity(0.9),
                   ],
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.25),
+                    blurRadius: 30,
+                    offset: const Offset(0, -10),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade400,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Expanded(
+                    child: ListView.separated(
+                      controller: controller,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: members.length,
+                      separatorBuilder: (_, __) =>
+                      const SizedBox(height: 12),
+                      itemBuilder: (_, index) =>
+                          _MemberTile(member: members[index]),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -454,25 +463,23 @@ class _GlassCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withOpacity(0.25)),
-          ),
-          child: child,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withOpacity(0.2),
+            Colors.white.withOpacity(0.15),
+          ],
         ),
+        border: Border.all(color: Colors.white.withOpacity(0.25)),
       ),
+      child: child,
     );
   }
 }
-
 class _GlassValue extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -489,9 +496,15 @@ class _GlassValue extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white),
+          Icon(
+            icon,
+            color: Colors.white,
+            size: 22,
+          ),
           const SizedBox(width: 12),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -501,11 +514,16 @@ class _GlassValue extends StatelessWidget {
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
+                    fontSize: 14,
                   ),
                 ),
+                const SizedBox(height: 4),
                 Text(
                   text,
-                  style: const TextStyle(color: Colors.white70),
+                  style: const TextStyle(
+                    color: Colors.white70,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -514,8 +532,6 @@ class _GlassValue extends StatelessWidget {
       ),
     );
   }
-
-
 }
 class _AnimatedFishBadge extends StatelessWidget {
   final _FishBadge badge;

@@ -43,3 +43,20 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# ===== Flutter generated =====
+**/generated_plugin_registrant.*
+**/generated_plugins.cmake
+
+# ===== DevTools =====
+devtools_options.yaml
+
+# ===== iOS / macOS Pods =====
+ios/Pods/
+ios/Podfile
+macos/Pods/
+macos/Podfile
+
+# ===== Desktop flutter generated =====
+linux/flutter/
+windows/flutter/

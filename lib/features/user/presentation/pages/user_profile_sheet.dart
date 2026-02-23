@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../demain/user_model.dart';
 
@@ -21,77 +20,96 @@ class UserProfileSheet extends StatelessWidget {
           borderRadius: const BorderRadius.vertical(
             top: Radius.circular(30),
           ),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.15),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(30),
-                ),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
               ),
-              child: ListView(
-                controller: controller,
-                padding: const EdgeInsets.all(24),
-                children: [
-                  _dragHandle(),
-                  const SizedBox(height: 30),
 
-                  /// 🟢 AVATAR AVEC HALO
-                  Center(
-                    child: Hero(
-                      tag: "user-avatar",
-                      child: _GlowingAvatar(),
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  Center(
-                    child: Text(
-                      "${user.prenom} ${user.nom}",
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Center(
-                    child: Text(
-                      _roleLabel(user.role),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  _profileTile(Icons.email, "Email", user.email),
-                  _profileTile(Icons.phone, "Téléphone", user.telephone),
-                  _profileTile(Icons.badge, "Licence FFESSM", user.licence),
-                  _profileTile(Icons.diversity_3, "Club", user.club),
-                  _profileTile(Icons.school, "Niveau", user.niveau),
-
-                  const SizedBox(height: 20),
-
-                  /// 🔵 COMPTEUR ANIMÉ
-                  _DiveCounter(user.nombrePlongees),
-
-                  const SizedBox(height: 30),
-
-                  _actionButton("Modifier mon profil", Colors.white.withOpacity(0.2)),
-                  const SizedBox(height: 12),
-                  _actionButton("Se déconnecter", Colors.red.withOpacity(0.85)),
-
-                  const SizedBox(height: 40),
+              /// 🎨 Glass effect optimisé (sans blur runtime)
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.96),
+                  Colors.white.withOpacity(0.88),
                 ],
               ),
+
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 30,
+                  offset: const Offset(0, -10),
+                ),
+              ],
+            ),
+            child: ListView(
+              controller: controller,
+              padding: const EdgeInsets.all(24),
+              children: [
+                _dragHandle(),
+                const SizedBox(height: 30),
+
+                /// 🟢 AVATAR AVEC HALO
+                Center(
+                  child: Hero(
+                    tag: "user-avatar",
+                    child: const _GlowingAvatar(),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                Center(
+                  child: Text(
+                    "${user.prenom} ${user.nom}",
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Center(
+                  child: Text(
+                    _roleLabel(user.role),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.black54,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+
+                _profileTile(Icons.email, "Email", user.email),
+                _profileTile(Icons.phone, "Téléphone", user.telephone),
+                _profileTile(Icons.badge, "Licence FFESSM", user.licence),
+                _profileTile(Icons.diversity_3, "Club", user.club),
+                _profileTile(Icons.school, "Niveau", user.niveau),
+
+                const SizedBox(height: 20),
+
+                _DiveCounter(user.nombrePlongees),
+
+                const SizedBox(height: 30),
+
+                _actionButton(
+                  "Modifier mon profil",
+                  Colors.blueAccent.withOpacity(0.9),
+                ),
+                const SizedBox(height: 12),
+                _actionButton(
+                  "Se déconnecter",
+                  Colors.red.withOpacity(0.85),
+                ),
+
+                const SizedBox(height: 40),
+              ],
             ),
           ),
         );
@@ -105,7 +123,7 @@ class UserProfileSheet extends StatelessWidget {
         width: 60,
         height: 6,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.4),
+          color: Colors.black.withOpacity(0.2),
           borderRadius: BorderRadius.circular(10),
         ),
       ),
@@ -118,12 +136,19 @@ class UserProfileSheet extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Row(
           children: [
-            Icon(icon, color: Colors.white),
+            Icon(icon, color: Colors.blueGrey),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
@@ -132,7 +157,7 @@ class UserProfileSheet extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white70,
+                      color: Colors.black54,
                       fontSize: 13,
                     ),
                   ),
@@ -140,7 +165,7 @@ class UserProfileSheet extends StatelessWidget {
                   Text(
                     value,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Colors.black87,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -161,6 +186,7 @@ class UserProfileSheet extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         padding: const EdgeInsets.symmetric(vertical: 16),
+        elevation: 4,
       ),
       onPressed: () {},
       child: Text(
@@ -182,9 +208,9 @@ class UserProfileSheet extends StatelessWidget {
   }
 }
 
-
-/// 🟢 HALO LUMINEUX ANIMÉ
 class _GlowingAvatar extends StatefulWidget {
+  const _GlowingAvatar();
+
   @override
   State<_GlowingAvatar> createState() => _GlowingAvatarState();
 }
@@ -203,22 +229,22 @@ class _GlowingAvatarState extends State<_GlowingAvatar>
       ..repeat(reverse: true);
 
     _glowAnimation =
-        Tween<double>(begin: 4, end: 20).animate(_controller);
+        Tween<double>(begin: 4, end: 16).animate(_controller);
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: _glowAnimation,
-      builder: (_, child) {
+      builder: (_, __) {
         return Container(
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.cyanAccent.withOpacity(0.7),
+                color: Colors.cyanAccent.withOpacity(0.4),
                 blurRadius: _glowAnimation.value,
-                spreadRadius: 2,
+                spreadRadius: 1,
               ),
             ],
           ),
@@ -238,40 +264,78 @@ class _GlowingAvatarState extends State<_GlowingAvatar>
   }
 }
 
-/// 🔵 COMPTEUR ANIMÉ
-class _DiveCounter extends StatelessWidget {
+class _DiveCounter extends StatefulWidget {
   final int dives;
 
   const _DiveCounter(this.dives);
+
+  @override
+  State<_DiveCounter> createState() => _DiveCounterState();
+}
+
+class _DiveCounterState extends State<_DiveCounter>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<int> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _animation = IntTween(
+      begin: 0,
+      end: widget.dives,
+    ).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: Curves.easeOut,
+      ),
+    );
+
+    _controller.forward();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
           const Text(
             "Nombre de plongées",
             style: TextStyle(
-              color: Colors.white70,
+              color: Colors.black54,
               fontSize: 14,
             ),
           ),
           const SizedBox(height: 10),
-          TweenAnimationBuilder<int>(
-            tween: IntTween(begin: 0, end: dives),
-            duration: const Duration(seconds: 2),
-            builder: (_, value, __) {
+
+          /// 🔥 Seul le texte est animé
+          AnimatedBuilder(
+            animation: _animation,
+            builder: (_, __) {
               return Text(
-                "$value",
+                "${_animation.value}",
                 style: const TextStyle(
                   fontSize: 40,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.black87,
                 ),
               );
             },
@@ -279,5 +343,11 @@ class _DiveCounter extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }

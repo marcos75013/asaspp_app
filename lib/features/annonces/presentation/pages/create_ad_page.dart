@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class CreateAdPage extends StatefulWidget {
   const CreateAdPage({super.key});
@@ -9,13 +11,34 @@ class CreateAdPage extends StatefulWidget {
 
 class _CreateAdPageState extends State<CreateAdPage> {
   final _formKey = GlobalKey<FormState>();
-
+  final ImagePicker _picker = ImagePicker();
+  List<XFile> _images = [];
   final _titleController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _phoneController = TextEditingController();
-
   final String _sellerName = "Marcos";
+
+  Future<void> _pickImage() async {
+    if (_images.length >= 5) return;
+
+    final XFile? image = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80,
+    );
+
+    if (image != null) {
+      setState(() {
+        _images.add(image);
+      });
+    }
+  }
+
+  void _removeImage(int index) {
+    setState(() {
+      _images.removeAt(index);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -269,34 +292,118 @@ class _CreateAdPageState extends State<CreateAdPage> {
       ),
     );
   }
-
   Widget _imageBox() {
-    return Container(
-      height: 120,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius:
-        BorderRadius.circular(20),
-        border: Border.all(
-            color: Colors.grey.shade300),
-      ),
-      child: const Center(
-        child: Column(
-          mainAxisAlignment:
-          MainAxisAlignment.center,
-          children: [
-            Icon(Icons.add_photo_alternate,
-                size: 30,
-                color: Colors.grey),
-            SizedBox(height: 8),
-            Text(
-              "Ajouter des images",
-              style:
-              TextStyle(color: Colors.grey),
-            ),
-          ],
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+
+        SizedBox(
+          height: 110,
+          child: ReorderableListView.builder(
+            scrollDirection: Axis.horizontal,
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) newIndex--;
+                final item = _images.removeAt(oldIndex);
+                _images.insert(newIndex, item);
+              });
+            },
+            itemCount: _images.length + 1,
+            itemBuilder: (context, index) {
+
+              /// ➕ BOUTON AJOUT
+              if (index == _images.length) {
+                return Container(
+                  key: const ValueKey("add"),
+                  margin: const EdgeInsets.only(right: 12),
+                  child: GestureDetector(
+                    onTap: _pickImage,
+                    child: Container(
+                      width: 100,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.add_photo_alternate_outlined,
+                          size: 32,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }
+
+              final image = _images[index];
+
+              return Container(
+                key: ValueKey(image.path),
+                margin: const EdgeInsets.only(right: 12),
+                child: Stack(
+                  children: [
+
+                    /// IMAGE
+                    Container(
+                      width: 100,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(18),
+                        image: DecorationImage(
+                          image: FileImage(File(image.path)),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+
+                    /// ❌ DELETE
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: GestureDetector(
+                        onTap: () => _removeImage(index),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.black54,
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: const Icon(
+                            Icons.close,
+                            size: 16,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    /// DRAG HANDLE
+                    const Positioned(
+                      bottom: 6,
+                      left: 6,
+                      child: Icon(
+                        Icons.drag_indicator,
+                        color: Colors.white70,
+                        size: 18,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
-      ),
+
+        const SizedBox(height: 8),
+
+        Text(
+          "${_images.length}/5 photos — Maintenez et glissez pour réorganiser",
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }

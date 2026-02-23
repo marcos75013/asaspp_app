@@ -27,6 +27,7 @@ dependencies:
   intl: ^0.20.2
   shimmer: ^3.0.0
   equatable: ^2.0.8
+  image_picker: ^1.0.7
 
 
 

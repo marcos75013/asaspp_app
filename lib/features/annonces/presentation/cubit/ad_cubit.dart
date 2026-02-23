@@ -7,6 +7,32 @@ class AdsCubit extends Cubit<AdsState> {
     loadAds();
   }
 
+  void search(String query) {
+    emit(state.copyWith(searchQuery: query));
+  }
+
+  List<AdModel> getFilteredAds() {
+    List<AdModel> filtered = state.ads;
+
+    /// 🔹 Filtre type
+    if (state.selectedFilter != null) {
+      filtered =
+          filtered.where((ad) => ad.type == state.selectedFilter).toList();
+    }
+
+    /// 🔹 Filtre recherche (dès 3 lettres)
+    if (state.searchQuery.length >= 3) {
+      final q = state.searchQuery.toLowerCase();
+
+      filtered = filtered.where((ad) {
+        return ad.title.toLowerCase().contains(q) ||
+            ad.description.toLowerCase().contains(q);
+      }).toList();
+    }
+
+    return filtered;
+  }
+
   void loadAds() {
     final mockAds = [
       AdModel(

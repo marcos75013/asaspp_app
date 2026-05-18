@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/widgets/app_drawer.dart';
+import '../../../../core/widgets/feature_tile.dart';
+import '../../../paiement/presentation/widgets/payment_floating_button.dart';
+import '../../../paiement/presentation/widgets/payment_home_card.dart';
 import '../../../splash/presentation/widget/bubbles_layer.dart';
 import '../../../user/demain/user_model.dart';
 import '../../../user/presentation/cubit/user_cubit.dart';
 import '../../../user/presentation/pages/user_profile_sheet.dart';
+import '../../../ducumentslib/presentation/widgets/documents_library_card.dart';
 import '../widgets/next_events_carousel.dart';
 import '../pages/welcome_section.dart';
 import 'club_message_card.dart';
@@ -28,6 +33,8 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
+      drawer: const AppDrawer(),
+
 
       appBar: AppBar(
         toolbarHeight: 110,
@@ -60,7 +67,7 @@ class HomePage extends StatelessWidget {
                       Text(
                         user.prenom,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Colors.black,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
                         ),
@@ -103,57 +110,36 @@ class HomePage extends StatelessWidget {
 
                   const NextEventsCarousel(),
 
-                  const SizedBox(height: 12),
+
+                  Center(child: const PaymentActionButton()),
 
                   const ClubMessageCard(),
 
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 16),
 
-                  /// 📘 QUIZ RESTAURÉ
-                  GestureDetector(
-                    onTap: () {
-                      context.go('/quiz');
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.all(6.0),
-                      child: Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: Colors.white.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Row(
-                          children: const [
-                            Icon(
-                              Icons.quiz,
-                              color: Colors.white,
-                              size: 32,
-                            ),
-                            SizedBox(width: 16),
-                            Expanded(
-                              child: Text(
-                                "Quiz Plongée Plaisir 📘",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            Icon(
-                              Icons.arrow_forward_ios,
-                              color: Colors.white,
-                              size: 18,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                  FeatureTile(
+                    title: "Quiz Plongée Plaisir",
+                    subtitle: "Teste tes connaissances",
+                    icon: Icons.quiz,
+                    gradient: [
+                      const Color(0xFF0061FF),
+                      const Color(0xFF60EFFF),
+                    ],
+                    route: "/quiz",
                   ),
 
+                  SizedBox(height: 20),
+
+                  FeatureTile(
+                    title: "Bibliothèque Plongée",
+                    subtitle: "Documents & Liens utiles",
+                    icon: Icons.folder_open,
+                    gradient: [
+                      const Color(0xFF11998E),
+                      const Color(0xFF38EF7D),
+                    ],
+                    route: "/documents",
+                  ),
                   const SizedBox(height: 32),
                 ],
               ),

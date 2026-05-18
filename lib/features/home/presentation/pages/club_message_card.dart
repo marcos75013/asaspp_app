@@ -1,111 +1,106 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_text_styles.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class ClubMessageCard extends StatelessWidget {
   const ClubMessageCard({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12), // ⬅️ PLUS COMPACT
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ───────── HEADER COMPACT ─────────
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                ClipOval(
-                  child: Image.asset(
-                    'assets/jpgs/macron.jpg',
-                    width: 40, // ⬅️ plus petit
-                    height: 40,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Message du président',
-                    style: AppTextStyles.headline.copyWith(
-                      fontSize: 15, // ⬅️ plus petit
-                    ),
-                  ),
-                ),
-              ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(28),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: Colors.white.withOpacity(0.15),
+            border: Border.all(
+              color: Colors.white.withOpacity(0.25),
+              width: 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.25),
+                blurRadius: 25,
+                offset: const Offset(0, 15),
+              ),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
 
-            const SizedBox(height: 8),
-
-            // ───────── MESSAGE COMPACT ─────────
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              /// HEADER
+              Row(
                 children: [
-                  // Guillemet ouvrant (inline)
-                  Text(
-                    '“',
-                    style: TextStyle(
-                      fontSize: 28,
-                      height: 1.2,
-                      color: Colors.grey.shade400,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.blueAccent.withOpacity(0.5),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                        )
+                      ],
                     ),
-                  ),
-
-                  const SizedBox(width: 4),
-
-                  // Texte
-                  Expanded(
-                    child: Text(
-                      "Bande de plongeurs merguez, n'oubliez pas vos matos",
-                      style: AppTextStyles.body.copyWith(
-                        fontStyle: FontStyle.italic,
-                        height: 1.3,
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/jpgs/macron.jpg',
+                        width: 46,
+                        height: 46,
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
-
-                  const SizedBox(width: 4),
-
-                  // Guillemet fermant (inline)
-                  Text(
-                    '”',
+                  const SizedBox(width: 14),
+                  const Text(
+                    "Message du président",
                     style: TextStyle(
-                      fontSize: 28,
-                      height: 1.2,
-                      color: Colors.grey.shade400,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
                     ),
                   ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 6),
+              const SizedBox(height: 18),
 
-            // ───────── SIGNATURE COMPACTE ─────────
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '— Yan Coomans',
-                style: AppTextStyles.body.copyWith(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
+              /// MESSAGE
+              Text(
+                "“ Bande de plongeurs merguez, n'oubliez pas vos matos ”",
+                style: const TextStyle(
+                  fontSize: 16,
+                  height: 1.5,
+                  fontStyle: FontStyle.italic,
+                  color: Colors.white,
                 ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 16),
+
+              /// SIGNATURE
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  "— Yan Coomans",
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withOpacity(0.8),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(duration: 600.ms)
+        .slideY(begin: 0.15, curve: Curves.easeOutCubic);
   }
 }

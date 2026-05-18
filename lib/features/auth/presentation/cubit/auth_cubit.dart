@@ -13,7 +13,7 @@ class AuthCubit extends Cubit<AuthState> {
     await Future.delayed(const Duration(seconds: 1));
 
     // 🔥 LOGIN EN DUR (temporaire)
-    if (email == "admin@asaspp.com" && password == "1234") {
+    if (email == "aaa" && password == "aaa") {
       emit(state.copyWith(status: AuthStatus.authenticated));
     } else {
       emit(state.copyWith(

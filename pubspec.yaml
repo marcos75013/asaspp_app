@@ -28,6 +28,8 @@ dependencies:
   shimmer: ^3.0.0
   equatable: ^2.0.8
   image_picker: ^1.0.7
+  url_launcher: ^6.3.2
+  flutter_animate: ^4.5.2
 
 
 

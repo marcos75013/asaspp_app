@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 import '../../features/annonces/presentation/data/models/ad_model.dart';
 import '../../features/carpool/presentation/pages/create_carpool_screen.dart';
 import '../../features/carpool/presentation/pages/join_carpool_screen.dart';
+import '../../features/ducumentslib/presentation/documents_library_page.dart';
 import '../../features/home/data/models/next_event_model.dart';
+import '../../features/home_page_admin/presentation/pages/home_page_admin.dart';
+import '../../features/paiement/presentation/pages/payment_list_page.dart';
 import '../../features/quiz/presentation/pages/quiz_game_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
 import '../../features/home/presentation/pages/home_page.dart';
@@ -60,6 +63,18 @@ final GoRouter appRouter = GoRouter(
       path: '/login',
       builder: (context, state) => const LoginScreen(),
     ),
+    GoRoute(
+      path: '/documents',
+      builder: (context, state) => const DocumentsLibraryPage(),
+    ),
+    GoRoute(
+      path: '/payments',
+      builder: (context, state) => const PaymentListPage(),
+    ),
+    GoRoute(
+      path: '/admin-home',
+      builder: (context, state) => const HomePageAdmin(),
+    )
 
 
 

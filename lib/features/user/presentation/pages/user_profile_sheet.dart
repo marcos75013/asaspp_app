@@ -1,13 +1,13 @@
+import 'package:asaspp_app/features/auth/presentation/cubit/auth_cubit.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../demain/user_model.dart';
 
 class UserProfileSheet extends StatelessWidget {
   final UserModel user;
 
-  const UserProfileSheet({
-    super.key,
-    required this.user,
-  });
+  const UserProfileSheet({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -17,9 +17,7 @@ class UserProfileSheet extends StatelessWidget {
       maxChildSize: 0.95,
       builder: (_, controller) {
         return ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(30),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.vertical(
@@ -77,10 +75,7 @@ class UserProfileSheet extends StatelessWidget {
                 Center(
                   child: Text(
                     _roleLabel(user.role),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
                   ),
                 ),
 
@@ -101,14 +96,42 @@ class UserProfileSheet extends StatelessWidget {
                 _actionButton(
                   "Modifier mon profil",
                   Colors.blueAccent.withOpacity(0.9),
+                  () {},
                 ),
                 const SizedBox(height: 12),
                 _actionButton(
-                  "Se déconnecter",
-                  Colors.red.withOpacity(0.85),
-                ),
+  'Se déconnecter',
+  Colors.red,
+  () async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Déconnexion'),
+          content: const Text('Voulez-vous vraiment vous déconnecter ?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Se déconnecter'),
+            ),
+          ],
+        );
+      },
+    );
 
-                const SizedBox(height: 40),
+    if (shouldLogout != true) return;
+
+    await context.read<AuthCubit>().logout();
+
+    if (!context.mounted) return;
+
+    context.go('/login');
+  },
+)
               ],
             ),
           ),
@@ -156,10 +179,7 @@ class UserProfileSheet extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.black54,
-                      fontSize: 13,
-                    ),
+                    style: const TextStyle(color: Colors.black54, fontSize: 13),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -171,28 +191,23 @@ class UserProfileSheet extends StatelessWidget {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _actionButton(String text, Color color) {
+  Widget _actionButton(String text, Color color, VoidCallback onPressed) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(vertical: 16),
         elevation: 4,
       ),
-      onPressed: () {},
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white),
-      ),
+      onPressed: onPressed,
+      child: Text(text, style: const TextStyle(color: Colors.white)),
     );
   }
 
@@ -224,12 +239,12 @@ class _GlowingAvatarState extends State<_GlowingAvatar>
   void initState() {
     super.initState();
 
-    _controller =
-    AnimationController(vsync: this, duration: const Duration(seconds: 2))
-      ..repeat(reverse: true);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
 
-    _glowAnimation =
-        Tween<double>(begin: 4, end: 16).animate(_controller);
+    _glowAnimation = Tween<double>(begin: 4, end: 16).animate(_controller);
   }
 
   @override
@@ -290,12 +305,7 @@ class _DiveCounterState extends State<_DiveCounter>
     _animation = IntTween(
       begin: 0,
       end: widget.dives,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOut,
-      ),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
 
     _controller.forward();
   }
@@ -319,10 +329,7 @@ class _DiveCounterState extends State<_DiveCounter>
         children: [
           const Text(
             "Nombre de plongées",
-            style: TextStyle(
-              color: Colors.black54,
-              fontSize: 14,
-            ),
+            style: TextStyle(color: Colors.black54, fontSize: 14),
           ),
           const SizedBox(height: 10),
 

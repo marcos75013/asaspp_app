@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 
@@ -17,6 +18,13 @@ class _LoginFormState extends State<LoginForm> {
   final _formKey = GlobalKey<FormState>();
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocConsumer<AuthCubit, AuthState>(
       listener: (context, state) {
@@ -28,20 +36,20 @@ class _LoginFormState extends State<LoginForm> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               backgroundColor: Colors.redAccent,
-              content: Text(state.errorMessage ?? "Erreur"),
+              content: Text(state.errorMessage ?? 'Erreur de connexion'),
             ),
           );
         }
       },
       builder: (context, state) {
+        final isLoading = state.status == AuthStatus.loading;
+
         return ClipRRect(
           borderRadius: BorderRadius.circular(25),
           child: Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(25),
-
-              /// 🎨 Glass effect optimisé (sans blur runtime)
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -50,8 +58,6 @@ class _LoginFormState extends State<LoginForm> {
                   Colors.white.withOpacity(0.75),
                 ],
               ),
-
-              /// 💡 Ombre douce
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.15),
@@ -59,8 +65,6 @@ class _LoginFormState extends State<LoginForm> {
                   offset: const Offset(0, 15),
                 ),
               ],
-
-              /// Bordure légère
               border: Border.all(
                 color: Colors.white.withOpacity(0.4),
                 width: 1.2,
@@ -71,17 +75,16 @@ class _LoginFormState extends State<LoginForm> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  /// 🐠 Logo
                   Image.asset(
                     'assets/pngs/logo_asaspp.png',
                     width: 120,
-                    filterQuality: FilterQuality.low, // ⚡ optimisation
+                    filterQuality: FilterQuality.low,
                   ),
 
                   const SizedBox(height: 24),
 
                   const Text(
-                    "Connexion",
+                    'Connexion',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -91,66 +94,63 @@ class _LoginFormState extends State<LoginForm> {
 
                   const SizedBox(height: 30),
 
-                  /// 📧 Email
                   _buildTextField(
                     controller: _emailController,
-                    hint: "Email",
+                    hint: 'Email',
                     icon: Icons.mail_outline,
+                    keyboardType: TextInputType.emailAddress,
                   ),
 
                   const SizedBox(height: 20),
 
-                  /// 🔒 Password
                   _buildTextField(
                     controller: _passwordController,
-                    hint: "Mot de passe",
+                    hint: 'Mot de passe',
                     icon: Icons.lock_outline,
                     obscure: true,
                   ),
 
                   const SizedBox(height: 30),
 
-                  /// 🔵 Bouton
                   SizedBox(
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blueAccent,
+                        disabledBackgroundColor: Colors.blueAccent.withOpacity(0.5),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
                         elevation: 6,
                       ),
-                      onPressed: state.status == AuthStatus.loading
+                      onPressed: isLoading
                           ? null
                           : () {
-                        if (_formKey.currentState!.validate()) {
-                          context.read<AuthCubit>().login(
-                            email:
-                            _emailController.text.trim(),
-                            password:
-                            _passwordController.text.trim(),
-                          );
-                        }
-                      },
-                      child: state.status == AuthStatus.loading
+                              if (_formKey.currentState!.validate()) {
+                                context.read<AuthCubit>().login(
+                                      email: _emailController.text.trim(),
+                                      password: _passwordController.text.trim(),
+                                    );
+                              }
+                            },
+                      child: isLoading
                           ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2.5,
-                        ),
-                      )
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2.5,
+                              ),
+                            )
                           : const Text(
-                        "Se connecter",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                              'Se connecter',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                     ),
                   ),
                 ],
@@ -166,18 +166,28 @@ class _LoginFormState extends State<LoginForm> {
     required TextEditingController controller,
     required String hint,
     required IconData icon,
+    TextInputType? keyboardType,
     bool obscure = false,
   }) {
     return TextFormField(
       controller: controller,
+      keyboardType: keyboardType,
       obscureText: obscure,
       style: const TextStyle(color: Colors.black87),
-      validator: (value) =>
-      value == null || value.isEmpty ? "Champ requis" : null,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return 'Champ requis';
+        }
+
+        return null;
+      },
       decoration: InputDecoration(
         filled: true,
         fillColor: Colors.white.withOpacity(0.7),
-        prefixIcon: Icon(icon, color: Colors.blueGrey),
+        prefixIcon: Icon(
+          icon,
+          color: Colors.blueGrey,
+        ),
         hintText: hint,
         hintStyle: const TextStyle(color: Colors.black45),
         border: OutlineInputBorder(

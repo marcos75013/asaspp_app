@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../demain/user_model.dart';
+
+import '../../../context/data/models/association_role.dart';
+import '../../../context/data/models/mobile_association_model.dart';
+import '../../../context/data/models/mobile_user_model.dart';
 
 class UserProfileSheet extends StatelessWidget {
-  final UserModel user;
+  final MobileUserModel user;
+  final MobileAssociationModel? association;
 
   const UserProfileSheet({
     super.key,
     required this.user,
+    this.association,
   });
 
   @override
@@ -25,8 +30,6 @@ class UserProfileSheet extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(30),
               ),
-
-              /// 🎨 Glass effect optimisé (sans blur runtime)
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -35,7 +38,6 @@ class UserProfileSheet extends StatelessWidget {
                   Colors.white.withOpacity(0.88),
                 ],
               ),
-
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.25),
@@ -50,20 +52,16 @@ class UserProfileSheet extends StatelessWidget {
               children: [
                 _dragHandle(),
                 const SizedBox(height: 30),
-
-                /// 🟢 AVATAR AVEC HALO
-                Center(
+                const Center(
                   child: Hero(
                     tag: "user-avatar",
-                    child: const _GlowingAvatar(),
+                    child: _GlowingAvatar(),
                   ),
                 ),
-
                 const SizedBox(height: 20),
-
                 Center(
                   child: Text(
-                    "${user.prenom} ${user.nom}",
+                    "${user.firstName} ${user.lastName}",
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -71,33 +69,36 @@ class UserProfileSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 6),
-
                 Center(
                   child: Text(
-                    _roleLabel(user.role),
+                    _roleLabel(association?.role),
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.black54,
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 30),
-
                 _profileTile(Icons.email, "Email", user.email),
-                _profileTile(Icons.phone, "Téléphone", user.telephone),
-                _profileTile(Icons.badge, "Licence FFESSM", user.licence),
-                _profileTile(Icons.diversity_3, "Club", user.club),
-                _profileTile(Icons.school, "Niveau", user.niveau),
-
+                _profileTile(
+                  Icons.phone,
+                  "Téléphone",
+                  user.phone ?? "Non renseigné",
+                ),
+                _profileTile(
+                  Icons.diversity_3,
+                  "Association active",
+                  association?.associationName ?? "Non renseignée",
+                ),
+                _profileTile(
+                  Icons.verified_user,
+                  "Rôle",
+                  _roleLabel(association?.role),
+                ),
                 const SizedBox(height: 20),
-
-                _DiveCounter(user.nombrePlongees),
-
+                _modulesCard(association?.modules ?? []),
                 const SizedBox(height: 30),
-
                 _actionButton(
                   "Modifier mon profil",
                   Colors.blueAccent.withOpacity(0.9),
@@ -107,7 +108,6 @@ class UserProfileSheet extends StatelessWidget {
                   "Se déconnecter",
                   Colors.red.withOpacity(0.85),
                 ),
-
                 const SizedBox(height: 40),
               ],
             ),
@@ -178,6 +178,62 @@ class UserProfileSheet extends StatelessWidget {
     );
   }
 
+  Widget _modulesCard(List<String> modules) {
+    if (modules.isEmpty) {
+      return _profileTile(
+        Icons.apps,
+        "Modules",
+        "Aucun module disponible",
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.apps, color: Colors.blueGrey),
+              SizedBox(width: 16),
+              Text(
+                "Modules disponibles",
+                style: TextStyle(
+                  color: Colors.black54,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: modules.map((module) {
+              return Chip(
+                label: Text(
+                  module,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _actionButton(String text, Color color) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
@@ -196,13 +252,13 @@ class UserProfileSheet extends StatelessWidget {
     );
   }
 
-  String _roleLabel(UserRole role) {
+  String _roleLabel(AssociationRole? role) {
     switch (role) {
-      case UserRole.admin:
+      case AssociationRole.admin:
         return "Administrateur";
-      case UserRole.bureau:
-        return "Membre du bureau";
-      case UserRole.membre:
+      case AssociationRole.member:
+        return "Membre";
+      default:
         return "Membre";
     }
   }
@@ -254,94 +310,6 @@ class _GlowingAvatarState extends State<_GlowingAvatar>
           ),
         );
       },
-    );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-}
-
-class _DiveCounter extends StatefulWidget {
-  final int dives;
-
-  const _DiveCounter(this.dives);
-
-  @override
-  State<_DiveCounter> createState() => _DiveCounterState();
-}
-
-class _DiveCounterState extends State<_DiveCounter>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<int> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    );
-
-    _animation = IntTween(
-      begin: 0,
-      end: widget.dives,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: Curves.easeOut,
-      ),
-    );
-
-    _controller.forward();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          const Text(
-            "Nombre de plongées",
-            style: TextStyle(
-              color: Colors.black54,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 10),
-
-          /// 🔥 Seul le texte est animé
-          AnimatedBuilder(
-            animation: _animation,
-            builder: (_, __) {
-              return Text(
-                "${_animation.value}",
-                style: const TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              );
-            },
-          ),
-        ],
-      ),
     );
   }
 

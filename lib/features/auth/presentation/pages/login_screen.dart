@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/auth_storage.dart';
+import '../../../context/data/services/mobile_context_api_service.dart';
 import '../../../splash/presentation/widget/bubbles_layer.dart';
 import '../cubit/auth_cubit.dart';
+import '../data/models/mobile_auth_api_service.dart';
 import '../widgets/login_form.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -10,7 +14,18 @@ class LoginScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => AuthCubit(),
+      create: (_) {
+        final authStorage = AuthStorage();
+        final apiClient = ApiClient(authStorage);
+        final authApiService = MobileAuthApiService(apiClient);
+        final contextApiService = MobileContextApiService(apiClient);
+
+        return AuthCubit(
+          authApiService: authApiService,
+          contextApiService: contextApiService,
+          authStorage: authStorage,
+        );
+      },
       child: Scaffold(
         body: Stack(
           fit: StackFit.expand,

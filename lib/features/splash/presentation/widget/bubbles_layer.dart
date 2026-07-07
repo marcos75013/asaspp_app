@@ -25,14 +25,14 @@ class _BubblesLayerState extends State<BubblesLayer>
 
     final rnd = Random(42); // seed stable → animation identique à chaque run
 
-    _bubbles = List.generate(22, (_) {
+    _bubbles = List.generate(12, (_) {
       return _Bubble(
         x: rnd.nextDouble(),
         y: rnd.nextDouble(),
         radius: lerpDouble(6, 16, rnd.nextDouble())!,
         speed: lerpDouble(0.25, 1.1, rnd.nextDouble())!,
         drift: lerpDouble(-0.12, 0.12, rnd.nextDouble())!,
-        opacity: lerpDouble(0.18, 0.35, rnd.nextDouble())!,
+        opacity: lerpDouble(0.06, 0.16, rnd.nextDouble())!,
       );
     });
   }

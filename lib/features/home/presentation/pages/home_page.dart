@@ -92,7 +92,17 @@ class HomePage extends StatelessWidget {
           const BubblesLayer(),
 
           Container(
-            color: Colors.black.withOpacity(0.18),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.fromRGBO(0, 0, 0, 0.08),
+                  Color.fromRGBO(0, 0, 0, 0.22),
+                  Color.fromRGBO(0, 0, 0, 0.35),
+                ],
+              ),
+            ),
           ),
 
           SafeArea(
@@ -110,37 +120,30 @@ class HomePage extends StatelessWidget {
 
                   const NextEventsCarousel(),
 
-
-                  Center(child: const PaymentActionButton()),
-
                   const ClubMessageCard(),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 6),
+
+                  const PaymentHomeCard(),
+
+                  const SizedBox(height: 2),
 
                   FeatureTile(
-                    title: "Quiz Plongée Plaisir",
+                    title: "Quiz Plongée",
                     subtitle: "Teste tes connaissances",
                     icon: Icons.quiz,
                     gradient: [
-                      const Color(0xFF0061FF),
-                      const Color(0xFF60EFFF),
+                      Color(0xFF0061FF),
+                      Color(0xFF60EFFF),
                     ],
                     route: "/quiz",
                   ),
 
-                  SizedBox(height: 20),
+                  const SizedBox(height: 2),
 
-                  FeatureTile(
-                    title: "Bibliothèque Plongée",
-                    subtitle: "Documents & Liens utiles",
-                    icon: Icons.folder_open,
-                    gradient: [
-                      const Color(0xFF11998E),
-                      const Color(0xFF38EF7D),
-                    ],
-                    route: "/documents",
-                  ),
-                  const SizedBox(height: 32),
+                  const DocumentsLibraryCard(),
+
+                  const SizedBox(height: 46),
                 ],
               ),
             ),

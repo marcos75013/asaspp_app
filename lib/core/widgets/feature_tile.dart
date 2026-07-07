@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -27,8 +28,19 @@ class FeatureTile extends StatefulWidget {
 class _FeatureTileState extends State<FeatureTile> {
   bool isPressed = false;
 
+  bool get _isQuiz => widget.title.toLowerCase().contains('quiz');
+
   @override
   Widget build(BuildContext context) {
+    const borderColor = Color(0xFF42E8F4);
+    const iconColor = Color(0xFF6CEFFF);
+
+    const cardGradient = [
+      Color(0xFF102A43),
+      Color(0xFF071E34),
+      Color(0xFF020B18),
+    ];
+
     return GestureDetector(
       onTapDown: (_) {
         HapticFeedback.lightImpact();
@@ -43,85 +55,159 @@ class _FeatureTileState extends State<FeatureTile> {
         transform: Matrix4.identity()
           ..scale(isPressed ? 0.97 : 1.0)
           ..translate(0.0, isPressed ? 4.0 : 0.0),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(32),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-            child: Container(
-              height: 110,
-              padding: const EdgeInsets.all(22),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                gradient: LinearGradient(
-                  colors: widget.gradient,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.18),
-                  width: 1.2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: widget.gradient.last.withOpacity(0.35),
-                    blurRadius: isPressed ? 15 : 30,
-                    spreadRadius: isPressed ? 0 : 2,
-                    offset: const Offset(0, 18),
-                  ),
-                ],
+        child: Container(
+          height: 110,
+          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
+            gradient: const LinearGradient(
+              colors: cardGradient,
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: borderColor,
+              width: 1.4,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: borderColor.withOpacity(0.18),
+                blurRadius: 22,
+                offset: const Offset(0, 8),
               ),
-              child: Row(
-                children: [
-                  /// Icon bubble
-                  Container(
-                    height: 58,
-                    width: 58,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                if (_isQuiz) ...[
+                  Positioned(
+                    right: 28,
+                    top: -8,
+                    child: Text(
+                      '?',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.11),
+                        fontSize: 92,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
+                  ),
+                  Positioned(
+                    right: 100,
+                    bottom: -14,
+                    child: Text(
+                      '?',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.08),
+                        fontSize: 68,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ] else ...[
+                  Positioned(
+                    right: -18,
+                    top: -10,
                     child: Icon(
-                      widget.icon,
-                      color: Colors.white,
-                      size: 28,
+                      Icons.library_books_rounded,
+                      size: 170,
+                      color: Colors.white.withOpacity(0.10),
                     ),
-                  ),
-
-                  const SizedBox(width: 20),
-
-                  /// Text
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.title,
-                          style: const TextStyle(
-                            fontSize: 21,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          widget.subtitle,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const Icon(
-                    Icons.arrow_forward_ios,
-                    color: Colors.white,
-                    size: 18,
                   ),
                 ],
-              ),
+
+                Positioned.fill(
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 0.4, sigmaY: 0.4),
+                    child: Container(
+                      color: Colors.white.withOpacity(0.01),
+                    ),
+                  ),
+                ),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.16),
+                              Colors.white.withOpacity(0.05),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          border: Border.all(
+                            color: iconColor.withOpacity(0.55),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: iconColor.withOpacity(0.14),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          _isQuiz
+                              ? Icons.emoji_events_outlined
+                              : Icons.library_books_outlined,
+                          color: iconColor,
+                          size: 36,
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              _isQuiz
+                                  ? "QUIZ PLONGÉE"
+                                  : "BIBLIOTHÈQUE",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.2,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              _isQuiz
+                                  ? "Teste tes connaissances"
+                                  : "Documents, liens et ressources",
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                color: Colors.white.withOpacity(0.84),
+                                fontSize: 15,
+                                height: 1.25,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),

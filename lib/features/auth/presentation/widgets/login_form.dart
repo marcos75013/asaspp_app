@@ -24,6 +24,14 @@ class _LoginFormState extends State<LoginForm> {
           context.go('/home');
         }
 
+        if (state.status == AuthStatus.selectAssociation &&
+            state.mobileContext != null) {
+          context.go(
+            '/association-selection',
+            extra: state.mobileContext,
+          );
+        }
+
         if (state.status == AuthStatus.error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

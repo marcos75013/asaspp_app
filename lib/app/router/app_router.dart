@@ -1,8 +1,15 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
+import '../../core/network/api_client.dart';
+import '../../core/storage/auth_storage.dart';
 import '../../features/annonces/presentation/data/models/ad_model.dart';
+import '../../features/association_selection/presentation/pages/association_selection_page.dart';
 import '../../features/carpool/presentation/pages/create_carpool_screen.dart';
 import '../../features/carpool/presentation/pages/join_carpool_screen.dart';
+import '../../features/context/cubit/context_cubit.dart';
+import '../../features/context/data/models/mobile_context_model.dart';
+import '../../features/context/data/services/mobile_context_api_service.dart';
 import '../../features/ducumentslib/presentation/documents_library_page.dart';
 import '../../features/home/data/models/next_event_model.dart';
 import '../../features/home_page_admin/presentation/pages/home_page_admin.dart';
@@ -27,7 +34,29 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/home',
-      builder: (context, state) => const MainScaffold(),
+      builder: (context, state) {
+        final authStorage = AuthStorage();
+        final apiClient = ApiClient(authStorage);
+        final contextApiService = MobileContextApiService(apiClient);
+
+        return BlocProvider(
+          create: (_) => ContextCubit(
+            contextApiService: contextApiService,
+            authStorage: authStorage,
+          )..loadContext(),
+          child: const MainScaffold(),
+        );
+      },
+    ),
+    GoRoute(
+      path: '/association-selection',
+      builder: (context, state) {
+        final mobileContext = state.extra as MobileContextModel;
+
+        return AssociationSelectionPage(
+          mobileContext: mobileContext,
+        );
+      },
     ),
     GoRoute(
       path: '/covoiturage/create',

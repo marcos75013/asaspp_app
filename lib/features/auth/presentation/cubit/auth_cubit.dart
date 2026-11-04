@@ -15,34 +15,34 @@ class AuthCubit extends Cubit<AuthState> {
     required MobileAuthApiService authApiService,
     required MobileContextApiService contextApiService,
     required AuthStorage authStorage,
-  })  : _authApiService = authApiService,
-        _contextApiService = contextApiService,
-        _authStorage = authStorage,
-        super(const AuthState());
+  }) : _authApiService = authApiService,
+       _contextApiService = contextApiService,
+       _authStorage = authStorage,
+       super(const AuthState());
 
-  Future<void> login({
-    required String email,
-    required String password,
-  }) async {
+  Future<void> login({required String email, required String password}) async {
     emit(state.copyWith(status: AuthStatus.loading, errorMessage: null));
 
     try {
       final loginResponse = await _authApiService.login(
-        MobileLoginRequest(
-          email: email,
-          password: password,
-        ),
+        MobileLoginRequest(email: email, password: password),
       );
 
+      await _authStorage.clear();
       await _authStorage.saveToken(loginResponse.token);
 
       final mobileContext = await _contextApiService.getContext();
 
+      if (isClosed) return;
       if (mobileContext.associations.isEmpty) {
-        emit(state.copyWith(
-          status: AuthStatus.error,
-          errorMessage: 'Aucune association associée à ce compte',
-        ));
+        await _authStorage.clear();
+        if (isClosed) return;
+        emit(
+          state.copyWith(
+            status: AuthStatus.error,
+            errorMessage: 'Aucune association associée à ce compte',
+          ),
+        );
         return;
       }
 
@@ -51,22 +51,30 @@ class AuthCubit extends Cubit<AuthState> {
           mobileContext.associations.first.associationId,
         );
 
-        emit(state.copyWith(
-          status: AuthStatus.authenticated,
-          mobileContext: mobileContext,
-        ));
+        emit(
+          state.copyWith(
+            status: AuthStatus.authenticated,
+            mobileContext: mobileContext,
+          ),
+        );
         return;
       }
 
-      emit(state.copyWith(
-        status: AuthStatus.selectAssociation,
-        mobileContext: mobileContext,
-      ));
+      emit(
+        state.copyWith(
+          status: AuthStatus.selectAssociation,
+          mobileContext: mobileContext,
+        ),
+      );
     } catch (_) {
-      emit(state.copyWith(
-        status: AuthStatus.error,
-        errorMessage: 'Email ou mot de passe incorrect',
-      ));
+      await _authStorage.clear();
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          status: AuthStatus.error,
+          errorMessage: 'Email ou mot de passe incorrect',
+        ),
+      );
     }
   }
 

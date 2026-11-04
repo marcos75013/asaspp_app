@@ -12,15 +12,12 @@ class ContextCubit extends Cubit<ContextState> {
   ContextCubit({
     required MobileContextApiService contextApiService,
     required AuthStorage authStorage,
-  })  : _contextApiService = contextApiService,
-        _authStorage = authStorage,
-        super(const ContextState());
+  }) : _contextApiService = contextApiService,
+       _authStorage = authStorage,
+       super(const ContextState());
 
   Future<void> loadContext() async {
-    emit(state.copyWith(
-      status: ContextStatus.loading,
-      errorMessage: null,
-    ));
+    emit(state.copyWith(status: ContextStatus.loading, errorMessage: null));
 
     try {
       final mobileContext = await _contextApiService.getContext();
@@ -39,17 +36,29 @@ class ContextCubit extends Cubit<ContextState> {
 
       selectedAssociation ??= mobileContext.currentAssociation;
 
-      emit(state.copyWith(
-        status: ContextStatus.loaded,
-        context: mobileContext.copyWith(
-          activeAssociation: selectedAssociation,
+      if (selectedAssociation != null) {
+        await _authStorage.saveActiveAssociationId(
+          selectedAssociation.associationId,
+        );
+      }
+      if (isClosed) return;
+
+      emit(
+        state.copyWith(
+          status: ContextStatus.loaded,
+          context: mobileContext.copyWith(
+            activeAssociation: selectedAssociation,
+          ),
         ),
-      ));
+      );
     } catch (_) {
-      emit(state.copyWith(
-        status: ContextStatus.error,
-        errorMessage: 'Impossible de récupérer le contexte utilisateur',
-      ));
+      if (isClosed) return;
+      emit(
+        state.copyWith(
+          status: ContextStatus.error,
+          errorMessage: 'Impossible de récupérer le contexte utilisateur',
+        ),
+      );
     }
   }
 

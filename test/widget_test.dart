@@ -1,21 +1,12 @@
-import 'package:asaspp_app/core/config/app_config.dart';
+import 'package:asaspp_app/core/network/api_client.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('AppConfig', () {
-    test('builds the local API URL', () {
-      expect(AppConfig.apiBaseUrl, 'http://localhost:8080/api');
-    });
-
-    test('keeps absolute URLs unchanged', () {
-      const url = 'https://example.com/photo.jpg';
-      expect(AppConfig.buildBackendUrl(url), url);
-    });
-
-    test('builds an absolute backend URL from a path', () {
+  group('ApiClient', () {
+    test('targets the configured development backend', () {
       expect(
-        AppConfig.buildBackendUrl('/uploads/photo.jpg'),
-        'http://localhost:8080/uploads/photo.jpg',
+        Uri.parse(ApiClient.baseUrl),
+        Uri.parse('http://192.168.1.36:8080'),
       );
     });
   });

@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
 import '../../core/storage/auth_storage.dart';
 import '../../features/annonces/presentation/data/models/ad_model.dart';
@@ -16,7 +15,6 @@ import '../../features/home_page_admin/presentation/pages/home_page_admin.dart';
 import '../../features/paiement/presentation/pages/payment_list_page.dart';
 import '../../features/quiz/presentation/pages/quiz_game_page.dart';
 import '../../features/splash/presentation/pages/splash_screen.dart';
-import '../../features/home/presentation/pages/home_page.dart';
 import '../../main_scaffold.dart';
 import '../../features/annonces/presentation/pages/ad_detail_page.dart';
 import '../../features/quiz/presentation/pages/quiz_page.dart';

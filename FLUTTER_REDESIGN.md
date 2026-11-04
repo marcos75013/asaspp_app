@@ -131,3 +131,15 @@ Aucun raccordement API supprimé. Les 7 tests passent après mise à jour du tes
 navigation. Analyse : aucune erreur ni avertissement, remarques historiques
 informatives uniquement. La capture `flutter-modern-preview.jpg` documente la
 première proposition, et ne représente plus cette direction graphique.
+
+### Cache de l’aperçu corrigé
+
+L’ancien Service Worker conservait la première proposition sur le port 59765.
+L’aperçu actuel est servi sur http://127.0.0.1:59766 avec les en-têtes HTTP
+`Cache-Control: no-store`. Le fond marin, les illustrations et les onglets
+historiques ont été vérifiés visuellement dans le navigateur. La capture actuelle
+est `flutter-ocean-preview.jpg`.
+
+```sh
+python3 tool/serve_preview.py --directory /tmp/multi-asso-visual-preview --port 59766
+```

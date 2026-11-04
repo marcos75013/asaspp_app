@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_text_styles.dart';
 
 class WelcomeSection extends StatelessWidget {
-  const WelcomeSection();
+  const WelcomeSection({super.key});
 
   @override
   Widget build(BuildContext context) {

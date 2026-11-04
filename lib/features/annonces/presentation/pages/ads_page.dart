@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/ad_cubit.dart';
 import '../cubit/ad_state.dart';
 import '../data/models/ad_model.dart';
-import '../widgets/ad_card.dart' hide AdsState;
+import '../widgets/ad_card.dart';
 import 'create_ad_page.dart';
 
 class AdsPage extends StatelessWidget {
@@ -11,8 +11,6 @@ class AdsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottomSafe = MediaQuery.of(context).padding.bottom;
-
     return BlocProvider(
       create: (_) => AdsCubit(),
       child: Scaffold(

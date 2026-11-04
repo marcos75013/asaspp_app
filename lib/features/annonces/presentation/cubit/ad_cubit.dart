@@ -1,9 +1,12 @@
+import '../../../connected/data/club_api.dart';
+import '../../../../core/data/association_repository.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../data/models/ad_model.dart';
 import 'ad_state.dart';
 
 class AdsCubit extends Cubit<AdsState> {
-  AdsCubit() : super(AdsState.initial()) {
+  final AssociationRepository repository;
+  AdsCubit(this.repository) : super(AdsState.initial()) {
     loadAds();
   }
 
@@ -16,8 +19,9 @@ class AdsCubit extends Cubit<AdsState> {
 
     /// 🔹 Filtre type
     if (state.selectedFilter != null) {
-      filtered =
-          filtered.where((ad) => ad.type == state.selectedFilter).toList();
+      filtered = filtered
+          .where((ad) => ad.type == state.selectedFilter)
+          .toList();
     }
 
     /// 🔹 Filtre recherche (dès 3 lettres)
@@ -33,95 +37,76 @@ class AdsCubit extends Cubit<AdsState> {
     return filtered;
   }
 
-  void loadAds() {
-    final mockAds = [
-      AdModel(
-        id: "1",
-        title: "Combinaison 5mm Homme",
-        description:
-        "Très bon état, utilisée 3 fois. Taille L.",
-        image: "assets/annonces/annonce1.jpg",
-        price: 120,
-        sellerName: "Marcos",
-        sellerAvatar: "assets/jpgs/macron.jpg",
-        createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-        type: AdType.vente,
-      ),
-      AdModel(
-        id: "2",
-        title: "Détendeur Scubapro MK25",
-        description: "Révisé cette année, tres bonne qualité lorem ipsum, lorem ipsum, lorem ipsum, lorem ipsum, lorem ipsum, lorem ipsum.",
-        image: "assets/annonces/annonce2.jpg",
-        price: 250,
-        sellerName: "Thomas",
-        sellerAvatar: "assets/jpgs/macron.jpg",
-        createdAt: DateTime.now().subtract(const Duration(hours: 3)),
-        type: AdType.vente,
-      ),
-      AdModel(
-        id: "3",
-        title: "Gilet stabilisateur Mares",
-        description: "Taille M, très confortable.",
-        image: "assets/annonces/annonce3.jpg",
-        price: 180,
-        sellerName: "Claire",
-        sellerAvatar: "assets/jpgs/macron.jpg",
-        createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-        type: AdType.vente,
-      ),
-      AdModel(
-        id: "4",
-        title: "Recherche lampe vidéo",
-        description: "Je cherche 4000+ lumens.",
-        image: "assets/annonces/annonce4.jpg",
-        price: 0,
-        sellerName: "Julien",
-        sellerAvatar: "assets/jpgs/macron.jpg",
-        createdAt: DateTime.now().subtract(const Duration(minutes: 20)),
-        type: AdType.recherche,
-      ),
-      AdModel(
-        id: "5",
-        title: "Don masque junior",
-        description: "Masque enfant en bon état.",
-        image: "assets/annonces/annonce5.jpg",
-        price: 0,
-        sellerName: "Sophie",
-        sellerAvatar: "assets/jpgs/macron.jpg",
-        createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
-        type: AdType.don,
-      ),
-      AdModel(
-        id: "6",
-        title: "Ordinateur Cressi Leonardo",
-        description: "Batterie neuve.",
-        image: "assets/annonces/annonce6.jpg",
-        price: 140,
-        sellerName: "Antoine",
-        sellerAvatar: "assets/jpgs/macron.jpg",
-        createdAt: DateTime.now().subtract(const Duration(hours: 5)),
-        type: AdType.vente,
-      ),
-    ];
-
-    // 💎 TRI automatique
-    mockAds.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-
-    emit(state.copyWith(ads: mockAds));
+  AdModel _model(Json row, ClubApi api) {
+    final images = records(row['images'] ?? []);
+    return AdModel(
+      id: '${row['id']}',
+      title: label(row, 'title'),
+      description: label(row, 'description'),
+      image: images.isEmpty ? '' : api.imageUrl(label(images.first, 'url')),
+      price: (row['price'] as num? ?? 0).toDouble(),
+      sellerName:
+          '${label(row, 'authorFirstName')} ${label(row, 'authorLastName')}',
+      sellerAvatar: '',
+      contactEmail: label(row, 'authorEmail'),
+      contactPhone: label(row, 'contactPhone'),
+      createdAt: DateTime.tryParse(label(row, 'createdAt')) ?? DateTime.now(),
+      type: switch (row['type']) {
+        'GIFT' => AdType.don,
+        'WANTED' => AdType.recherche,
+        _ => AdType.vente,
+      },
+      isFavorite: row['favorite'] == true,
+    );
   }
 
-  void toggleFavorite(String id) {
-    final updated = state.ads.map((ad) {
-      if (ad.id == id) {
-        return ad.copyWith(isFavorite: !ad.isFavorite);
-      }
-      return ad;
-    }).toList();
+  Future<void> loadAds() async {
+    emit(state.copyWith(isLoading: true));
+    try {
+      final api = await repository.api();
+      final data = await api.list('/api/marketplace');
+      if (!isClosed)
+        emit(
+          state.copyWith(
+            ads: data.map((row) => _model(row, api)).toList(),
+            isLoading: false,
+          ),
+        );
+    } catch (error) {
+      if (!isClosed)
+        emit(state.copyWith(isLoading: false, error: readableError(error)));
+    }
+  }
 
-    emit(state.copyWith(ads: updated));
+  final Set<String> _pending = {};
+  Future<void> toggleFavorite(String id) async {
+    if (!_pending.add(id)) return;
+    try {
+      final api = await repository.api();
+      final result = await api.request(
+        '/api/marketplace/$id/favorite',
+        method: 'POST',
+      );
+      if (!isClosed)
+        emit(
+          state.copyWith(
+            ads: state.ads
+                .map(
+                  (a) => a.id == id
+                      ? _model(Map<String, dynamic>.from(result), api)
+                      : a,
+                )
+                .toList(),
+          ),
+        );
+    } catch (error) {
+      if (!isClosed) emit(state.copyWith(error: readableError(error)));
+    } finally {
+      _pending.remove(id);
+    }
   }
 
   void filterByType(AdType? type) {
-    emit(state.copyWith(selectedFilter: type));
+    emit(state.copyWith(selectedFilter: type, clearFilter: type == null));
   }
 }

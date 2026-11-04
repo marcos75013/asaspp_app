@@ -1,3 +1,4 @@
+import '../../../../core/data/association_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../cubit/ad_cubit.dart';
@@ -20,22 +21,19 @@ class AdCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         /// ✅ Navigation locale (compatible MainScaffold)
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => AdDetailPage(ad: ad),
-          ),
-        );
+        Navigator.of(
+          context,
+        ).push(MaterialPageRoute(builder: (_) => AdDetailPage(ad: ad)));
       },
       child: ClipRRect(
         borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
-
             /// HERO IMAGE
             Hero(
               tag: ad.id,
-              child: Image.asset(
-                ad.image,
+              child: Image(
+                image: associationImage(ad.image),
                 height: 220,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -54,12 +52,8 @@ class AdCard extends StatelessWidget {
                   scale: ad.isFavorite ? 1.2 : 1.0,
                   duration: const Duration(milliseconds: 200),
                   child: Icon(
-                    ad.isFavorite
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                    color: ad.isFavorite
-                        ? Colors.red
-                        : Colors.white,
+                    ad.isFavorite ? Icons.favorite : Icons.favorite_border,
+                    color: ad.isFavorite ? Colors.red : Colors.white,
                   ),
                 ),
               ),
@@ -71,8 +65,7 @@ class AdCard extends StatelessWidget {
               left: 16,
               right: 16,
               child: Column(
-                crossAxisAlignment:
-                CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     ad.title,
@@ -87,15 +80,12 @@ class AdCard extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 12,
-                        backgroundImage:
-                        AssetImage(ad.sellerAvatar),
+                        backgroundImage: associationImage(ad.sellerAvatar),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         ad.sellerName,
-                        style: const TextStyle(
-                          color: Colors.white70,
-                        ),
+                        style: const TextStyle(color: Colors.white70),
                       ),
                     ],
                   ),
@@ -109,7 +99,9 @@ class AdCard extends StatelessWidget {
               right: 16,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 8),
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF00B4D8),
                   borderRadius: BorderRadius.circular(20),

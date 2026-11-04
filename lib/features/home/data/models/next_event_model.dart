@@ -1,47 +1,57 @@
-enum DiveType {
-  mer,
-  piscine,
-  carriere,
-  apero,
-  formation,
-  stage,
-  fosse,
-}
+import '../../../connected/data/club_api.dart';
+import '../../../connected/presentation/club_widgets.dart' show dateLabel;
 
-enum ParticipationStatus {
-  none,
-  going,
-  maybe,
-  notGoing,
-}
+enum DiveType { mer, piscine, carriere, apero, formation, stage, fosse }
+
+enum ParticipationStatus { none, going, maybe, notGoing, waitlisted }
 
 class NextEventModel {
-  final String site;
-  final String date;
-  final String time;
+  final int id;
+  final String site, date, time, message;
   final DiveType diveType;
-  final String message;
   final ParticipationStatus participation;
-
+  final Json raw;
   const NextEventModel({
+    required this.id,
     required this.site,
     required this.date,
     required this.time,
     required this.diveType,
     required this.message,
     this.participation = ParticipationStatus.none,
+    this.raw = const {},
   });
-
-  NextEventModel copyWith({
-    ParticipationStatus? participation,
-  }) {
+  factory NextEventModel.fromJson(Json data) {
+    final category = label(data, 'category').toLowerCase();
+    final type = category.contains('piscine')
+        ? DiveType.piscine
+        : category.contains('fosse')
+        ? DiveType.fosse
+        : category.contains('carri')
+        ? DiveType.carriere
+        : category.contains('apéro') || category.contains('apero')
+        ? DiveType.apero
+        : category.contains('formation')
+        ? DiveType.formation
+        : category.contains('stage')
+        ? DiveType.stage
+        : DiveType.mer;
+    final formatted = dateLabel(data['startDate']).split(' · ');
     return NextEventModel(
-      site: site,
-      date: date,
-      time: time,
-      diveType: diveType,
-      message: message,
-      participation: participation ?? this.participation,
+      id: data['id'] as int,
+      site: label(data, 'title'),
+      date: formatted.first,
+      time: formatted.length > 1 ? formatted.last : '',
+      diveType: type,
+      message: label(data, 'description'),
+      raw: data,
+      participation: switch (data['currentUserStatus']) {
+        'GOING' => ParticipationStatus.going,
+        'MAYBE' => ParticipationStatus.maybe,
+        'NOT_GOING' => ParticipationStatus.notGoing,
+        'WAITLISTED' => ParticipationStatus.waitlisted,
+        _ => ParticipationStatus.none,
+      },
     );
   }
 }

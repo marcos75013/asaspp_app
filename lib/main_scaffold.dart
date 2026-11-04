@@ -41,14 +41,17 @@ class _MainScaffoldState extends State<MainScaffold> {
           color: color,
         ),
         const SizedBox(height: 6),
-        Text(
-          label,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: active ? 9 : 13, // ⬅️ TITRES PLUS GRANDS
-            fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-            color: color,
-            letterSpacing: 0.3,
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: active ? 9 : 13, // ⬅️ TITRES PLUS GRANDS
+              fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              color: color,
+              letterSpacing: 0.3,
+            ),
           ),
         ),
       ],
@@ -79,12 +82,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           activeIndex: _currentIndex,
 
           /// 👉 LE CERCLE affichera TOUJOURS ce plongeur
-          activeIcons: [
-            _diverIcon(),
-            _diverIcon(),
-            _diverIcon(),
-            _diverIcon(),
-          ],
+          activeIcons: [_diverIcon(), _diverIcon(), _diverIcon(), _diverIcon()],
 
           /// 👉 Icônes + labels
           inactiveIcons: [

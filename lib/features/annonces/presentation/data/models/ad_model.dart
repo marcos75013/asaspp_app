@@ -2,6 +2,8 @@ enum AdType { vente, recherche, don }
 
 class AdModel {
   final String id;
+  final String contactEmail;
+  final String contactPhone;
   final String title;
   final String description;
   final String image;
@@ -14,6 +16,8 @@ class AdModel {
 
   const AdModel({
     required this.id,
+    this.contactEmail = '',
+    this.contactPhone = '',
     required this.title,
     required this.description,
     required this.image,
@@ -25,11 +29,11 @@ class AdModel {
     this.isFavorite = false,
   });
 
-  AdModel copyWith({
-    bool? isFavorite,
-  }) {
+  AdModel copyWith({bool? isFavorite}) {
     return AdModel(
       id: id,
+      contactEmail: contactEmail,
+      contactPhone: contactPhone,
       title: title,
       description: description,
       image: image,

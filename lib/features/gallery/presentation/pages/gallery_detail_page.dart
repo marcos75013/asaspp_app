@@ -1,3 +1,4 @@
+import '../../../../core/data/association_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -25,29 +26,31 @@ class _GalleryDetailPageState extends State<GalleryDetailPage> {
       ),
       body: Stack(
         children: [
-          PhotoViewGallery.builder(
-            itemCount: widget.gallery.photos.length,
-            builder: (context, index) {
-              return PhotoViewGalleryPageOptions(
-                imageProvider:
-                AssetImage(widget.gallery.photos[index]),
-                heroAttributes: PhotoViewHeroAttributes(
-                    tag: widget.gallery.id),
-              );
-            },
-            onPageChanged: (index) {
-              setState(() => currentIndex = index);
-            },
-          ),
+          if (widget.gallery.photos.isNotEmpty)
+            PhotoViewGallery.builder(
+              itemCount: widget.gallery.photos.length,
+              builder: (context, index) {
+                return PhotoViewGalleryPageOptions(
+                  imageProvider: associationImage(widget.gallery.photos[index]),
+                  heroAttributes: PhotoViewHeroAttributes(
+                    tag: widget.gallery.id,
+                  ),
+                );
+              },
+              onPageChanged: (index) {
+                setState(() => currentIndex = index);
+              },
+            ),
           Positioned(
             bottom: 30,
             left: 0,
             right: 0,
             child: Center(
               child: Text(
-                '${currentIndex + 1} / ${widget.gallery.photos.length}',
-                style: const TextStyle(
-                    color: Colors.white70, fontSize: 16),
+                widget.gallery.photos.isEmpty
+                    ? 'Aucune photo dans cet album'
+                    : '${currentIndex + 1} / ${widget.gallery.photos.length}',
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
               ),
             ),
           ),

@@ -1,59 +1,66 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/data/association_repository.dart';
+import '../../../connected/data/club_api.dart';
 import '../../data/models/next_event_model.dart';
 import 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit()
-      : super(
-    HomeState(
-      nextEvents: {
-        DiveType.fosse: const NextEventModel(
-          site: 'Carrière de Beaumont',
-          date: 'Samedi 15 février',
-          time: '08h30',
-          diveType: DiveType.fosse,
-          message:
-          'N’oubliez pas de vérifier votre matériel avant la sortie.',
-        ),
+  final AssociationRepository repository;
+  int _request = 0;
+  HomeCubit(this.repository) : super(const HomeState());
+  Future<void> loadEvents() async {
+    final request = ++_request;
+    emit(const HomeState(loading: true));
+    try {
+      final api = await repository.api();
+      final events = <int, NextEventModel>{};
+      var page = 0;
+      while (true) {
+        final data = await api.events(page: page++);
+        for (final item in records(data['content'])) {
+          if (item['published'] == true) {
+            final event = NextEventModel.fromJson(item);
+            events[event.id] = event;
+          }
+        }
+        if (data['last'] != false) break;
+      }
+      if (!isClosed && request == _request) emit(HomeState(nextEvents: events));
+    } catch (error) {
+      if (!isClosed && request == _request)
+        emit(HomeState(error: readableError(error)));
+    }
+  }
 
-        DiveType.mer: const NextEventModel(
-          site: 'Étretat',
-          date: 'Dimanche 23 mars',
-          time: '09h00',
-          diveType: DiveType.mer,
-          message: 'Sortie mer – niveau 2 minimum.',
-        ),
-
-        DiveType.apero: const NextEventModel(
-          site: 'Local du club',
-          date: 'Vendredi 28 mars',
-          time: '19h30',
-          diveType: DiveType.apero,
-          message: 'Apéro convivial ouvert à tous 🍻',
-        ),
-
-        DiveType.formation: const NextEventModel(
-          site: 'Piscine municipale',
-          date: 'Mercredi 2 avril',
-          time: '20h00',
-          diveType: DiveType.formation,
-          message: 'Formation N1 – séance technique.',
-        ),
-      },
-    ),
-  );
-
-  void setParticipation(DiveType type, ParticipationStatus status) {
-    final event = state.nextEvents[type];
-    if (event == null) return;
-
-    emit(
-      state.copyWith(
-        nextEvents: {
-          ...state.nextEvents,
-          type: event.copyWith(participation: status),
-        },
-      ),
-    );
+  Future<void> setParticipation(int eventId, ParticipationStatus status) async {
+    if (state.pending.contains(eventId)) return;
+    final generation = _request;
+    emit(state.copyWith(pending: {...state.pending, eventId}));
+    try {
+      final api = await repository.api();
+      final data = await api.participate(eventId, switch (status) {
+        ParticipationStatus.going => 'GOING',
+        ParticipationStatus.maybe => 'MAYBE',
+        _ => 'NOT_GOING',
+      });
+      if (!isClosed && generation == _request)
+        emit(
+          state.copyWith(
+            nextEvents: {
+              ...state.nextEvents,
+              eventId: NextEventModel.fromJson(data),
+            },
+            pending: {...state.pending}..remove(eventId),
+          ),
+        );
+    } catch (error) {
+      if (!isClosed && generation == _request)
+        emit(
+          state.copyWith(
+            error: readableError(error),
+            pending: {...state.pending}..remove(eventId),
+          ),
+        );
+    }
   }
 }

@@ -1,13 +1,12 @@
+import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/data/association_repository.dart';
 import 'package:flutter/material.dart';
 import '../data/models/ad_model.dart';
 
 class AdDetailPage extends StatefulWidget {
   final AdModel ad;
 
-  const AdDetailPage({
-    super.key,
-    required this.ad,
-  });
+  const AdDetailPage({super.key, required this.ad});
 
   @override
   State<AdDetailPage> createState() => _AdDetailPageState();
@@ -48,8 +47,8 @@ class _AdDetailPageState extends State<AdDetailPage> {
             right: 0,
             child: Hero(
               tag: ad.id,
-              child: Image.asset(
-                ad.image,
+              child: Image(
+                image: associationImage(ad.image),
                 height: 450,
                 fit: BoxFit.cover,
                 filterQuality: FilterQuality.low, // ⚡ important
@@ -71,10 +70,7 @@ class _AdDetailPageState extends State<AdDetailPage> {
                       color: Colors.black.withOpacity(0.4),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                    ),
+                    child: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
                 ),
               ),
@@ -133,7 +129,9 @@ class _AdDetailPageState extends State<AdDetailPage> {
 
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF00B4D8),
                             borderRadius: BorderRadius.circular(20),
@@ -167,8 +165,9 @@ class _AdDetailPageState extends State<AdDetailPage> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundImage:
-                              AssetImage(ad.sellerAvatar),
+                              backgroundImage: associationImage(
+                                ad.sellerAvatar,
+                              ),
                             ),
                             const SizedBox(width: 12),
                             Text(
@@ -188,19 +187,28 @@ class _AdDetailPageState extends State<AdDetailPage> {
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                              const Color(0xFF00B4D8),
-                              padding:
-                              const EdgeInsets.symmetric(
-                                vertical: 16,
-                              ),
-                              shape:
-                              RoundedRectangleBorder(
-                                borderRadius:
-                                BorderRadius.circular(20),
+                              backgroundColor: const Color(0xFF00B4D8),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed: () async {
+                              final uri = ad.contactPhone.isNotEmpty
+                                  ? Uri(scheme: 'tel', path: ad.contactPhone)
+                                  : Uri(
+                                      scheme: 'mailto',
+                                      path: ad.contactEmail,
+                                    );
+                              if (!await launchUrl(uri) && context.mounted)
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Impossible d’ouvrir le contact.',
+                                    ),
+                                  ),
+                                );
+                            },
                             child: const Text(
                               "Contacter le vendeur",
                               style: TextStyle(fontSize: 16),

@@ -1,18 +1,10 @@
 import 'package:flutter/material.dart';
-
-import '../../../context/data/models/association_role.dart';
-import '../../../context/data/models/mobile_association_model.dart';
-import '../../../context/data/models/mobile_user_model.dart';
+import '../../demain/user_model.dart';
 
 class UserProfileSheet extends StatelessWidget {
-  final MobileUserModel user;
-  final MobileAssociationModel? association;
+  final UserModel user;
 
-  const UserProfileSheet({
-    super.key,
-    required this.user,
-    this.association,
-  });
+  const UserProfileSheet({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -22,14 +14,14 @@ class UserProfileSheet extends StatelessWidget {
       maxChildSize: 0.95,
       builder: (_, controller) {
         return ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(30),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(30),
               ),
+
+              /// 🎨 Glass effect optimisé (sans blur runtime)
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
@@ -38,6 +30,7 @@ class UserProfileSheet extends StatelessWidget {
                   Colors.white.withOpacity(0.88),
                 ],
               ),
+
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.25),
@@ -52,16 +45,20 @@ class UserProfileSheet extends StatelessWidget {
               children: [
                 _dragHandle(),
                 const SizedBox(height: 30),
-                const Center(
+
+                /// 🟢 AVATAR AVEC HALO
+                Center(
                   child: Hero(
                     tag: "user-avatar",
-                    child: _GlowingAvatar(),
+                    child: const _GlowingAvatar(),
                   ),
                 ),
+
                 const SizedBox(height: 20),
+
                 Center(
                   child: Text(
-                    "${user.firstName} ${user.lastName}",
+                    "${user.prenom} ${user.nom}",
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -69,45 +66,37 @@ class UserProfileSheet extends StatelessWidget {
                     ),
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Center(
                   child: Text(
-                    _roleLabel(association?.role),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                    ),
+                    _roleLabel(user.role),
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
                   ),
                 ),
+
                 const SizedBox(height: 30),
+
                 _profileTile(Icons.email, "Email", user.email),
-                _profileTile(
-                  Icons.phone,
-                  "Téléphone",
-                  user.phone ?? "Non renseigné",
-                ),
-                _profileTile(
-                  Icons.diversity_3,
-                  "Association active",
-                  association?.associationName ?? "Non renseignée",
-                ),
-                _profileTile(
-                  Icons.verified_user,
-                  "Rôle",
-                  _roleLabel(association?.role),
-                ),
+                _profileTile(Icons.phone, "Téléphone", user.telephone),
+                _profileTile(Icons.badge, "Licence FFESSM", user.licence),
+                _profileTile(Icons.diversity_3, "Club", user.club),
+                _profileTile(Icons.school, "Niveau", user.niveau),
+
                 const SizedBox(height: 20),
-                _modulesCard(association?.modules ?? []),
+
+                _DiveCounter(user.nombrePlongees),
+
                 const SizedBox(height: 30),
+
                 _actionButton(
                   "Modifier mon profil",
                   Colors.blueAccent.withOpacity(0.9),
                 ),
                 const SizedBox(height: 12),
-                _actionButton(
-                  "Se déconnecter",
-                  Colors.red.withOpacity(0.85),
-                ),
+                _actionButton("Se déconnecter", Colors.red.withOpacity(0.85)),
+
                 const SizedBox(height: 40),
               ],
             ),
@@ -156,10 +145,7 @@ class UserProfileSheet extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.black54,
-                      fontSize: 13,
-                    ),
+                    style: const TextStyle(color: Colors.black54, fontSize: 13),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -171,65 +157,9 @@ class UserProfileSheet extends StatelessWidget {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _modulesCard(List<String> modules) {
-    if (modules.isEmpty) {
-      return _profileTile(
-        Icons.apps,
-        "Modules",
-        "Aucun module disponible",
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.apps, color: Colors.blueGrey),
-              SizedBox(width: 16),
-              Text(
-                "Modules disponibles",
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 13,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: modules.map((module) {
-              return Chip(
-                label: Text(
-                  module,
-                  style: const TextStyle(fontSize: 12),
-                ),
-              );
-            }).toList(),
-          ),
-        ],
       ),
     );
   }
@@ -238,27 +168,22 @@ class UserProfileSheet extends StatelessWidget {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(vertical: 16),
         elevation: 4,
       ),
       onPressed: () {},
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: Text(text, style: const TextStyle(color: Colors.white)),
     );
   }
 
-  String _roleLabel(AssociationRole? role) {
+  String _roleLabel(UserRole role) {
     switch (role) {
-      case AssociationRole.admin:
+      case UserRole.admin:
         return "Administrateur";
-      case AssociationRole.member:
-        return "Membre";
-      default:
+      case UserRole.bureau:
+        return "Membre du bureau";
+      case UserRole.membre:
         return "Membre";
     }
   }
@@ -280,12 +205,12 @@ class _GlowingAvatarState extends State<_GlowingAvatar>
   void initState() {
     super.initState();
 
-    _controller =
-    AnimationController(vsync: this, duration: const Duration(seconds: 2))
-      ..repeat(reverse: true);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
 
-    _glowAnimation =
-        Tween<double>(begin: 4, end: 16).animate(_controller);
+    _glowAnimation = Tween<double>(begin: 4, end: 16).animate(_controller);
   }
 
   @override
@@ -306,10 +231,90 @@ class _GlowingAvatarState extends State<_GlowingAvatar>
           ),
           child: const CircleAvatar(
             radius: 55,
-            backgroundImage: AssetImage('assets/jpgs/macron.jpg'),
+            child: Icon(Icons.person, size: 55),
           ),
         );
       },
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+}
+
+class _DiveCounter extends StatefulWidget {
+  final int? dives;
+
+  const _DiveCounter(this.dives);
+
+  @override
+  State<_DiveCounter> createState() => _DiveCounterState();
+}
+
+class _DiveCounterState extends State<_DiveCounter>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<int> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _animation = IntTween(
+      begin: 0,
+      end: widget.dives ?? 0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    _controller.forward();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          const Text(
+            "Nombre de plongées",
+            style: TextStyle(color: Colors.black54, fontSize: 14),
+          ),
+          const SizedBox(height: 10),
+
+          /// 🔥 Seul le texte est animé
+          AnimatedBuilder(
+            animation: _animation,
+            builder: (_, __) {
+              return Text(
+                widget.dives == null ? "—" : "${_animation.value}",
+                style: const TextStyle(
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 

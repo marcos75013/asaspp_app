@@ -1,13 +1,15 @@
-import 'dart:math';
+import '../../../connected/data/club_api.dart';
+import '../../../../core/data/association_repository.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/quiz_mock_data.dart';
+
 import '../../domain/quiz_model.dart';
 
 class QuizGamePage extends StatefulWidget {
-  final int level;
+  final Json quiz;
 
-  const QuizGamePage({super.key, required this.level});
+  const QuizGamePage({super.key, required this.quiz});
 
   @override
   State<QuizGamePage> createState() => _QuizGamePageState();
@@ -35,15 +37,10 @@ class _QuizGamePageState extends State<QuizGamePage>
       duration: const Duration(milliseconds: 400),
     );
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _questionController,
-        curve: Curves.easeOut,
-      ),
-    );
+    _slideAnimation = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _questionController, curve: Curves.easeOut),
+        );
 
     _fadeAnimation = CurvedAnimation(
       parent: _questionController,
@@ -53,28 +50,33 @@ class _QuizGamePageState extends State<QuizGamePage>
     _questionController.forward();
   }
 
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _questionController.dispose();
+    super.dispose();
+  }
+
+  final List<Json> _answers = [];
+  Timer? _timer;
+  bool _submitting = false;
+  Json? _result;
   void _generateRandomQuiz() {
-    final allQuestions =
-    List<QuizQuestion>.from(QuizMockData.getQuestions(widget.level));
-
-    allQuestions.shuffle(Random());
-
-    questions = allQuestions.map((q) {
-      final answers = List<String>.from(q.answers);
-      final correctAnswer = answers[q.correctIndex];
-
-      answers.shuffle(Random());
-      final newCorrectIndex = answers.indexOf(correctAnswer);
-
-      return QuizQuestion(
-        question: q.question,
-        answers: answers,
-        correctIndex: newCorrectIndex,
-      );
-    }).toList();
+    questions = records(widget.quiz['questions'])
+        .map(
+          (q) => QuizQuestion(
+            question: label(q, 'text'),
+            answers: records(
+              q['choices'],
+            ).map((c) => label(c, 'text')).toList(),
+            correctIndex: -1,
+          ),
+        )
+        .toList();
   }
 
   void _nextQuestion() {
+    if (!mounted) return;
     if (currentIndex < questions.length - 1) {
       _questionController.reset();
       setState(() {
@@ -92,15 +94,45 @@ class _QuizGamePageState extends State<QuizGamePage>
 
     setState(() {
       selectedIndex = index;
-      if (index == questions[currentIndex].correctIndex) {
-        score++;
-      }
+      final question = records(widget.quiz['questions'])[currentIndex];
+      final choice = records(question['choices'])[index];
+      _answers.add({
+        'questionIndex': question['index'],
+        'choiceIndex': choice['index'],
+      });
     });
 
-    Future.delayed(const Duration(milliseconds: 900), _nextQuestion);
+    _timer = Timer(const Duration(milliseconds: 900), _nextQuestion);
   }
 
-  void _showResult() {
+  Future<void> _showResult() async {
+    if (_submitting) return;
+    _submitting = true;
+    try {
+      if (_result == null) {
+        final api = await repositoryOf(context).api();
+        _result = Map<String, dynamic>.from(
+          await api.request(
+            '/api/mobile/quizzes/${widget.quiz['id']}/attempts',
+            method: 'POST',
+            data: {'answers': _answers},
+          ),
+        );
+      }
+      score = _result!['correctAnswers'] as int;
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(readableError(error)),
+            action: SnackBarAction(label: 'Réessayer', onPressed: _showResult),
+          ),
+        );
+      _submitting = false;
+      return;
+    }
+    _submitting = false;
+    if (!mounted) return;
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -117,7 +149,7 @@ class _QuizGamePageState extends State<QuizGamePage>
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                "Bravo 🎉",
+                'Résultat enregistré',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -127,10 +159,7 @@ class _QuizGamePageState extends State<QuizGamePage>
               const SizedBox(height: 16),
               Text(
                 "Score : $score / ${questions.length}",
-                style: const TextStyle(
-                  fontSize: 20,
-                  color: Colors.white,
-                ),
+                style: const TextStyle(fontSize: 20, color: Colors.white),
               ),
               const SizedBox(height: 20),
               ElevatedButton(
@@ -139,7 +168,7 @@ class _QuizGamePageState extends State<QuizGamePage>
                   context.pop(); // revenir au niveau
                 },
                 child: const Text("Retour"),
-              )
+              ),
             ],
           ),
         ),
@@ -149,6 +178,11 @@ class _QuizGamePageState extends State<QuizGamePage>
 
   @override
   Widget build(BuildContext context) {
+    if (questions.isEmpty)
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(child: Text('Ce quiz ne contient aucune question.')),
+      );
     final question = questions[currentIndex];
 
     return Scaffold(
@@ -160,7 +194,7 @@ class _QuizGamePageState extends State<QuizGamePage>
                 colors: [
                   Color(0xFF0F2027),
                   Color(0xFF203A43),
-                  Color(0xFF2C5364)
+                  Color(0xFF2C5364),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -177,8 +211,10 @@ class _QuizGamePageState extends State<QuizGamePage>
                   Row(
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.arrow_back_ios,
-                            color: Colors.white),
+                        icon: const Icon(
+                          Icons.arrow_back_ios,
+                          color: Colors.white,
+                        ),
                         onPressed: () => context.pop(),
                       ),
                     ],
@@ -193,8 +229,9 @@ class _QuizGamePageState extends State<QuizGamePage>
                       value: (currentIndex + 1) / questions.length,
                       minHeight: 14,
                       backgroundColor: Colors.white.withOpacity(0.2),
-                      valueColor:
-                      const AlwaysStoppedAnimation(Colors.greenAccent),
+                      valueColor: const AlwaysStoppedAnimation(
+                        Colors.greenAccent,
+                      ),
                     ),
                   ),
 
@@ -223,54 +260,37 @@ class _QuizGamePageState extends State<QuizGamePage>
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: question.answers.length,
                       gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                      ),
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 16,
+                            mainAxisSpacing: 16,
+                          ),
                       itemBuilder: (context, index) {
-                        final isCorrect =
-                            index == question.correctIndex;
-                        final isSelected =
-                            index == selectedIndex;
+                        final isSelected = index == selectedIndex;
 
-                        Color bgColor =
-                        Colors.white.withOpacity(0.08);
+                        Color bgColor = Colors.white.withOpacity(0.08);
 
-                        if (selectedIndex != null) {
-                          if (isCorrect) {
-                            bgColor = Colors.green;
-                          } else if (isSelected) {
-                            bgColor = Colors.red;
-                          }
-                        }
+                        if (isSelected) bgColor = Colors.blueAccent;
 
                         return AnimatedContainer(
-                          duration:
-                          const Duration(milliseconds: 300),
+                          duration: const Duration(milliseconds: 300),
                           decoration: BoxDecoration(
                             color: bgColor,
-                            borderRadius:
-                            BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: InkWell(
-                            borderRadius:
-                            BorderRadius.circular(20),
-                            onTap: () =>
-                                _selectAnswer(index),
+                            borderRadius: BorderRadius.circular(20),
+                            onTap: () => _selectAnswer(index),
                             child: Center(
                               child: Padding(
-                                padding:
-                                const EdgeInsets.all(12),
+                                padding: const EdgeInsets.all(12),
                                 child: Text(
                                   question.answers[index],
                                   textAlign: TextAlign.center,
-                                  style:
-                                  const TextStyle(
+                                  style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
-                                    fontWeight:
-                                    FontWeight.w600,
+                                    fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),

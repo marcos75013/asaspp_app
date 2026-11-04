@@ -1,3 +1,7 @@
+import '../storage/auth_storage.dart';
+import '../../features/context/cubit/context_cubit.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../features/user/presentation/cubit/user_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -12,16 +16,12 @@ class AppDrawer extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
             /// 🔵 HEADER AVEC LOGO
             Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  Image.asset(
-                    "assets/pngs/logo_asaspp.png",
-                    height: 50,
-                  ),
+                  Image.asset("assets/pngs/logo_asaspp.png", height: 50),
                   const SizedBox(width: 12),
                   const Text(
                     "ASASPP",
@@ -36,13 +36,14 @@ class AppDrawer extends StatelessWidget {
             ),
 
             const Divider(color: Colors.white24),
-            _DrawerItem(
-              icon: Icons.settings_input_svideo_sharp,
-              title: "ESPACE ADMIN",
-              onTap: () {
-                context.go('/admin-home');
-              },
-            ),
+            if (context.watch<UserCubit>().isAdmin)
+              _DrawerItem(
+                icon: Icons.settings_input_svideo_sharp,
+                title: "ESPACE ADMIN",
+                onTap: () {
+                  context.push('/admin-home');
+                },
+              ),
             const Divider(color: Colors.white24),
 
             /// MENU ITEMS
@@ -78,6 +79,33 @@ class AppDrawer extends StatelessWidget {
               },
             ),
 
+            if ((context
+                        .watch<ContextCubit>()
+                        .state
+                        .context
+                        ?.associations
+                        .length ??
+                    0) >
+                1)
+              _DrawerItem(
+                icon: Icons.swap_horiz,
+                title: 'Changer d’association',
+                onTap: () => context.go(
+                  '/association-selection',
+                  extra: context.read<ContextCubit>().state.context,
+                ),
+              ),
+            _DrawerItem(
+              icon: Icons.logout,
+              title: 'Déconnexion',
+              onTap: () async {
+                await AuthStorage().clear();
+                if (context.mounted) {
+                  context.read<ContextCubit>().clear();
+                  context.go('/login');
+                }
+              },
+            ),
             const Spacer(),
 
             const Divider(color: Colors.white24),
@@ -86,12 +114,9 @@ class AppDrawer extends StatelessWidget {
               padding: EdgeInsets.all(16),
               child: Text(
                 "Version 1.0.0",
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.white54, fontSize: 12),
               ),
-            )
+            ),
           ],
         ),
       ),

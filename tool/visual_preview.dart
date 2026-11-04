@@ -9,8 +9,11 @@ import 'package:go_router/go_router.dart';
 import 'package:asaspp_app/core/network/api_client.dart';
 import 'package:asaspp_app/core/storage/auth_storage.dart';
 import 'package:asaspp_app/features/connected/data/club_api.dart';
-import 'package:asaspp_app/features/connected/presentation/club_shell.dart';
-import 'package:asaspp_app/features/connected/presentation/club_widgets.dart';
+import 'package:asaspp_app/app/router/app_router.dart';
+import 'package:asaspp_app/core/data/association_repository.dart';
+import 'package:asaspp_app/core/theme/app_theme.dart';
+import 'package:asaspp_app/features/home/presentation/cubit/home_cubit.dart';
+import 'package:asaspp_app/features/user/presentation/cubit/user_cubit.dart';
 import 'package:asaspp_app/features/context/cubit/context_cubit.dart';
 import 'package:asaspp_app/features/context/cubit/context_state.dart';
 import 'package:asaspp_app/features/context/data/models/mobile_context_model.dart';
@@ -164,64 +167,54 @@ class PreviewAdapter implements HttpClientAdapter {
 }
 
 void main() {
-  final router = GoRouter(
-    initialLocation: '/home',
-    routes: [
-      GoRoute(
-        path: '/home',
-        builder: (_, state) => BlocProvider<ContextCubit>(
-          create: (_) => PreviewContextCubit()..loadContext(),
-          child: ClubShell(
-            apiFactory: (id) => ClubApi(
-              id,
-              client: Dio()..httpClientAdapter = PreviewAdapter(),
-            ),
-          ),
-        ),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => Scaffold(
-          body: Center(
-            child: FilledButton(
-              onPressed: () => context.go('/home'),
-              child: const Text('Revenir à la démonstration'),
-            ),
-          ),
-        ),
-      ),
-    ],
+  final repository = AssociationRepository(
+    injectedApi: ClubApi(
+      1,
+      client: Dio()..httpClientAdapter = PreviewAdapter(),
+    ),
   );
   runApp(
-    MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      theme: connectedTheme(),
-      routerConfig: router,
-      builder: (context, child) => Column(
-        children: [
-          Material(
-            color: const Color(0xFFFFE5B0),
-            child: SafeArea(
-              bottom: false,
-              child: SizedBox(
-                width: double.infinity,
-                child: Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: Text(
-                    'APERÇU VISUEL · DONNÉES FICTIVES',
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: ink,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+    RepositoryProvider.value(
+      value: repository,
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => HomeCubit(repository)..loadEvents()),
+          BlocProvider(create: (_) => UserCubit()..setContext(previewContext)),
+          BlocProvider<ContextCubit>(create: (_) => PreviewContextCubit()),
+        ],
+        child: MaterialApp.router(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.lightTheme,
+          routerConfig: GoRouter(
+            initialLocation: '/home',
+            routes: applicationRoutes,
+          ),
+          builder: (context, child) => Column(
+            children: [
+              const Material(
+                color: Color(0xFFFFE5B0),
+                child: SafeArea(
+                  bottom: false,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Text(
+                        'APERÇU · DONNÉES FICTIVES',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Color(0xFF152536),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+              Expanded(child: child!),
+            ],
           ),
-          Expanded(child: child!),
-        ],
+        ),
       ),
     ),
   );

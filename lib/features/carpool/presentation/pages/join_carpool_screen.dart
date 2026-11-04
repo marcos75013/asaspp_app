@@ -1,3 +1,8 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../home/presentation/cubit/home_cubit.dart';
+import '../../../home/data/models/next_event_model.dart';
+import '../../../connected/data/club_api.dart';
+import '../../../../core/data/association_repository.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 
@@ -5,7 +10,8 @@ import '../../data/models/carpool_model.dart';
 import '../../widgets/carpool_card.dart';
 
 class JoinCarpoolScreen extends StatefulWidget {
-  const JoinCarpoolScreen({super.key});
+  final NextEventModel? event;
+  const JoinCarpoolScreen({super.key, this.event});
 
   @override
   State<JoinCarpoolScreen> createState() => _JoinCarpoolScreenState();
@@ -14,41 +20,84 @@ class JoinCarpoolScreen extends StatefulWidget {
 class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
   String? _selectedEvent;
 
-  /// 🔧 MOCK DATA
-  final List<CarpoolModel> _carpools = const [
-    CarpoolModel(
-      id: '1',
-      eventName: 'Plongée fosse',
-      creatorName: 'Julien',
-      totalSeats: 4,
-      remainingSeats: 2,
-    ),
-    CarpoolModel(
-      id: '2',
-      eventName: 'Plongée fosse',
-      creatorName: 'Sophie',
-      totalSeats: 3,
-      remainingSeats: 0,
-    ),
-    CarpoolModel(
-      id: '3',
-      eventName: 'Plongée mer',
-      creatorName: 'Marc',
-      totalSeats: 5,
-      remainingSeats: 1,
-    ),
-  ];
+  List<CarpoolModel> _carpools = [];
+  bool _loading = false;
+  String? _error;
+  final Set<String> _pending = {};
+  List<NextEventModel> get _events =>
+      context.read<HomeCubit>().state.nextEvents.values.toList();
+  @override
+  void initState() {
+    super.initState();
+    _selectedEvent = widget.event?.id.toString();
+    if (_selectedEvent != null) _load();
+  }
 
-  List<String> get _events =>
-      _carpools.map((e) => e.eventName).toSet().toList();
+  Future<void> _load() async {
+    final selected = _selectedEvent;
+    if (selected == null) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final rows = await repositoryOf(
+        context,
+      ).list('/api/events/$selected/carpools');
+      if (mounted && selected == _selectedEvent)
+        setState(() {
+          _carpools = rows
+              .where((r) => r['type'] == 'OFFER')
+              .map(
+                (r) => CarpoolModel(
+                  id: '${r['id']}',
+                  eventName: selected,
+                  creatorName:
+                      '${label(r, 'authorFirstName')} ${label(r, 'authorLastName')}',
+                  totalSeats: r['seatCount'] as int,
+                  remainingSeats: (r['availableSeatCount'] as num).toInt(),
+                  booked: r['bookedByCurrentUser'] == true,
+                  owned: r['ownedByCurrentUser'] == true,
+                  departure:
+                      '${label(r, 'departureLocation')} · ${label(r, 'departureTime').replaceAll('T', ' ')}',
+                ),
+              )
+              .toList();
+          _loading = false;
+        });
+    } catch (error) {
+      if (mounted && selected == _selectedEvent)
+        setState(() {
+          _error = readableError(error);
+          _loading = false;
+        });
+    }
+  }
+
+  Future<void> _reserve(CarpoolModel trip) async {
+    if (!_pending.add(trip.id)) return;
+    try {
+      final api = await repositoryOf(context).api();
+      await api.request(
+        '/api/carpools/${trip.id}${trip.booked ? '/bookings/mine' : '/bookings'}',
+        method: trip.booked ? 'DELETE' : 'POST',
+      );
+      if (mounted) await _load();
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(readableError(error))));
+    } finally {
+      _pending.remove(trip.id);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final filteredCarpools = _selectedEvent == null
         ? []
-        : _carpools
-        .where((c) => c.eventName == _selectedEvent)
-        .toList();
+        : _carpools.where((c) => c.eventName == _selectedEvent).toList();
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -67,10 +116,7 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          Image.asset(
-            'assets/pngs/bg_mer.png',
-            fit: BoxFit.cover,
-          ),
+          Image.asset('assets/pngs/bg_mer.png', fit: BoxFit.cover),
           Container(color: Colors.black.withOpacity(0.2)),
 
           SafeArea(
@@ -104,13 +150,14 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
                           items: _events
                               .map(
                                 (e) => DropdownMenuItem(
-                              value: e,
-                              child: Text(e),
-                            ),
-                          )
+                                  value: e.id.toString(),
+                                  child: Text(e.site),
+                                ),
+                              )
                               .toList(),
                           onChanged: (value) {
                             setState(() => _selectedEvent = value);
+                            _load();
                           },
                           decoration: InputDecoration(
                             filled: true,
@@ -125,7 +172,14 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
                         const SizedBox(height: 24),
 
                         /// 📋 LISTE DES COVOITURAGES
-                        if (_selectedEvent == null)
+                        if (_loading || _error != null)
+                          DataStatus(
+                            loading: _loading,
+                            error: _error,
+                            empty: '',
+                            reload: _load,
+                          )
+                        else if (_selectedEvent == null)
                           const Text(
                             'Sélectionne un événement pour voir les covoiturages',
                           )
@@ -133,18 +187,13 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
                           const Text('Aucun covoiturage disponible')
                         else
                           ...filteredCarpools.map(
-                                (carpool) => CarpoolCard(
+                            (carpool) => CarpoolCard(
                               creatorName: carpool.creatorName,
                               remainingSeats: carpool.remainingSeats,
-                              onReserve: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      'Place réservée chez ${carpool.creatorName}',
-                                    ),
-                                  ),
-                                );
-                              },
+                              booked: carpool.booked,
+                              owned: carpool.owned,
+                              departure: carpool.departure,
+                              onReserve: () => _reserve(carpool),
                             ),
                           ),
                       ],

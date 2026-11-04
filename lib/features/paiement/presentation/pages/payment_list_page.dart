@@ -11,32 +11,7 @@ class PaymentItem {
 class PaymentListPage extends StatelessWidget {
   const PaymentListPage({super.key});
 
-  static final List<PaymentItem> payments = [
-    PaymentItem(
-      title: "Adhésion annuelle 2025/2026",
-      url: "https://www.helloasso.com/exemple-adhesion",
-    ),
-    PaymentItem(
-      title: "Stage Niolon Juin 2026",
-      url: "https://www.helloasso.com/exemple-sortie",
-    ),
-    PaymentItem(
-      title: "Cagnote Voyage Mexique 2027",
-      url: "https://www.helloasso.com/exemple-sortie",
-    ),
-    PaymentItem(
-      title: "Passage de Niveau 1",
-      url: "https://www.stripe.com/exemple",
-    ),
-    PaymentItem(
-      title: "Passage de Niveau 2",
-      url: "https://www.stripe.com/exemple",
-    ),
-    PaymentItem(
-      title: "Passage de Niveau 3",
-      url: "https://www.stripe.com/exemple",
-    ),
-  ];
+  static final List<PaymentItem> payments = [];
 
   Future<void> _openUrl(String url) async {
     final Uri uri = Uri.parse(url);
@@ -49,14 +24,10 @@ class PaymentListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7FA),
-      appBar: AppBar(
-        title: const Text("Paiements"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Paiements"), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-
           /// 🔵 LOGO ASASPP
           Center(
             child: Container(
@@ -73,14 +44,16 @@ class PaymentListPage extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Image.asset(
-                "assets/pngs/logo_asaspp.png",
-                height: 120,
-              ),
+              child: Image.asset("assets/pngs/logo_asaspp.png", height: 120),
             ),
           ),
 
           /// 🔵 LISTE DES PAIEMENTS
+          if (payments.isEmpty)
+            const Text(
+              'Aucun lien de paiement disponible.',
+              textAlign: TextAlign.center,
+            ),
           ...payments.map((item) {
             return GestureDetector(
               onTap: () => _openUrl(item.url),
@@ -95,13 +68,12 @@ class PaymentListPage extends StatelessWidget {
                       color: Colors.black.withOpacity(0.08),
                       blurRadius: 10,
                       offset: const Offset(0, 4),
-                    )
+                    ),
                   ],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.receipt_long,
-                        color: Color(0xFF0077B6)),
+                    const Icon(Icons.receipt_long, color: Color(0xFF0077B6)),
                     const SizedBox(width: 16),
                     Expanded(
                       child: Text(
@@ -112,7 +84,7 @@ class PaymentListPage extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Icon(Icons.open_in_new, size: 18)
+                    const Icon(Icons.open_in_new, size: 18),
                   ],
                 ),
               ),

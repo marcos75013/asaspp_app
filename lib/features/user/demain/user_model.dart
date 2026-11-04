@@ -1,8 +1,4 @@
-enum UserRole {
-  admin,
-  bureau,
-  membre,
-}
+enum UserRole { admin, bureau, membre }
 
 class UserModel {
   final String nom;
@@ -12,7 +8,7 @@ class UserModel {
   final String licence;
   final String club;
   final String niveau;
-  final int nombrePlongees;
+  final int? nombrePlongees;
   final UserRole role;
 
   UserModel({

@@ -1,9 +1,11 @@
+import '../../../connected/data/club_api.dart';
+import '../../../../core/data/association_repository.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../data/models/gallery_mock_data.dart';
+
 import '../../data/models/gallery_model.dart';
 import 'gallery_detail_page.dart';
 
@@ -19,6 +21,9 @@ class _GalleryPageState extends State<GalleryPage> {
   DateTimeRange? selectedRange;
   String selectedType = 'Tous';
   bool isLoading = true;
+  String? _error;
+  List<GalleryModel> _galleries = [];
+  final List<String> _serverTypes = ['Tous'];
 
   final List<String> types = [
     'Tous',
@@ -26,34 +31,74 @@ class _GalleryPageState extends State<GalleryPage> {
     'Fosse',
     'Carrière',
     'Nuit',
-    'Apéro'
+    'Apéro',
   ];
 
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 800), () {
-      setState(() => isLoading = false);
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      isLoading = true;
+      _error = null;
     });
+    try {
+      final api = await repositoryOf(context).api();
+      final data = await api.list('/api/gallery');
+      final albums = data.map((album) {
+        final photos = records(album['photos'] ?? []);
+        final cover =
+            photos.where((p) => p['id'] == album['coverPhotoId']).firstOrNull ??
+            photos.firstOrNull;
+        return GalleryModel(
+          id: '${album['id']}',
+          title: label(album, 'title'),
+          date: DateTime.tryParse(label(album, 'createdAt')) ?? DateTime.now(),
+          coverImage: cover == null ? '' : api.imageUrl(label(cover, 'url')),
+          photos: photos.map((p) => api.imageUrl(label(p, 'url'))).toList(),
+          type: label(album, 'category', 'Album'),
+        );
+      }).toList();
+      if (mounted)
+        setState(() {
+          _galleries = albums;
+          isLoading = false;
+          _serverTypes
+            ..clear()
+            ..addAll({'Tous', ...albums.map((a) => a.type)});
+        });
+    } catch (error) {
+      if (mounted)
+        setState(() {
+          _error = readableError(error);
+          isLoading = false;
+        });
+    }
   }
 
   List<GalleryModel> get filteredGalleries {
-    return mockGalleries.where((gallery) {
-      final matchesName =
-      gallery.title.toLowerCase().contains(searchQuery.toLowerCase());
+    return _galleries.where((gallery) {
+      final matchesName = gallery.title.toLowerCase().contains(
+        searchQuery.toLowerCase(),
+      );
 
       final matchesType =
           selectedType == 'Tous' || gallery.type == selectedType;
 
-      final matchesDate = selectedRange == null ||
+      final matchesDate =
+          selectedRange == null ||
           (gallery.date.isAfter(
-              selectedRange!.start.subtract(const Duration(days: 1))) &&
+                selectedRange!.start.subtract(const Duration(days: 1)),
+              ) &&
               gallery.date.isBefore(
-                  selectedRange!.end.add(const Duration(days: 1))));
+                selectedRange!.end.add(const Duration(days: 1)),
+              ));
 
       return matchesName && matchesDate && matchesType;
-    }).toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
+    }).toList()..sort((a, b) => b.date.compareTo(a.date));
   }
 
   bool isNew(GalleryModel gallery) {
@@ -76,10 +121,11 @@ class _GalleryPageState extends State<GalleryPage> {
               onSurface: Colors.white,
             ),
             textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.white,
-              ),
-            ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF001F3F)),
+              style: TextButton.styleFrom(foregroundColor: Colors.white),
+            ),
+            dialogTheme: DialogThemeData(
+              backgroundColor: const Color(0xFF001F3F),
+            ),
           ),
           child: child!,
         );
@@ -90,7 +136,6 @@ class _GalleryPageState extends State<GalleryPage> {
       setState(() => selectedRange = range);
     }
   }
-
 
   void resetFilters() {
     setState(() {
@@ -112,7 +157,7 @@ class _GalleryPageState extends State<GalleryPage> {
               'assets/pngs/logo_asaspp.png',
               height: 40,
               errorBuilder: (_, __, ___) =>
-              const Icon(Icons.image_not_supported),
+                  const Icon(Icons.image_not_supported),
             ),
             const SizedBox(width: 8),
             const Expanded(
@@ -127,11 +172,7 @@ class _GalleryPageState extends State<GalleryPage> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF001F3F),
-              Color(0xFF003B6F),
-              Color(0xFF005C97),
-            ],
+            colors: [Color(0xFF001F3F), Color(0xFF003B6F), Color(0xFF005C97)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -139,12 +180,13 @@ class _GalleryPageState extends State<GalleryPage> {
         child: SafeArea(
           child: CustomScrollView(
             slivers: [
-
               /// FILTER BAR
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 12),
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   child: Column(
                     children: [
                       buildSearchField(),
@@ -158,11 +200,9 @@ class _GalleryPageState extends State<GalleryPage> {
               /// RESULT COUNT
               SliverToBoxAdapter(
                 child: Padding(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: AnimatedSwitcher(
-                    duration:
-                    const Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 300),
                     child: Text(
                       "${galleries.length} sortie(s)",
                       key: ValueKey(galleries.length),
@@ -175,46 +215,45 @@ class _GalleryPageState extends State<GalleryPage> {
                 ),
               ),
 
-              const SliverToBoxAdapter(
-                child: SizedBox(height: 12),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+              if (_error != null || (!isLoading && galleries.isEmpty))
+                SliverToBoxAdapter(
+                  child: DataStatus(
+                    loading: false,
+                    error: _error,
+                    empty: 'Aucun album publié.',
+                    reload: _load,
+                  ),
+                ),
 
               /// GRID
               isLoading
                   ? SliverFillRemaining(child: buildShimmer())
                   : SliverPadding(
-                padding:
-                const EdgeInsets.symmetric(horizontal: 16),
-                sliver: SliverMasonryGrid.count(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childCount: galleries.length,
-                  itemBuilder: (context, index) {
-                    final gallery = galleries[index];
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      sliver: SliverMasonryGrid.count(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childCount: galleries.length,
+                        itemBuilder: (context, index) {
+                          final gallery = galleries[index];
 
-                    return TweenAnimationBuilder(
-                      duration: Duration(
-                          milliseconds:
-                          350 + index * 80),
-                      tween: Tween(
-                          begin: 0.8, end: 1.0),
-                      builder:
-                          (context, value, child) {
-                        return Transform.scale(
-                          scale: value,
-                          child: Opacity(
-                            opacity: value,
-                            child: child,
-                          ),
-                        );
-                      },
-                      child:
-                      buildGalleryCard(gallery),
-                    );
-                  },
-                ),
-              ),
+                          return TweenAnimationBuilder(
+                            duration: Duration(milliseconds: 350 + index * 80),
+                            tween: Tween(begin: 0.8, end: 1.0),
+                            builder: (context, value, child) {
+                              return Transform.scale(
+                                scale: value,
+                                child: Opacity(opacity: value, child: child),
+                              );
+                            },
+                            child: buildGalleryCard(gallery),
+                          );
+                        },
+                      ),
+                    ),
             ],
           ),
         ),
@@ -238,21 +277,17 @@ class _GalleryPageState extends State<GalleryPage> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.search,
-              color: Colors.white70, size: 18),
+          const Icon(Icons.search, color: Colors.white70, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
-              style: const TextStyle(
-                  color: Colors.white, fontSize: 14),
+              style: const TextStyle(color: Colors.white, fontSize: 14),
               decoration: const InputDecoration(
                 hintText: 'Rechercher une sortie',
-                hintStyle: TextStyle(
-                    color: Colors.white54, fontSize: 14),
+                hintStyle: TextStyle(color: Colors.white54, fontSize: 14),
                 border: InputBorder.none,
               ),
-              onChanged: (value) =>
-                  setState(() => searchQuery = value),
+              onChanged: (value) => setState(() => searchQuery = value),
             ),
           ),
         ],
@@ -269,8 +304,7 @@ class _GalleryPageState extends State<GalleryPage> {
         const SizedBox(width: 8),
         GestureDetector(
           onTap: resetFilters,
-          child: const Icon(Icons.refresh,
-              color: Colors.white70, size: 18),
+          child: const Icon(Icons.refresh, color: Colors.white70, size: 18),
         ),
       ],
     );
@@ -288,19 +322,20 @@ class _GalleryPageState extends State<GalleryPage> {
         child: DropdownButton<String>(
           value: selectedType,
           dropdownColor: const Color(0xFF003B6F),
-          icon: const Icon(Icons.keyboard_arrow_down,
-              color: Colors.white70, size: 18),
+          icon: const Icon(
+            Icons.keyboard_arrow_down,
+            color: Colors.white70,
+            size: 18,
+          ),
           isExpanded: true,
-          style:
-          const TextStyle(color: Colors.white, fontSize: 13),
-          items: types
-              .map((type) => DropdownMenuItem<String>(
-            value: type,
-            child: Text(type),
-          ))
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+          items: _serverTypes
+              .map(
+                (type) =>
+                    DropdownMenuItem<String>(value: type, child: Text(type)),
+              )
               .toList(),
-          onChanged: (value) =>
-              setState(() => selectedType = value!),
+          onChanged: (value) => setState(() => selectedType = value!),
         ),
       ),
     );
@@ -312,25 +347,22 @@ class _GalleryPageState extends State<GalleryPage> {
       onTap: pickDateRange,
       child: Container(
         height: 42,
-        padding:
-        const EdgeInsets.symmetric(horizontal: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(25),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today,
-                size: 15, color: Colors.white70),
+            const Icon(Icons.calendar_today, size: 15, color: Colors.white70),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
                 selectedRange == null
                     ? 'Période'
                     : "${DateFormat('dd/MM').format(selectedRange!.start)} - "
-                    "${DateFormat('dd/MM/yyyy').format(selectedRange!.end)}",
-                style: const TextStyle(
-                    color: Colors.white, fontSize: 13),
+                          "${DateFormat('dd/MM/yyyy').format(selectedRange!.end)}",
+                style: const TextStyle(color: Colors.white, fontSize: 13),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -346,8 +378,7 @@ class _GalleryPageState extends State<GalleryPage> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) =>
-                GalleryDetailPage(gallery: gallery),
+            builder: (_) => GalleryDetailPage(gallery: gallery),
           ),
         );
       },
@@ -355,8 +386,8 @@ class _GalleryPageState extends State<GalleryPage> {
         borderRadius: BorderRadius.circular(24),
         child: Stack(
           children: [
-            Image.asset(
-              gallery.coverImage,
+            Image(
+              image: associationImage(gallery.coverImage),
               fit: BoxFit.cover,
               height: 220,
               width: double.infinity,
@@ -367,10 +398,7 @@ class _GalleryPageState extends State<GalleryPage> {
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black87,
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black87, Colors.transparent],
                 ),
               ),
             ),
@@ -378,19 +406,14 @@ class _GalleryPageState extends State<GalleryPage> {
               top: 14,
               left: 14,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.black54,
-                  borderRadius:
-                  BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  DateFormat('dd MMM yyyy')
-                      .format(gallery.date),
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11),
+                  DateFormat('dd MMM yyyy').format(gallery.date),
+                  style: const TextStyle(color: Colors.white, fontSize: 11),
                 ),
               ),
             ),
@@ -401,17 +424,16 @@ class _GalleryPageState extends State<GalleryPage> {
                 right: 14,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 4),
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green,
-                    borderRadius:
-                    BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: const Text(
                     "Nouveau",
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11),
+                    style: TextStyle(color: Colors.white, fontSize: 11),
                   ),
                 ),
               ),
@@ -437,11 +459,7 @@ class _GalleryPageState extends State<GalleryPage> {
       child: Shimmer.fromColors(
         baseColor: Colors.white12,
         highlightColor: Colors.white24,
-        child: Container(
-          height: 200,
-          width: 200,
-          color: Colors.white,
-        ),
+        child: Container(height: 200, width: 200, color: Colors.white),
       ),
     );
   }

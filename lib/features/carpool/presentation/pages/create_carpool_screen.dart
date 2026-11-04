@@ -1,13 +1,83 @@
+import '../../../connected/data/club_api.dart';
+import '../../../../core/data/association_repository.dart';
 import 'package:flutter/material.dart';
 import '../../../home/data/models/next_event_model.dart';
 
-class CreateCarpoolScreen extends StatelessWidget {
-  final DiveType diveType;
+class CreateCarpoolScreen extends StatefulWidget {
+  final NextEventModel event;
 
-  const CreateCarpoolScreen({
-    super.key,
-    required this.diveType,
-  });
+  const CreateCarpoolScreen({super.key, required this.event});
+
+  @override
+  State<CreateCarpoolScreen> createState() => _CreateCarpoolScreenState();
+}
+
+class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
+  final _place = TextEditingController(),
+      _time = TextEditingController(),
+      _seats = TextEditingController(),
+      _note = TextEditingController();
+  bool _busy = false;
+  @override
+  void dispose() {
+    _place.dispose();
+    _time.dispose();
+    _seats.dispose();
+    _note.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final parts = _time.text.trim().split(':');
+      final hour = int.tryParse(parts.first),
+          minute = parts.length == 2 ? int.tryParse(parts.last) : null;
+      final seats = int.tryParse(_seats.text);
+      if (_place.text.trim().isEmpty ||
+          hour == null ||
+          minute == null ||
+          hour < 0 ||
+          hour > 23 ||
+          minute < 0 ||
+          minute > 59 ||
+          seats == null ||
+          seats < 1)
+        throw StateError(
+          'Indiquez un lieu, une heure HH:mm et au moins une place.',
+        );
+      final start = DateTime.parse(widget.event.raw['startDate']);
+      final departure = DateTime(
+        start.year,
+        start.month,
+        start.day,
+        hour,
+        minute,
+      );
+      if (departure.isBefore(DateTime.now()))
+        throw StateError('Le départ doit être dans le futur.');
+      final api = await repositoryOf(context).api();
+      await api.request(
+        '/api/events/${widget.event.id}/carpools',
+        method: 'POST',
+        data: {
+          'type': 'OFFER',
+          'departureLocation': _place.text.trim(),
+          'departureTime': departure.toIso8601String(),
+          'seatCount': seats,
+          'note': _note.text.trim(),
+        },
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(readableError(error))));
+    }
+    if (mounted) setState(() => _busy = false);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +147,13 @@ class CreateCarpoolScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      _EventTypeChip(type: diveType),
+                      _EventTypeChip(type: widget.event.diveType),
 
                       const SizedBox(height: 24),
 
                       _FormField(
                         label: 'Lieu de départ',
+                        controller: _place,
                         hint: 'Ex : Parking club, Gare, Domicile',
                         icon: Icons.place_outlined,
                       ),
@@ -91,7 +162,8 @@ class CreateCarpoolScreen extends StatelessWidget {
 
                       _FormField(
                         label: 'Heure de départ',
-                        hint: 'Ex : 07h30',
+                        controller: _time,
+                        hint: 'HH:mm · jour de la sortie',
                         icon: Icons.access_time,
                       ),
 
@@ -99,6 +171,7 @@ class CreateCarpoolScreen extends StatelessWidget {
 
                       _FormField(
                         label: 'Places disponibles',
+                        controller: _seats,
                         hint: 'Ex : 3',
                         icon: Icons.event_seat_outlined,
                         keyboardType: TextInputType.number,
@@ -108,6 +181,7 @@ class CreateCarpoolScreen extends StatelessWidget {
 
                       _FormField(
                         label: 'Commentaire',
+                        controller: _note,
                         hint: 'Coffre spacieux, retour possible…',
                         icon: Icons.chat_bubble_outline,
                         maxLines: 3,
@@ -116,7 +190,7 @@ class CreateCarpoolScreen extends StatelessWidget {
                       const SizedBox(height: 28),
 
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: _busy ? null : _save,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFD4AF37),
                           padding: const EdgeInsets.symmetric(vertical: 14),
@@ -144,7 +218,9 @@ class CreateCarpoolScreen extends StatelessWidget {
     );
   }
 }
+
 class _FormField extends StatelessWidget {
+  final TextEditingController controller;
   final String label;
   final String hint;
   final IconData icon;
@@ -153,6 +229,7 @@ class _FormField extends StatelessWidget {
 
   const _FormField({
     required this.label,
+    required this.controller,
     required this.hint,
     required this.icon,
     this.maxLines = 1,
@@ -164,14 +241,10 @@ class _FormField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         TextField(
+          controller: controller,
           maxLines: maxLines,
           keyboardType: keyboardType,
           decoration: InputDecoration(

@@ -66,8 +66,7 @@ class HomePageAdmin extends StatelessWidget {
                         tag: "user-avatar",
                         child: CircleAvatar(
                           radius: 20,
-                          backgroundImage:
-                          AssetImage('assets/jpgs/macron.jpg'),
+                          child: Icon(Icons.person),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -91,7 +90,6 @@ class HomePageAdmin extends StatelessWidget {
       /// BODY
       body: Stack(
         children: [
-
           /// BACKGROUND GRADIENT
           Container(
             decoration: const BoxDecoration(
@@ -171,6 +169,7 @@ class HomePageAdmin extends StatelessWidget {
     );
   }
 }
+
 class _AdminCard extends StatefulWidget {
   final AdminCardModel card;
 
@@ -210,9 +209,7 @@ class _AdminCardState extends State<_AdminCard> {
 
               Navigator.push(
                 context,
-                MaterialPageRoute(
-                  builder: (_) => widget.card.page,
-                ),
+                MaterialPageRoute(builder: (_) => widget.card.page),
               );
             },
 
@@ -228,37 +225,31 @@ class _AdminCardState extends State<_AdminCard> {
 
                     color: Colors.white.withOpacity(0.15),
 
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.25),
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.25)),
 
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.35),
                         blurRadius: 30,
                         offset: const Offset(0, 10),
-                      )
+                      ),
                     ],
                   ),
 
                   child: Stack(
                     children: [
-
                       Column(
                         children: [
-
                           /// IMAGE
                           Expanded(
                             flex: 3,
                             child: Stack(
                               fit: StackFit.expand,
                               children: [
-
                                 Hero(
                                   tag: widget.card.title,
                                   child: ClipRRect(
-                                    borderRadius:
-                                    const BorderRadius.vertical(
+                                    borderRadius: const BorderRadius.vertical(
                                       top: Radius.circular(24),
                                     ),
                                     child: Image.network(
@@ -290,7 +281,8 @@ class _AdminCardState extends State<_AdminCard> {
                             child: Center(
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 12),
+                                  horizontal: 12,
+                                ),
                                 child: Text(
                                   widget.card.title,
                                   textAlign: TextAlign.center,
@@ -315,10 +307,7 @@ class _AdminCardState extends State<_AdminCard> {
                           duration: const Duration(seconds: 2),
                           curve: Curves.easeInOut,
                           builder: (context, value, child) {
-                            return Transform.scale(
-                              scale: value,
-                              child: child,
-                            );
+                            return Transform.scale(scale: value, child: child);
                           },
                           child: Container(
                             height: 34,
@@ -330,7 +319,7 @@ class _AdminCardState extends State<_AdminCard> {
                                 BoxShadow(
                                   color: Colors.white.withOpacity(0.8),
                                   blurRadius: 10,
-                                )
+                                ),
                               ],
                             ),
                             child: const Icon(
@@ -341,8 +330,6 @@ class _AdminCardState extends State<_AdminCard> {
                           ),
                         ),
                       ),
-
-
                     ],
                   ),
                 ),
@@ -375,57 +362,49 @@ final List<AdminCardModel> adminCards = [
   AdminCardModel(
     title: "Créer un événement",
     icon: Icons.event,
-    image:
-    "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=600",
+    image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=600",
     page: const CreateEventForm(),
   ),
   AdminCardModel(
     title: "Créer un entraînement",
     icon: Icons.sports,
-    image:
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600",
+    image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600",
     page: const CreateTrainingForm(),
   ),
   AdminCardModel(
     title: "Suivi des membres",
     icon: Icons.group,
-    image:
-    "https://images.unsplash.com/photo-1551434678-e076c223a692?w=600",
+    image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=600",
     page: const MembersTrackingForm(),
   ),
   AdminCardModel(
     title: "Message association",
     icon: Icons.campaign,
-    image:
-    "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600",
+    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600",
     page: const WriteMessageForm(),
   ),
   AdminCardModel(
     title: "Lien de paiement",
     icon: Icons.payments,
-    image:
-    "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600",
     page: const PaymentLinkForm(),
   ),
   AdminCardModel(
     title: "Documents utiles",
     icon: Icons.description,
-    image:
-    "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600",
+    image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600",
     page: const DocumentForm(),
   ),
   AdminCardModel(
     title: "Profil chinois",
     icon: Icons.psychology,
-    image:
-    "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600",
+    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600",
     page: const ChineseProfileForm(),
   ),
   AdminCardModel(
     title: "Album photo",
     icon: Icons.photo_library,
-    image:
-    "https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=600",
+    image: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=600",
     page: const CreateAlbumForm(),
   ),
 ];

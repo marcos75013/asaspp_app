@@ -100,7 +100,7 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
                         const SizedBox(height: 8),
 
                         DropdownButtonFormField<String>(
-                          value: _selectedEvent,
+                          initialValue: _selectedEvent,
                           items: _events
                               .map(
                                 (e) => DropdownMenuItem(

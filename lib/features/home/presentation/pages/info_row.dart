@@ -7,7 +7,7 @@ class InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const InfoRow({
+  const InfoRow({super.key,
     required this.icon,
     required this.label,
     required this.value,

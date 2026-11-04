@@ -4,7 +4,7 @@ class SwipeHint extends StatelessWidget {
   final IconData icon;
   final String label;
 
-  const SwipeHint({
+  const SwipeHint({super.key,
     required this.icon,
     required this.label,
   });

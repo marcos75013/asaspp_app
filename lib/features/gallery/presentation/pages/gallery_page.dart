@@ -75,12 +75,11 @@ class _GalleryPageState extends State<GalleryPage> {
               surface: Color(0xFF002B4F), // fond calendrier
               onSurface: Colors.white,
             ),
-            dialogBackgroundColor: const Color(0xFF001F3F),
             textButtonTheme: TextButtonThemeData(
               style: TextButton.styleFrom(
                 foregroundColor: Colors.white,
               ),
-            ),
+            ), dialogTheme: DialogThemeData(backgroundColor: const Color(0xFF001F3F)),
           ),
           child: child!,
         );

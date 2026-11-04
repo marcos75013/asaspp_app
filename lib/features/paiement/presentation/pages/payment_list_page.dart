@@ -117,7 +117,7 @@ class PaymentListPage extends StatelessWidget {
                 ),
               ),
             );
-          }).toList(),
+          }),
         ],
       ),
     );

@@ -12,7 +12,7 @@ class CreateAdPage extends StatefulWidget {
 class _CreateAdPageState extends State<CreateAdPage> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
-  List<XFile> _images = [];
+  final List<XFile> _images = [];
   final _titleController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();

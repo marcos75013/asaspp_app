@@ -1,3 +1,5 @@
+import '../../../bo/bo_quiz.dart';
+import '../../../bo/bo_widgets.dart' show boOpen;
 import '../../../connected/data/club_api.dart';
 import '../../../../core/data/association_repository.dart';
 import 'package:flutter/material.dart';
@@ -88,7 +90,16 @@ class _QuizPageState extends State<QuizPage> {
                     ],
                   ),
 
-                  const SizedBox(height: 60),
+                  const SizedBox(height: 20),
+                  TextButton.icon(
+                    onPressed: () => boOpen(context, const MemberQuizHistory()),
+                    icon: const Icon(Icons.history, color: Colors.white),
+                    label: const Text(
+                      'Mes résultats',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
 
                   if (_loading || _error != null || _quizzes.isEmpty)
                     DataStatus(

@@ -1,5 +1,7 @@
 class CarpoolModel {
   final String id;
+  final Map<String, dynamic> raw;
+  final bool request;
   final bool booked, owned;
   final String departure;
   final String eventName;
@@ -9,6 +11,8 @@ class CarpoolModel {
 
   const CarpoolModel({
     required this.id,
+    this.raw = const {},
+    this.request = false,
     this.booked = false,
     this.owned = false,
     this.departure = '',

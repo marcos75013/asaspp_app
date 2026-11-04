@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class CarpoolCard extends StatelessWidget {
   final String creatorName;
-  final bool booked, owned;
+  final bool booked, owned, request;
   final String departure;
   final int remainingSeats;
   final VoidCallback onReserve;
@@ -11,6 +11,7 @@ class CarpoolCard extends StatelessWidget {
     super.key,
     required this.creatorName,
     this.booked = false,
+    this.request = false,
     this.owned = false,
     this.departure = '',
     required this.remainingSeats,
@@ -52,7 +53,11 @@ class CarpoolCard extends StatelessWidget {
                   Text(departure, style: const TextStyle(fontSize: 12)),
                 const SizedBox(height: 4),
                 Text(
-                  isFull ? 'Complet' : '$remainingSeats place(s) restante(s)',
+                  request
+                      ? 'Recherche une place'
+                      : isFull
+                      ? 'Complet'
+                      : '$remainingSeats place(s) restante(s)',
                   style: TextStyle(
                     color: isFull ? Colors.redAccent : Colors.green,
                     fontWeight: FontWeight.w500,
@@ -64,7 +69,9 @@ class CarpoolCard extends StatelessWidget {
 
           /// ✅ ACTION
           ElevatedButton(
-            onPressed: owned || (isFull && !booked) ? null : onReserve,
+            onPressed: request || owned || (isFull && !booked)
+                ? null
+                : onReserve,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD4AF37),
               shape: RoundedRectangleBorder(
@@ -72,7 +79,9 @@ class CarpoolCard extends StatelessWidget {
               ),
             ),
             child: Text(
-              owned
+              request
+                  ? 'Demande'
+                  : owned
                   ? 'Mon trajet'
                   : booked
                   ? 'Annuler'

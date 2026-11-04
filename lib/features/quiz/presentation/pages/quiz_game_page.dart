@@ -1,3 +1,4 @@
+import '../../../bo/bo_widgets.dart' show boOpen, BoCard;
 import '../../../connected/data/club_api.dart';
 import '../../../../core/data/association_repository.dart';
 import 'dart:async';
@@ -162,6 +163,42 @@ class _QuizGamePageState extends State<QuizGamePage>
                 style: const TextStyle(fontSize: 20, color: Colors.white),
               ),
               const SizedBox(height: 20),
+              TextButton(
+                onPressed: () => boOpen(
+                  context,
+                  Scaffold(
+                    appBar: AppBar(title: const Text('Correction du quiz')),
+                    body: ListView(
+                      padding: const EdgeInsets.all(20),
+                      children: records(_result!['corrections']).map((
+                        correction,
+                      ) {
+                        final question = records(widget.quiz['questions'])
+                            .where(
+                              (q) => q['index'] == correction['questionIndex'],
+                            )
+                            .firstOrNull;
+                        final answer = records(question?['choices'])
+                            .where(
+                              (c) =>
+                                  c['index'] ==
+                                  correction['correctChoiceIndex'],
+                            )
+                            .firstOrNull;
+                        return BoCard(
+                          title: label(question ?? {}, 'text', 'Question'),
+                          subtitle:
+                              '${correction['correct'] == true ? 'Bonne réponse' : 'À revoir'}\nRéponse attendue : ${label(answer ?? {}, 'text')}\n${label(correction, 'explanation')}',
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                ),
+                child: const Text(
+                  'Voir la correction',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
               ElevatedButton(
                 onPressed: () {
                   context.pop(); // fermer dialog

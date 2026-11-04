@@ -5,8 +5,9 @@ import '../../../home/data/models/next_event_model.dart';
 
 class CreateCarpoolScreen extends StatefulWidget {
   final NextEventModel event;
+  final Json? trip;
 
-  const CreateCarpoolScreen({super.key, required this.event});
+  const CreateCarpoolScreen({super.key, required this.event, this.trip});
 
   @override
   State<CreateCarpoolScreen> createState() => _CreateCarpoolScreenState();
@@ -17,6 +18,23 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
       _time = TextEditingController(),
       _seats = TextEditingController(),
       _note = TextEditingController();
+  String _type = 'OFFER';
+  @override
+  void initState() {
+    super.initState();
+    final trip = widget.trip;
+    if (trip != null) {
+      _type = label(trip, 'type', 'OFFER');
+      _place.text = label(trip, 'departureLocation');
+      final date = DateTime.tryParse(label(trip, 'departureTime'));
+      if (date != null)
+        _time.text =
+            '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+      _seats.text = '${trip['seatCount'] ?? 1}';
+      _note.text = label(trip, 'note');
+    }
+  }
+
   bool _busy = false;
   @override
   void dispose() {
@@ -47,7 +65,9 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
         throw StateError(
           'Indiquez un lieu, une heure HH:mm et au moins une place.',
         );
-      final start = DateTime.parse(widget.event.raw['startDate']);
+      final start = DateTime.parse(
+        widget.trip?['departureTime'] ?? widget.event.raw['startDate'],
+      );
       final departure = DateTime(
         start.year,
         start.month,
@@ -59,10 +79,12 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
         throw StateError('Le départ doit être dans le futur.');
       final api = await repositoryOf(context).api();
       await api.request(
-        '/api/events/${widget.event.id}/carpools',
-        method: 'POST',
+        widget.trip == null
+            ? '/api/events/${widget.event.id}/carpools'
+            : '/api/carpools/${widget.trip!['id']}',
+        method: widget.trip == null ? 'POST' : 'PUT',
         data: {
-          'type': 'OFFER',
+          'type': _type,
           'departureLocation': _place.text.trim(),
           'departureTime': departure.toIso8601String(),
           'seatCount': seats,
@@ -148,6 +170,26 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _EventTypeChip(type: widget.event.diveType),
+                      const SizedBox(height: 16),
+                      DropdownButtonFormField<String>(
+                        initialValue: _type,
+                        decoration: const InputDecoration(
+                          labelText: 'Type de trajet',
+                        ),
+                        items: const [
+                          DropdownMenuItem(
+                            value: 'OFFER',
+                            child: Text('Je propose des places'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'REQUEST',
+                            child: Text('Je cherche des places'),
+                          ),
+                        ],
+                        onChanged: _busy
+                            ? null
+                            : (v) => setState(() => _type = v!),
+                      ),
 
                       const SizedBox(height: 24),
 
@@ -170,7 +212,9 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
                       const SizedBox(height: 16),
 
                       _FormField(
-                        label: 'Places disponibles',
+                        label: _type == 'REQUEST'
+                            ? 'Places recherchées'
+                            : 'Places disponibles',
                         controller: _seats,
                         hint: 'Ex : 3',
                         icon: Icons.event_seat_outlined,

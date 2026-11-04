@@ -1,3 +1,5 @@
+> Mise à jour : les nouveautés du BO ont été ajoutées après cette restauration. Voir [BO_FLUTTER_PARITY.md](BO_FLUTTER_PARITY.md) pour la couverture actuelle et ses limites. Les paragraphes ci-dessous décrivent la première étape.
+
 # Flutter — interface de develop raccordée au backend
 
 Direction demandée le 4 novembre 2026 : conserver les écrans de `develop`, sans

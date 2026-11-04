@@ -1,3 +1,4 @@
+import '../../../../core/network/api_client.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -210,8 +211,26 @@ class _NextDiveCardState extends State<NextDiveCard>
                               clipper: TopRightTriangleClipper(),
                               child: Stack(
                                 children: [
-                                  Image.asset(
-                                    _imageForDiveType(event.diveType),
+                                  Image(
+                                    image: event.raw['categoryImageUrl'] == null
+                                        ? AssetImage(
+                                            _imageForDiveType(event.diveType),
+                                          )
+                                        : NetworkImage(
+                                                Uri.parse(ApiClient.baseUrl)
+                                                    .resolve(
+                                                      '${event.raw['categoryImageUrl']}',
+                                                    )
+                                                    .toString(),
+                                              )
+                                              as ImageProvider,
+                                    errorBuilder: (_, error, stack) =>
+                                        Image.asset(
+                                          _imageForDiveType(event.diveType),
+                                          width: 96,
+                                          height: 96,
+                                          fit: BoxFit.cover,
+                                        ),
                                     width: 96,
                                     height: 96,
                                     fit: BoxFit.cover,

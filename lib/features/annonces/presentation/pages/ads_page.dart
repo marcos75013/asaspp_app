@@ -1,3 +1,5 @@
+import '../../../bo/member_listings.dart';
+import '../../../bo/bo_widgets.dart' show boOpen;
 import '../../../../core/data/association_repository.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -96,6 +98,19 @@ class AdsPage extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 20),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () async {
+                      await boOpen(context, const MemberListings());
+                      if (context.mounted)
+                        await context.read<AdsCubit>().loadAds();
+                    },
+                    icon: const Icon(Icons.inventory_2_outlined),
+                    label: const Text('Mes annonces'),
+                  ),
+                ),
 
                 /// 🔎 SEARCH FIELD
                 Padding(

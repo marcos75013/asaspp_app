@@ -101,6 +101,77 @@ class PreviewAdapter implements HttpClientAdapter {
           },
         ],
       };
+    } else if (options.path == '/api/admin-association/association') {
+      data = {
+        'id': 1,
+        'name': 'ASASPP · Démonstration',
+        'code': 'DEMO',
+        'activityCode': 'DIVING',
+        'activityName': 'Plongée',
+        'logoUrl': null,
+      };
+    } else if (options.path == '/api/admin-association/members') {
+      data = [
+        {
+          'membershipId': 12,
+          'userId': 1,
+          'firstName': 'Camille',
+          'lastName': 'Martin',
+          'email': 'camille@example.org',
+          'role': 'MEMBER',
+          'sportProfile': {
+            'activityCode': 'DIVING',
+            'divingLevel': 'Niveau 2',
+            'divingQualifications': ['Nitrox'],
+            'licenseNumber': 'DEMO-001',
+            'medicalCertificateExpiresOn': '2026-12-01',
+          },
+          'membershipDues': {
+            'season': '2026–2027',
+            'status': 'ACTIVE',
+            'amount': 150,
+            'paidAmount': 150,
+            'paidOn': '2026-09-01',
+            'paymentMethod': 'Virement',
+          },
+        },
+      ];
+    } else if (options.path ==
+        '/api/admin-association/members/compliance-documents/alerts') {
+      data = [
+        {
+          'membershipId': 12,
+          'documentId': 4,
+          'memberName': 'Camille Martin',
+          'type': 'MEDICAL_CERTIFICATE',
+          'status': 'EXPIRING',
+          'expiresOn': '2026-12-01',
+          'verified': true,
+        },
+      ];
+    } else if (options.path ==
+        '/api/admin-association/members/12/compliance-documents') {
+      data = [
+        {
+          'id': 4,
+          'type': 'MEDICAL_CERTIFICATE',
+          'originalFilename': 'certificat-demo.pdf',
+          'expiresOn': '2026-12-01',
+          'verified': true,
+        },
+      ];
+    } else if (options.path == '/api/events/attendance/stats') {
+      data = [
+        {
+          'firstName': 'Camille',
+          'lastName': 'Martin',
+          'presentCount': 8,
+          'absentCount': 1,
+          'attendanceRate': 88.9,
+          'verifiedCount': 9,
+          'declaredCount': 0,
+        },
+      ];
     } else if (options.path == '/api/documents') {
       data = [
         {
@@ -136,7 +207,8 @@ class PreviewAdapter implements HttpClientAdapter {
           'owner': false,
         },
       ];
-    } else if (options.path == '/api/mobile/quizzes') {
+    } else if (options.path == '/api/mobile/quizzes' ||
+        options.path == '/api/quizzes') {
       data = [
         {
           'id': 1,
@@ -155,6 +227,32 @@ class PreviewAdapter implements HttpClientAdapter {
           ],
         },
       ];
+    }
+    if (options.path == '/api/quizzes') {
+      data = records(data)
+          .map(
+            (q) => {
+              ...q,
+              'published': true,
+              'questions': records(q['questions'])
+                  .map(
+                    (question) => {
+                      ...question,
+                      'explanation': 'Vérifier son équipement avant la sortie.',
+                      'choices': records(question['choices'])
+                          .map(
+                            (choice) => {
+                              ...choice,
+                              'correct': choice['index'] == 0,
+                            },
+                          )
+                          .toList(),
+                    },
+                  )
+                  .toList(),
+            },
+          )
+          .toList();
     }
     return ResponseBody.fromString(
       jsonEncode(data),
@@ -180,7 +278,9 @@ void main() {
         providers: [
           BlocProvider(create: (_) => HomeCubit(repository)..loadEvents()),
           BlocProvider(create: (_) => UserCubit()..setContext(previewContext)),
-          BlocProvider<ContextCubit>(create: (_) => PreviewContextCubit()),
+          BlocProvider<ContextCubit>(
+            create: (_) => PreviewContextCubit()..loadContext(),
+          ),
         ],
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,

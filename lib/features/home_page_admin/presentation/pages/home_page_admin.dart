@@ -1,26 +1,78 @@
+import '../../../user/presentation/pages/user_profile_sheet.dart';
+import '../../../../core/data/association_repository.dart';
 import 'dart:ui';
 
-import 'package:asaspp_app/features/home_page_admin/presentation/pages/chinese_profile_form.dart';
-import 'package:asaspp_app/features/home_page_admin/presentation/pages/create_album_form.dart';
-import 'package:asaspp_app/features/home_page_admin/presentation/pages/create_event_form.dart';
-import 'package:asaspp_app/features/home_page_admin/presentation/pages/create_training_form.dart';
-import 'package:asaspp_app/features/home_page_admin/presentation/pages/payment_link_form.dart';
-import 'package:asaspp_app/features/home_page_admin/presentation/pages/write_message_form.dart';
 import 'package:asaspp_app/features/user/presentation/cubit/user_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../user/demain/user_model.dart';
-import 'document_form.dart';
-import 'members_tracking_form.dart';
+import '../../../context/cubit/context_cubit.dart';
+import '../../../bo/bo_members.dart';
+import '../../../bo/bo_events.dart';
+import '../../../bo/bo_content.dart';
+import '../../../bo/bo_quiz.dart';
+import '../../../bo/bo_diving.dart';
 
-class HomePageAdmin extends StatelessWidget {
+class HomePageAdmin extends StatefulWidget {
   const HomePageAdmin({super.key});
 
-  void _openUserProfile(BuildContext context) {}
+  @override
+  State<HomePageAdmin> createState() => _HomePageAdminState();
+}
+
+class _HomePageAdminState extends State<HomePageAdmin> {
+  String? _activityCode;
+  @override
+  void initState() {
+    super.initState();
+    _loadActivity();
+  }
+
+  Future<void> _loadActivity() async {
+    if (!context.read<UserCubit>().isAdmin) return;
+    try {
+      final api = await repositoryOf(context).api();
+      final association = await api.request(
+        '/api/admin-association/association',
+      );
+      if (mounted)
+        setState(() => _activityCode = association['activityCode'] as String?);
+    } catch (_) {
+      /* Other admin modules remain accessible; association page offers retry. */
+    }
+  }
+
+  void _openUserProfile(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => UserProfileSheet(user: context.read<UserCubit>().state),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (!context.watch<UserCubit>().isAdmin)
+      return Scaffold(
+        appBar: AppBar(),
+        body: const Center(
+          child: Text('Cet espace est réservé aux administrateurs.'),
+        ),
+      );
+    final modules =
+        context
+            .watch<ContextCubit>()
+            .state
+            .context
+            ?.currentAssociation
+            ?.modules ??
+        <String>[];
+    final cards = adminCards
+        .where((card) => card.module == null || modules.contains(card.module))
+        .where((card) => card.page is! BoDiving || _activityCode == 'DIVING')
+        .toList();
     return Scaffold(
       extendBodyBehindAppBar: true,
 
@@ -36,18 +88,16 @@ class HomePageAdmin extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
 
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Espace Admin",
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1,
-              ),
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'Espace Admin',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1,
             ),
-          ],
+          ),
         ),
 
         centerTitle: true,
@@ -136,7 +186,8 @@ class HomePageAdmin extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 110, 16, 16),
             child: GridView.builder(
-              itemCount: adminCards.length,
+              padding: EdgeInsets.zero,
+              itemCount: cards.length,
 
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -159,7 +210,7 @@ class HomePageAdmin extends StatelessWidget {
                       ),
                     );
                   },
-                  child: _AdminCard(card: adminCards[index]),
+                  child: _AdminCard(card: cards[index]),
                 );
               },
             ),
@@ -252,7 +303,7 @@ class _AdminCardState extends State<_AdminCard> {
                                     borderRadius: const BorderRadius.vertical(
                                       top: Radius.circular(24),
                                     ),
-                                    child: Image.network(
+                                    child: Image.asset(
                                       widget.card.image,
                                       fit: BoxFit.cover,
                                     ),
@@ -348,63 +399,91 @@ class AdminCardModel {
   final String image;
   final Widget page;
   final IconData icon;
+  final String? module;
 
   const AdminCardModel({
     required this.title,
     required this.image,
     required this.page,
     required this.icon,
+    this.module,
   });
 }
 
 /// DATA
 final List<AdminCardModel> adminCards = [
   AdminCardModel(
-    title: "Créer un événement",
-    icon: Icons.event,
-    image: "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=600",
-    page: const CreateEventForm(),
+    title: 'Mon association',
+    icon: Icons.business,
+    image: 'assets/pngs/logo_asaspp.png',
+    page: const BoAssociation(),
   ),
   AdminCardModel(
-    title: "Créer un entraînement",
-    icon: Icons.sports,
-    image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600",
-    page: const CreateTrainingForm(),
-  ),
-  AdminCardModel(
-    title: "Suivi des membres",
+    title: 'Suivi des membres',
     icon: Icons.group,
-    image: "https://images.unsplash.com/photo-1551434678-e076c223a692?w=600",
-    page: const MembersTrackingForm(),
+    image: 'assets/pngs/bg_mer.png',
+    page: const BoMembers(),
   ),
   AdminCardModel(
-    title: "Message association",
+    title: 'Alertes justificatifs',
+    icon: Icons.fact_check_outlined,
+    image: 'assets/pngs/bg_mer.png',
+    page: const BoComplianceAlerts(),
+  ),
+  AdminCardModel(
+    title: 'Événements',
+    icon: Icons.event,
+    image: 'assets/pngs/bg_mer.png',
+    module: 'EVENTS',
+    page: const BoEvents(),
+  ),
+  AdminCardModel(
+    title: 'Présences',
+    icon: Icons.how_to_reg,
+    image: 'assets/pngs/bg_mer.png',
+    module: 'EVENTS',
+    page: const BoAttendanceStats(),
+  ),
+  AdminCardModel(
+    title: 'Préparer les plongées',
+    icon: Icons.scuba_diving,
+    image: 'assets/pngs/bg_mer.png',
+    module: 'EVENTS',
+    page: const BoDiving(),
+  ),
+  AdminCardModel(
+    title: 'Messages',
     icon: Icons.campaign,
-    image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=600",
-    page: const WriteMessageForm(),
+    image: 'assets/pngs/bg_mer.png',
+    module: 'CLUB_COMMUNICATION',
+    page: const BoMessages(),
   ),
   AdminCardModel(
-    title: "Lien de paiement",
-    icon: Icons.payments,
-    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=600",
-    page: const PaymentLinkForm(),
-  ),
-  AdminCardModel(
-    title: "Documents utiles",
+    title: 'Documents',
     icon: Icons.description,
-    image: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=600",
-    page: const DocumentForm(),
+    image: 'assets/pngs/bg_mer.png',
+    module: 'DOCUMENT_LIBRARY',
+    page: const BoDocuments(),
   ),
   AdminCardModel(
-    title: "Profil chinois",
-    icon: Icons.psychology,
-    image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=600",
-    page: const ChineseProfileForm(),
-  ),
-  AdminCardModel(
-    title: "Album photo",
+    title: 'Albums photo',
     icon: Icons.photo_library,
-    image: "https://images.unsplash.com/photo-1492724441997-5dc865305da7?w=600",
-    page: const CreateAlbumForm(),
+    image: 'assets/pngs/bg_mer.png',
+    module: 'PHOTO_GALLERY',
+    page: const BoAlbums(),
+  ),
+  AdminCardModel(
+    title: 'Annonces',
+    icon: Icons.campaign_outlined,
+    image: 'assets/pngs/bg_mer.png',
+    module: 'MARKETPLACE',
+    page: const BoMarketplace(),
+  ),
+  AdminCardModel(
+    title: 'Quiz et résultats',
+    icon: Icons.quiz,
+    image: 'assets/pngs/bg_mer.png',
+    module: 'QUIZ',
+    page: const BoQuizzes(),
   ),
 ];

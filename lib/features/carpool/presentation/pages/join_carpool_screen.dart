@@ -1,3 +1,6 @@
+import '../../../bo/bo_widgets.dart'
+    show BoAction, BoList, boOpen, boDelete, person;
+import 'create_carpool_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../home/presentation/cubit/home_cubit.dart';
 import '../../../home/data/models/next_event_model.dart';
@@ -47,10 +50,11 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
       if (mounted && selected == _selectedEvent)
         setState(() {
           _carpools = rows
-              .where((r) => r['type'] == 'OFFER')
               .map(
                 (r) => CarpoolModel(
                   id: '${r['id']}',
+                  raw: r,
+                  request: r['type'] == 'REQUEST',
                   eventName: selected,
                   creatorName:
                       '${label(r, 'authorFirstName')} ${label(r, 'authorLastName')}',
@@ -187,13 +191,75 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
                           const Text('Aucun covoiturage disponible')
                         else
                           ...filteredCarpools.map(
-                            (carpool) => CarpoolCard(
-                              creatorName: carpool.creatorName,
-                              remainingSeats: carpool.remainingSeats,
-                              booked: carpool.booked,
-                              owned: carpool.owned,
-                              departure: carpool.departure,
-                              onReserve: () => _reserve(carpool),
+                            (carpool) => Column(
+                              children: [
+                                CarpoolCard(
+                                  creatorName: carpool.creatorName,
+                                  remainingSeats: carpool.remainingSeats,
+                                  booked: carpool.booked,
+                                  owned: carpool.owned,
+                                  request: carpool.request,
+                                  departure: carpool.departure,
+                                  onReserve: () => _reserve(carpool),
+                                ),
+                                if (label(carpool.raw, 'note').isNotEmpty)
+                                  Text(label(carpool.raw, 'note')),
+                                if (carpool.owned)
+                                  Card(
+                                    child: Wrap(
+                                      children: [
+                                        BoAction('Modifier', () async {
+                                          final event = _events
+                                              .where(
+                                                (e) =>
+                                                    '${e.id}' == _selectedEvent,
+                                              )
+                                              .firstOrNull;
+                                          if (event != null) {
+                                            await boOpen(
+                                              context,
+                                              CreateCarpoolScreen(
+                                                event: event,
+                                                trip: carpool.raw,
+                                              ),
+                                            );
+                                            await _load();
+                                          }
+                                        }),
+                                        if (!carpool.request)
+                                          BoAction('Passagers', () async {
+                                            await boOpen(
+                                              context,
+                                              BoList(
+                                                title: 'Mes passagers',
+                                                load: (a) => a.list(
+                                                  '/api/carpools/${carpool.id}/passengers',
+                                                ),
+                                                tile: (c, a, p, r) => ListTile(
+                                                  title: Text(person(p)),
+                                                  subtitle: Text(
+                                                    label(p, 'email'),
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          }),
+                                        BoAction('Supprimer', () async {
+                                          final api = await repositoryOf(
+                                            context,
+                                          ).api();
+                                          if (context.mounted)
+                                            await boDelete(
+                                              context,
+                                              api,
+                                              '/api/carpools/${carpool.id}',
+                                              _load,
+                                            );
+                                        }),
+                                      ],
+                                    ),
+                                  ),
+                              ],
                             ),
                           ),
                       ],

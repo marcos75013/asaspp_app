@@ -1,3 +1,5 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'features/context/cubit/context_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 
@@ -16,13 +18,6 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
-
-  final List<Widget> _pages = const [
-    HomePage(),
-    AboutUsPage(),
-    GalleryPage(),
-    AdsPage(), // ⬅️ Petites annonces
-  ];
 
   Widget _navItem({
     required IconData icon,
@@ -71,41 +66,46 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final modules =
+        context
+            .watch<ContextCubit>()
+            .state
+            .context
+            ?.currentAssociation
+            ?.modules ??
+        <String>[];
+    final tabs = <({Widget page, IconData icon, String label})>[
+      (page: const HomePage(), icon: Icons.home, label: 'Accueil'),
+      (page: const AboutUsPage(), icon: Icons.event, label: 'Asaspp'),
+      if (modules.contains('PHOTO_GALLERY'))
+        (
+          page: const GalleryPage(),
+          icon: Icons.photo_library,
+          label: 'Galerie',
+        ),
+      if (modules.contains('MARKETPLACE'))
+        (page: const AdsPage(), icon: Icons.campaign, label: 'Annonces'),
+    ];
+    final selected = _currentIndex.clamp(0, tabs.length - 1);
 
     return Scaffold(
       extendBody: true,
-      body: _pages[_currentIndex],
+      body: tabs[selected].page,
       bottomNavigationBar: SafeArea(
         bottom: true,
         child: CircleNavBar(
           height: 72,
-          activeIndex: _currentIndex,
+          activeIndex: selected,
 
           /// 👉 LE CERCLE affichera TOUJOURS ce plongeur
-          activeIcons: [_diverIcon(), _diverIcon(), _diverIcon(), _diverIcon()],
-
-          /// 👉 Icônes + labels
+          activeIcons: [for (var i = 0; i < tabs.length; i++) _diverIcon()],
           inactiveIcons: [
-            _navItem(
-              icon: Icons.home,
-              label: 'Accueil',
-              active: _currentIndex == 0,
-            ),
-            _navItem(
-              icon: Icons.event,
-              label: 'Asaspp',
-              active: _currentIndex == 1,
-            ),
-            _navItem(
-              icon: Icons.photo_library,
-              label: 'Galerie',
-              active: _currentIndex == 2,
-            ),
-            _navItem(
-              icon: Icons.campaign, // ⬅️ icône annonces
-              label: 'Annonces',
-              active: _currentIndex == 3,
-            ),
+            for (var i = 0; i < tabs.length; i++)
+              _navItem(
+                icon: tabs[i].icon,
+                label: tabs[i].label,
+                active: selected == i,
+              ),
           ],
 
           /// 🎨 STYLE

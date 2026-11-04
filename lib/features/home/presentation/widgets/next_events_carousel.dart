@@ -1,3 +1,6 @@
+import '../../../context/cubit/context_cubit.dart';
+import '../../../bo/member_event_details.dart';
+import '../../../bo/bo_widgets.dart' show boOpen;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/data/association_repository.dart';
 import '../cubit/home_cubit.dart';
@@ -85,62 +88,84 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
 
             const SizedBox(height: 12),
 
-            /// 🚗 ACTIONS (lié à l’événement actif)
             Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.88,
-                child: Row(
-                  children: [
-                    /// 🚗 COVOITURAGE
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          context.push(
-                            '/covoiturage/create',
-                            extra: events[selected],
-                          );
-                        },
-
-                        // icon: const Icon(Icons.local_fire_department),
-                        label: const Text('Créer un covoiturage'),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD4AF37),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    /// 📍 DEPART / RDV
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          context.push(
-                            '/covoiturage/join',
-                            extra: events[selected],
-                          );
-                        },
-
-                        // icon: const Icon(Icons.place_outlined),
-                        label: const Text("je m'y infiltre"),
-                        style: OutlinedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD4AF37),
-
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+              child: TextButton.icon(
+                onPressed: () => boOpen(
+                  context,
+                  MemberEventDetails(eventId: events[selected].id),
+                ),
+                icon: const Icon(Icons.info_outline, color: Colors.white),
+                label: const Text(
+                  'Détails, places et inscriptions',
+                  style: TextStyle(color: Colors.white),
                 ),
               ),
             ),
+
+            /// 🚗 ACTIONS (lié à l’événement actif)
+            if (context
+                    .watch<ContextCubit>()
+                    .state
+                    .context
+                    ?.currentAssociation
+                    ?.modules
+                    .contains('CARPOOLING') ==
+                true)
+              Center(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.88,
+                  child: Row(
+                    children: [
+                      /// 🚗 COVOITURAGE
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            context.push(
+                              '/covoiturage/create',
+                              extra: events[selected],
+                            );
+                          },
+
+                          // icon: const Icon(Icons.local_fire_department),
+                          label: const Text('Créer un covoiturage'),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD4AF37),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      /// 📍 DEPART / RDV
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            context.push(
+                              '/covoiturage/join',
+                              extra: events[selected],
+                            );
+                          },
+
+                          // icon: const Icon(Icons.place_outlined),
+                          label: const Text("je m'y infiltre"),
+                          style: OutlinedButton.styleFrom(
+                            backgroundColor: const Color(0xFFD4AF37),
+
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
             const SizedBox(height: 12),
 

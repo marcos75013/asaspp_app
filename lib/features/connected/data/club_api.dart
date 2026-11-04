@@ -4,7 +4,7 @@ import '../../../core/storage/auth_storage.dart';
 
 typedef Json = Map<String, dynamic>;
 
-List<Json> records(dynamic data) => (data as List)
+List<Json> records(dynamic data) => (data as List? ?? const [])
     .map((value) => Map<String, dynamic>.from(value as Map))
     .toList();
 String label(Json item, String key, [String fallback = '']) =>

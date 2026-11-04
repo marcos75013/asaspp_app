@@ -10,6 +10,14 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final modules =
+        context
+            .watch<ContextCubit>()
+            .state
+            .context
+            ?.currentAssociation
+            ?.modules ??
+        <String>[];
     return Drawer(
       backgroundColor: const Color(0xFF001F2D),
       child: SafeArea(
@@ -63,21 +71,23 @@ class AppDrawer extends StatelessWidget {
               },
             ),
 
-            _DrawerItem(
-              icon: Icons.folder_open,
-              title: "Bibliothèque",
-              onTap: () {
-                context.push('/documents');
-              },
-            ),
+            if (modules.contains('DOCUMENT_LIBRARY'))
+              _DrawerItem(
+                icon: Icons.folder_open,
+                title: "Bibliothèque",
+                onTap: () {
+                  context.push('/documents');
+                },
+              ),
 
-            _DrawerItem(
-              icon: Icons.quiz,
-              title: "Quiz",
-              onTap: () {
-                context.push('/quiz');
-              },
-            ),
+            if (modules.contains('QUIZ'))
+              _DrawerItem(
+                icon: Icons.quiz,
+                title: "Quiz",
+                onTap: () {
+                  context.push('/quiz');
+                },
+              ),
 
             if ((context
                         .watch<ContextCubit>()

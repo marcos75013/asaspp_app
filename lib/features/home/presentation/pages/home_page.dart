@@ -30,6 +30,14 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final modules =
+        context
+            .watch<ContextCubit>()
+            .state
+            .context
+            ?.currentAssociation
+            ?.modules ??
+        <String>[];
     return Scaffold(
       extendBodyBehindAppBar: true,
       drawer: const AppDrawer(),
@@ -41,6 +49,11 @@ class HomePage extends StatelessWidget {
         centerTitle: true,
         title: Image.asset('assets/pngs/logo_asaspp.png', height: 120),
         actions: [
+          IconButton(
+            tooltip: 'Actualiser les données du club',
+            icon: const Icon(Icons.refresh),
+            onPressed: () => context.read<ContextCubit>().loadContext(),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 16, top: 12),
             child: GestureDetector(
@@ -127,37 +140,40 @@ class HomePage extends StatelessWidget {
 
                   const SizedBox(height: 12),
 
-                  const NextEventsCarousel(),
+                  if (modules.contains('EVENTS')) const NextEventsCarousel(),
 
                   Center(child: const PaymentActionButton()),
 
-                  const ClubMessageCard(),
+                  if (modules.contains('CLUB_COMMUNICATION'))
+                    const ClubMessageCard(),
 
                   const SizedBox(height: 16),
 
-                  FeatureTile(
-                    title: "Quiz Plongée Plaisir",
-                    subtitle: "Teste tes connaissances",
-                    icon: Icons.quiz,
-                    gradient: [
-                      const Color(0xFF0061FF),
-                      const Color(0xFF60EFFF),
-                    ],
-                    route: "/quiz",
-                  ),
+                  if (modules.contains('QUIZ'))
+                    FeatureTile(
+                      title: "Quiz Plongée Plaisir",
+                      subtitle: "Teste tes connaissances",
+                      icon: Icons.quiz,
+                      gradient: [
+                        const Color(0xFF0061FF),
+                        const Color(0xFF60EFFF),
+                      ],
+                      route: "/quiz",
+                    ),
 
                   SizedBox(height: 20),
 
-                  FeatureTile(
-                    title: "Bibliothèque Plongée",
-                    subtitle: "Documents & Liens utiles",
-                    icon: Icons.folder_open,
-                    gradient: [
-                      const Color(0xFF11998E),
-                      const Color(0xFF38EF7D),
-                    ],
-                    route: "/documents",
-                  ),
+                  if (modules.contains('DOCUMENT_LIBRARY'))
+                    FeatureTile(
+                      title: "Bibliothèque Plongée",
+                      subtitle: "Documents & Liens utiles",
+                      icon: Icons.folder_open,
+                      gradient: [
+                        const Color(0xFF11998E),
+                        const Color(0xFF38EF7D),
+                      ],
+                      route: "/documents",
+                    ),
                   const SizedBox(height: 32),
                 ],
               ),

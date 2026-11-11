@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import 'core/network/api_client.dart';
+import 'core/storage/auth_storage.dart';
 import 'core/theme/app_colors.dart';
 import 'features/annonces/presentation/pages/ads_page.dart';
 import 'features/events/presentation/pages/about_us_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/gallery/presentation/pages/gallery_page.dart';
+import 'features/messages/data/services/mobile_message_api_service.dart';
+import 'features/messages/presentation/cubit/message_cubit.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -17,12 +22,27 @@ class MainScaffold extends StatefulWidget {
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    HomePage(),
-    AboutUsPage(),
-    GalleryPage(),
-    AdsPage(), // ⬅️ Petites annonces
-  ];
+  late final List<Widget> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final authStorage = AuthStorage();
+    final apiClient = ApiClient(authStorage);
+
+    _pages = [
+      BlocProvider(
+        create: (_) =>
+            MessageCubit(messageRepository: MobileMessageApiService(apiClient))
+              ..loadMessages(),
+        child: const HomePage(),
+      ),
+      const AboutUsPage(),
+      const GalleryPage(),
+      const AdsPage(), // ⬅️ Petites annonces
+    ];
+  }
 
   Widget _navItem({
     required IconData icon,

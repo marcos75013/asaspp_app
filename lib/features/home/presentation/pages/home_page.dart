@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/config/api_config.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/feature_tile.dart';
 import '../../../context/cubit/context_cubit.dart';
@@ -16,7 +17,7 @@ import 'club_message_card.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  static const String _baseUrl = 'http://192.168.1.36:8080';
+  static const ApiConfig _apiConfig = ApiConfig();
 
   void _openUserProfile(BuildContext context, ContextState state) {
     final user = state.context?.user;
@@ -42,11 +43,7 @@ class HomePage extends StatelessWidget {
       return const AssetImage('assets/jpgs/macron.jpg');
     }
 
-    if (avatarUrl.startsWith('http')) {
-      return NetworkImage(avatarUrl);
-    }
-
-    return NetworkImage('$_baseUrl$avatarUrl');
+    return NetworkImage(_apiConfig.resolveUrl(avatarUrl));
   }
 
   @override

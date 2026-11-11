@@ -1,16 +1,18 @@
-# asaspp_app
+# ASASPP App
 
-A new Flutter project.
+Application mobile MultiAsso.
 
-## Getting Started
+## Configuration de l'API
 
-This project is a starting point for a Flutter application.
+L'URL du backend est fournie au build avec `API_BASE_URL`. Sans paramètre,
+l'application utilise `http://localhost:8080`.
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter run --dart-define=API_BASE_URL=http://192.168.1.36:8080
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Pour un émulateur Android, utiliser généralement :
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080
+```

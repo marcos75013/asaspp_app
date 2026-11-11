@@ -1,47 +1,125 @@
-enum DiveType {
-  mer,
-  piscine,
-  carriere,
-  apero,
-  formation,
-  stage,
-  fosse,
-}
+enum DiveType { mer, piscine, carriere, apero, formation, stage, fosse }
 
-enum ParticipationStatus {
-  none,
-  going,
-  maybe,
-  notGoing,
-}
+enum ParticipationStatus { none, going, maybe, notGoing }
 
 class NextEventModel {
+  final int id;
+  final String title;
   final String site;
-  final String date;
-  final String time;
+  final DateTime startDate;
   final DiveType diveType;
   final String message;
   final ParticipationStatus participation;
 
   const NextEventModel({
+    required this.id,
+    required this.title,
     required this.site,
-    required this.date,
-    required this.time,
+    required this.startDate,
     required this.diveType,
     required this.message,
     this.participation = ParticipationStatus.none,
   });
 
-  NextEventModel copyWith({
-    ParticipationStatus? participation,
-  }) {
+  String get date {
+    const weekdays = [
+      'Lundi',
+      'Mardi',
+      'Mercredi',
+      'Jeudi',
+      'Vendredi',
+      'Samedi',
+      'Dimanche',
+    ];
+    const months = [
+      'janvier',
+      'février',
+      'mars',
+      'avril',
+      'mai',
+      'juin',
+      'juillet',
+      'août',
+      'septembre',
+      'octobre',
+      'novembre',
+      'décembre',
+    ];
+
+    return '${weekdays[startDate.weekday - 1]} '
+        '${startDate.day} ${months[startDate.month - 1]}';
+  }
+
+  String get time {
+    final hour = startDate.hour.toString().padLeft(2, '0');
+    final minute = startDate.minute.toString().padLeft(2, '0');
+    return '${hour}h$minute';
+  }
+
+  NextEventModel copyWith({ParticipationStatus? participation}) {
     return NextEventModel(
+      id: id,
+      title: title,
       site: site,
-      date: date,
-      time: time,
+      startDate: startDate,
       diveType: diveType,
       message: message,
       participation: participation ?? this.participation,
     );
   }
+
+  factory NextEventModel.fromJson(Map<String, dynamic> json) {
+    final title = json['title'] as String? ?? '';
+    final category = json['category'] as String? ?? '';
+    final location = json['location'] as String? ?? '';
+
+    return NextEventModel(
+      id: json['id'] as int? ?? 0,
+      title: title,
+      site: location.isEmpty ? title : location,
+      startDate:
+          DateTime.tryParse(json['startDate'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      diveType: _diveTypeFrom('$category $title $location'),
+      message: json['description'] as String? ?? '',
+      participation: _participationFrom(json['currentUserStatus'] as String?),
+    );
+  }
+}
+
+DiveType _diveTypeFrom(String value) {
+  final normalized = value.toLowerCase();
+
+  if (normalized.contains('fosse')) return DiveType.fosse;
+  if (normalized.contains('piscine')) return DiveType.piscine;
+  if (normalized.contains('carrière') || normalized.contains('carriere')) {
+    return DiveType.carriere;
+  }
+  if (normalized.contains('apéro') || normalized.contains('apero')) {
+    return DiveType.apero;
+  }
+  if (normalized.contains('formation')) return DiveType.formation;
+  if (normalized.contains('stage')) return DiveType.stage;
+
+  return DiveType.mer;
+}
+
+ParticipationStatus _participationFrom(String? value) {
+  return switch (value) {
+    'GOING' || 'WAITLISTED' => ParticipationStatus.going,
+    'MAYBE' => ParticipationStatus.maybe,
+    'NOT_GOING' => ParticipationStatus.notGoing,
+    _ => ParticipationStatus.none,
+  };
+}
+
+String participationStatusToJson(ParticipationStatus status) {
+  return switch (status) {
+    ParticipationStatus.going => 'GOING',
+    ParticipationStatus.maybe => 'MAYBE',
+    ParticipationStatus.notGoing => 'NOT_GOING',
+    ParticipationStatus.none => throw ArgumentError(
+      'A participation status is required',
+    ),
+  };
 }

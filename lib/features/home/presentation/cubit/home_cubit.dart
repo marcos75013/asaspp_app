@@ -1,59 +1,74 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../data/models/next_event_model.dart';
+import '../../data/services/mobile_event_repository.dart';
 import 'home_state.dart';
 
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit()
-      : super(
-    HomeState(
-      nextEvents: {
-        DiveType.fosse: const NextEventModel(
-          site: 'Carrière de Beaumont',
-          date: 'Samedi 15 février',
-          time: '08h30',
-          diveType: DiveType.fosse,
-          message:
-          'N’oubliez pas de vérifier votre matériel avant la sortie.',
+  final MobileEventRepository _eventRepository;
+
+  HomeCubit({required MobileEventRepository eventRepository})
+    : _eventRepository = eventRepository,
+      super(const HomeState());
+
+  Future<void> loadEvents() async {
+    emit(state.copyWith(status: HomeStatus.loading, errorMessage: null));
+
+    try {
+      final events = await _eventRepository.getFutureEvents();
+      emit(
+        state.copyWith(
+          status: HomeStatus.loaded,
+          nextEvents: events,
+          errorMessage: null,
         ),
-
-        DiveType.mer: const NextEventModel(
-          site: 'Étretat',
-          date: 'Dimanche 23 mars',
-          time: '09h00',
-          diveType: DiveType.mer,
-          message: 'Sortie mer – niveau 2 minimum.',
+      );
+    } catch (_) {
+      emit(
+        state.copyWith(
+          status: HomeStatus.error,
+          errorMessage: 'Impossible de récupérer les prochains événements',
         ),
+      );
+    }
+  }
 
-        DiveType.apero: const NextEventModel(
-          site: 'Local du club',
-          date: 'Vendredi 28 mars',
-          time: '19h30',
-          diveType: DiveType.apero,
-          message: 'Apéro convivial ouvert à tous 🍻',
-        ),
-
-        DiveType.formation: const NextEventModel(
-          site: 'Piscine municipale',
-          date: 'Mercredi 2 avril',
-          time: '20h00',
-          diveType: DiveType.formation,
-          message: 'Formation N1 – séance technique.',
-        ),
-      },
-    ),
-  );
-
-  void setParticipation(DiveType type, ParticipationStatus status) {
-    final event = state.nextEvents[type];
-    if (event == null) return;
-
-    emit(
-      state.copyWith(
-        nextEvents: {
-          ...state.nextEvents,
-          type: event.copyWith(participation: status),
-        },
-      ),
+  Future<void> setParticipation(int eventId, ParticipationStatus status) async {
+    final eventIndex = state.nextEvents.indexWhere(
+      (event) => event.id == eventId,
     );
+    if (eventIndex == -1 || status == ParticipationStatus.none) return;
+
+    final previousEvent = state.nextEvents[eventIndex];
+    final optimisticEvents = [...state.nextEvents];
+    optimisticEvents[eventIndex] = previousEvent.copyWith(
+      participation: status,
+    );
+    emit(state.copyWith(nextEvents: optimisticEvents));
+
+    try {
+      final updatedEvent = await _eventRepository.setParticipation(
+        eventId,
+        status,
+      );
+      final updatedEvents = [...state.nextEvents];
+      final updatedIndex = updatedEvents.indexWhere(
+        (event) => event.id == eventId,
+      );
+      if (updatedIndex != -1) updatedEvents[updatedIndex] = updatedEvent;
+      emit(state.copyWith(nextEvents: updatedEvents, errorMessage: null));
+    } catch (_) {
+      final restoredEvents = [...state.nextEvents];
+      final restoredIndex = restoredEvents.indexWhere(
+        (event) => event.id == eventId,
+      );
+      if (restoredIndex != -1) restoredEvents[restoredIndex] = previousEvent;
+      emit(
+        state.copyWith(
+          nextEvents: restoredEvents,
+          errorMessage: 'Impossible d’enregistrer votre participation',
+        ),
+      );
+    }
   }
 }

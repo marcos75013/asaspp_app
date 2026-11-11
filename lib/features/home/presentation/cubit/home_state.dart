@@ -1,18 +1,27 @@
 import '../../data/models/next_event_model.dart';
 
+enum HomeStatus { initial, loading, loaded, error }
+
 class HomeState {
-  final Map<DiveType, NextEventModel> nextEvents;
+  final HomeStatus status;
+  final List<NextEventModel> nextEvents;
+  final String? errorMessage;
 
   const HomeState({
-    required this.nextEvents,
+    this.status = HomeStatus.initial,
+    this.nextEvents = const [],
+    this.errorMessage,
   });
 
   HomeState copyWith({
-    Map<DiveType, NextEventModel>? nextEvents,
+    HomeStatus? status,
+    List<NextEventModel>? nextEvents,
+    String? errorMessage,
   }) {
     return HomeState(
+      status: status ?? this.status,
       nextEvents: nextEvents ?? this.nextEvents,
+      errorMessage: errorMessage,
     );
   }
 }
-

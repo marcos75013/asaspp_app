@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/models/next_event_model.dart';
+
+import '../cubit/home_cubit.dart';
+import '../cubit/home_state.dart';
 import '../pages/next_dive_card.dart';
 
 class NextEventsCarousel extends StatefulWidget {
@@ -14,20 +17,10 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
   late final PageController _pageController;
   int _currentIndex = 0;
 
-  final List<DiveType> _types = const [
-    DiveType.fosse,
-    DiveType.mer,
-    DiveType.apero,
-    DiveType.formation,
-    DiveType.stage,
-  ];
-
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(
-      viewportFraction: 0.99,
-    );
+    _pageController = PageController(viewportFraction: 0.99);
   }
 
   @override
@@ -38,128 +31,136 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return BlocBuilder<HomeCubit, HomeState>(
+      builder: (context, state) {
+        if (state.status == HomeStatus.loading ||
+            state.status == HomeStatus.initial) {
+          return const _EventFeedback(
+            child: CircularProgressIndicator.adaptive(),
+          );
+        }
 
-        const SizedBox(height: 16),
-
-        /// 🎠 PAGEVIEW
-        SizedBox(
-          height: 180, // hauteur maîtrisée
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: _types.length,
-            onPageChanged: (index) {
-              setState(() => _currentIndex = index);
-            },
-            itemBuilder: (context, index) {
-              final isActive = index == _currentIndex;
-
-              return AnimatedPadding(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOut,
-                padding: EdgeInsets.symmetric(
-                  horizontal: isActive ? 4 : 10,
-                ),
-                child: SizedBox.expand(
-                  // 🔥 SUPPRIME L’ESPACE VIDE
-                  child: NextDiveCard(
-                    type: _types[index],
-                    highlighted: isActive,
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-
-        const SizedBox(height: 12),
-
-        /// 🚗 ACTIONS (lié à l’événement actif)
-        Center(
-          child: SizedBox(
-            width: MediaQuery.of(context).size.width * 0.88,
-            child: Row(
-              children: [
-                /// 🚗 COVOITURAGE
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      context.push(
-                        '/covoiturage/create',
-                        extra: _types[_currentIndex],
-                      );
-                    },
-
-                    // icon: const Icon(Icons.local_fire_department),
-                    label: const Text('Créer un covoiturage'),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(width: 12),
-
-                /// 📍 DEPART / RDV
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      context.push('/covoiturage/join');
-                    },
-
-                    // icon: const Icon(Icons.place_outlined),
-                    label: const Text("je m'y infiltre"),
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: const Color(0xFFD4AF37),
-
-    padding: const EdgeInsets.symmetric(vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+        if (state.status == HomeStatus.error) {
+          return _EventFeedback(
+            child: TextButton.icon(
+              onPressed: context.read<HomeCubit>().loadEvents,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Réessayer de charger les événements'),
             ),
-          ),
-        ),
+          );
+        }
 
-        const SizedBox(height: 12),
+        final events = state.nextEvents;
+        if (events.isEmpty) {
+          return const _EventFeedback(
+            child: Text('Aucun événement à venir pour le moment.'),
+          );
+        }
 
+        final currentIndex = _currentIndex.clamp(0, events.length - 1);
+        final currentEvent = events[currentIndex];
 
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 180,
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: events.length,
+                onPageChanged: (index) {
+                  setState(() => _currentIndex = index);
+                },
+                itemBuilder: (context, index) {
+                  final isActive = index == currentIndex;
 
-
-        /// 🔵 INDICATOR
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            _types.length,
-                (index) {
-              final isActive = index == _currentIndex;
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                width: isActive ? 14 : 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? Colors.white
-                      : Colors.white,
-                  borderRadius: BorderRadius.circular(4),
+                  return AnimatedPadding(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: isActive ? 4 : 10,
+                    ),
+                    child: SizedBox.expand(
+                      child: NextDiveCard(
+                        event: events[index],
+                        highlighted: isActive,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Center(
+              child: SizedBox(
+                width: MediaQuery.of(context).size.width * 0.88,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          context.push(
+                            '/covoiturage/create',
+                            extra: currentEvent.diveType,
+                          );
+                        },
+                        label: const Text('Créer un covoiturage'),
+                        style: _carpoolButtonStyle(),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: () => context.push('/covoiturage/join'),
+                        label: const Text("je m'y infiltre"),
+                        style: _carpoolButtonStyle(),
+                      ),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 12),
-
-      ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(events.length, (index) {
+                final isActive = index == currentIndex;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: isActive ? 14 : 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
+            ),
+            const SizedBox(height: 12),
+          ],
+        );
+      },
     );
+  }
+
+  ButtonStyle _carpoolButtonStyle() {
+    return OutlinedButton.styleFrom(
+      backgroundColor: const Color(0xFFD4AF37),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
+  }
+}
+
+class _EventFeedback extends StatelessWidget {
+  final Widget child;
+
+  const _EventFeedback({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(height: 216, child: Center(child: child));
   }
 }

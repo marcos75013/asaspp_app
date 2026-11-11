@@ -9,6 +9,8 @@ import 'features/annonces/presentation/pages/ads_page.dart';
 import 'features/events/presentation/pages/about_us_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/gallery/presentation/pages/gallery_page.dart';
+import 'features/home/data/services/mobile_event_api_service.dart';
+import 'features/home/presentation/cubit/home_cubit.dart';
 import 'features/messages/data/services/mobile_message_api_service.dart';
 import 'features/messages/presentation/cubit/message_cubit.dart';
 
@@ -32,10 +34,19 @@ class _MainScaffoldState extends State<MainScaffold> {
     final apiClient = ApiClient(authStorage);
 
     _pages = [
-      BlocProvider(
-        create: (_) =>
-            MessageCubit(messageRepository: MobileMessageApiService(apiClient))
-              ..loadMessages(),
+      MultiBlocProvider(
+        providers: [
+          BlocProvider(
+            create: (_) =>
+                HomeCubit(eventRepository: MobileEventApiService(apiClient))
+                  ..loadEvents(),
+          ),
+          BlocProvider(
+            create: (_) => MessageCubit(
+              messageRepository: MobileMessageApiService(apiClient),
+            )..loadMessages(),
+          ),
+        ],
         child: const HomePage(),
       ),
       const AboutUsPage(),

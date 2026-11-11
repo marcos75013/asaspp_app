@@ -1,20 +1,18 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
 import '../../data/models/next_event_model.dart';
 import '../cubit/home_cubit.dart';
-import '../cubit/home_state.dart';
 import '../widgets/triangle_clipper.dart';
 
 class NextDiveCard extends StatefulWidget {
-  final DiveType type;
+  final NextEventModel event;
   final bool highlighted;
 
   const NextDiveCard({
     super.key,
-    required this.type,
+    required this.event,
     this.highlighted = false,
   });
 
@@ -36,10 +34,7 @@ class _NextDiveCardState extends State<NextDiveCard>
       duration: const Duration(milliseconds: 450),
     );
 
-    _fade = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
     _slide = Tween<Offset>(
       begin: const Offset(0, 0.05),
@@ -57,205 +52,196 @@ class _NextDiveCardState extends State<NextDiveCard>
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomeCubit, HomeState>(
-      builder: (context, state) {
-        final event = state.nextEvents[widget.type];
-        if (event == null) return const SizedBox();
+    final event = widget.event;
 
-        return FadeTransition(
-          opacity: _fade,
-          child: SlideTransition(
-            position: _slide,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                ClipRRect(
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
 
-                      /// 🎨 Glass effect optimisé (SANS blur)
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withOpacity(0.95),
-                          Colors.white.withOpacity(0.85),
+                  /// 🎨 Glass effect optimisé (SANS blur)
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.95),
+                      Colors.white.withValues(alpha: 0.85),
+                    ],
+                  ),
+
+                  border: Border.all(
+                    color: const Color(
+                      0xFFD4AF37,
+                    ).withValues(alpha: widget.highlighted ? 0.9 : 0.5),
+                    width: widget.highlighted ? 2 : 1.5,
+                  ),
+
+                  boxShadow: widget.highlighted
+                      ? [
+                          BoxShadow(
+                            color: const Color(
+                              0xFFD4AF37,
+                            ).withValues(alpha: 0.25),
+                            blurRadius: 16,
+                            spreadRadius: 1,
+                          ),
+                        ]
+                      : [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
                         ],
-                      ),
-
-                      border: Border.all(
-                        color: const Color(0xFFD4AF37)
-                            .withOpacity(widget.highlighted ? 0.9 : 0.5),
-                        width: widget.highlighted ? 2 : 1.5,
-                      ),
-
-                      boxShadow: widget.highlighted
-                          ? [
-                        BoxShadow(
-                          color: const Color(0xFFD4AF37)
-                              .withOpacity(0.25),
-                          blurRadius: 16,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                          : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.08),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Stack(
+                ),
+                child: Stack(
+                  children: [
+                    /// ───── CONTENU ─────
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        /// ───── CONTENU ─────
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              event.site,
-                              style: AppTextStyles.headline.copyWith(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _InfoLine(
-                              icon: Icons.calendar_today,
-                              text: event.date,
-                            ),
-                            const SizedBox(height: 6),
-                            _InfoLine(
-                              icon: Icons.access_time,
-                              text: event.time,
-                            ),
-                            const SizedBox(height: 16),
+                        Text(
+                          event.site,
+                          style: AppTextStyles.headline.copyWith(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _InfoLine(icon: Icons.calendar_today, text: event.date),
+                        const SizedBox(height: 6),
+                        _InfoLine(icon: Icons.access_time, text: event.time),
+                        const SizedBox(height: 16),
 
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _MiniActionButton(
-                                    label: 'Je viens',
-                                    icon: Icons.check,
-                                    color: Colors.green,
-                                    selected: event.participation ==
-                                        ParticipationStatus.going,
-                                    onTap: () => context
-                                        .read<HomeCubit>()
-                                        .setParticipation(
-                                      widget.type,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _MiniActionButton(
+                                label: 'Je viens',
+                                icon: Icons.check,
+                                color: Colors.green,
+                                selected:
+                                    event.participation ==
+                                    ParticipationStatus.going,
+                                onTap: () =>
+                                    context.read<HomeCubit>().setParticipation(
+                                      event.id,
                                       ParticipationStatus.going,
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _MiniActionButton(
-                                    label: 'Peut-être',
-                                    icon: Icons.help_outline,
-                                    color: Colors.orange,
-                                    selected: event.participation ==
-                                        ParticipationStatus.maybe,
-                                    onTap: () => context
-                                        .read<HomeCubit>()
-                                        .setParticipation(
-                                      widget.type,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _MiniActionButton(
+                                label: 'Peut-être',
+                                icon: Icons.help_outline,
+                                color: Colors.orange,
+                                selected:
+                                    event.participation ==
+                                    ParticipationStatus.maybe,
+                                onTap: () =>
+                                    context.read<HomeCubit>().setParticipation(
+                                      event.id,
                                       ParticipationStatus.maybe,
                                     ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: _MiniActionButton(
-                                    label: 'Non',
-                                    icon: Icons.close,
-                                    color: Colors.red,
-                                    selected: event.participation ==
-                                        ParticipationStatus.notGoing,
-                                    onTap: () => context
-                                        .read<HomeCubit>()
-                                        .setParticipation(
-                                      widget.type,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _MiniActionButton(
+                                label: 'Non',
+                                icon: Icons.close,
+                                color: Colors.red,
+                                selected:
+                                    event.participation ==
+                                    ParticipationStatus.notGoing,
+                                onTap: () =>
+                                    context.read<HomeCubit>().setParticipation(
+                                      event.id,
                                       ParticipationStatus.notGoing,
                                     ),
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ],
                         ),
-
-                        /// ───── IMAGE TRIANGLE ─────
-                        Positioned(
-                          top: 0,
-                          right: 0,
-                          child: ClipPath(
-                            clipper: TopRightTriangleClipper(),
-                            child: Stack(
-                              children: [
-                                Image.asset(
-                                  _imageForDiveType(event.diveType),
-                                  width: 96,
-                                  height: 96,
-                                  fit: BoxFit.cover,
-                                  filterQuality: FilterQuality.low, // ⚡ important
-                                ),
-                                Container(
-                                  width: 96,
-                                  height: 96,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topRight,
-                                      end: Alignment.bottomLeft,
-                                      colors: [
-                                        Colors.black.withOpacity(0.5),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 8,
-                                  right: 8,
-                                  child: Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.end,
-                                    children: [
-                                      Text(
-                                        _labelForDiveType(event.diveType)
-                                            .toUpperCase(),
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.6,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Icon(
-                                        _iconForDiveType(event.diveType),
-                                        color: Colors.white,
-                                        size: 18,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
                       ],
                     ),
-                  ),
+
+                    /// ───── IMAGE TRIANGLE ─────
+                    Positioned(
+                      top: 0,
+                      right: 0,
+                      child: ClipPath(
+                        clipper: TopRightTriangleClipper(),
+                        child: Stack(
+                          children: [
+                            Image.asset(
+                              _imageForDiveType(event.diveType),
+                              width: 96,
+                              height: 96,
+                              fit: BoxFit.cover,
+                              filterQuality: FilterQuality.low, // ⚡ important
+                            ),
+                            Container(
+                              width: 96,
+                              height: 96,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topRight,
+                                  end: Alignment.bottomLeft,
+                                  colors: [
+                                    Colors.black.withValues(alpha: 0.5),
+                                    Colors.transparent,
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    _labelForDiveType(
+                                      event.diveType,
+                                    ).toUpperCase(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.6,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Icon(
+                                    _iconForDiveType(event.diveType),
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
@@ -323,10 +309,7 @@ class _InfoLine extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _InfoLine({
-    required this.icon,
-    required this.text,
-  });
+  const _InfoLine({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -335,11 +318,7 @@ class _InfoLine extends StatelessWidget {
         Icon(icon, size: 16),
         const SizedBox(width: 8),
         Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
+          child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
         ),
       ],
     );
@@ -369,7 +348,7 @@ class _MiniActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? color.withOpacity(0.2) : Colors.transparent,
+          color: selected ? color.withValues(alpha: 0.2) : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color),
         ),

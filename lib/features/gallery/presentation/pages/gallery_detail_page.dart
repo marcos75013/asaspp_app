@@ -23,36 +23,45 @@ class _GalleryDetailPageState extends State<GalleryDetailPage> {
         title: Text(widget.gallery.title),
         backgroundColor: Colors.black,
       ),
-      body: Stack(
-        children: [
-          PhotoViewGallery.builder(
-            itemCount: widget.gallery.photos.length,
-            builder: (context, index) {
-              return PhotoViewGalleryPageOptions(
-                imageProvider:
-                AssetImage(widget.gallery.photos[index]),
-                heroAttributes: PhotoViewHeroAttributes(
-                    tag: widget.gallery.id),
-              );
-            },
-            onPageChanged: (index) {
-              setState(() => currentIndex = index);
-            },
-          ),
-          Positioned(
-            bottom: 30,
-            left: 0,
-            right: 0,
-            child: Center(
+      body: widget.gallery.photos.isEmpty
+          ? const Center(
               child: Text(
-                '${currentIndex + 1} / ${widget.gallery.photos.length}',
-                style: const TextStyle(
-                    color: Colors.white70, fontSize: 16),
+                'Aucune photo dans cet album.',
+                style: TextStyle(color: Colors.white70),
               ),
+            )
+          : Stack(
+              children: [
+                PhotoViewGallery.builder(
+                  itemCount: widget.gallery.photos.length,
+                  builder: (context, index) {
+                    return PhotoViewGalleryPageOptions(
+                      imageProvider: NetworkImage(widget.gallery.photos[index]),
+                      heroAttributes: PhotoViewHeroAttributes(
+                        tag: widget.gallery.id,
+                      ),
+                    );
+                  },
+                  onPageChanged: (index) {
+                    setState(() => currentIndex = index);
+                  },
+                ),
+                Positioned(
+                  bottom: 30,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Text(
+                      '${currentIndex + 1} / ${widget.gallery.photos.length}',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -51,12 +51,22 @@ class AdsPage extends StatelessWidget {
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(30),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const CreateAdPage(),
-                              ),
-                            );
+                          onTap: () async {
+                            final created = await Navigator.of(context)
+                                .push<bool>(
+                                  MaterialPageRoute(
+                                    builder: (_) => CreateAdPage(
+                                      repository:
+                                          repository ??
+                                          MobileAdsApiService(
+                                            ApiClient(AuthStorage()),
+                                          ),
+                                    ),
+                                  ),
+                                );
+                            if (created == true && context.mounted) {
+                              await context.read<AdsCubit>().loadAds();
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(

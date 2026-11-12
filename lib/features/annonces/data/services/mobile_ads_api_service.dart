@@ -1,3 +1,5 @@
+import 'package:dio/dio.dart';
+
 import '../../../../core/config/api_config.dart';
 import '../../../../core/network/api_client.dart';
 import '../../presentation/data/models/ad_model.dart';
@@ -36,5 +38,64 @@ class MobileAdsApiService implements AdsRepository {
       response.data ?? const {},
       resolveUrl: _apiConfig.resolveUrl,
     );
+  }
+
+  @override
+  Future<AdModel> createAd(
+    CreateAdInput input,
+    List<AdImageUpload> images,
+  ) async {
+    final createResponse = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/api/marketplace',
+      data: {
+        'type': switch (input.type) {
+          AdType.vente => 'SALE',
+          AdType.recherche => 'WANTED',
+          AdType.don => 'GIFT',
+        },
+        'title': input.title,
+        'description': input.description,
+        'price': input.type == AdType.don ? 0 : input.price,
+        'contactPhone': input.contactPhone,
+      },
+    );
+    var created = createResponse.data ?? const <String, dynamic>{};
+
+    if (images.isNotEmpty) {
+      try {
+        final formData = FormData();
+        for (final image in images) {
+          formData.files.add(
+            MapEntry(
+              'files',
+              MultipartFile.fromBytes(
+                image.bytes,
+                filename: image.filename,
+                contentType: _imageContentType(image.filename),
+              ),
+            ),
+          );
+        }
+        final uploadResponse = await _apiClient.dio.post<Map<String, dynamic>>(
+          '/api/marketplace/${created['id']}/images',
+          data: formData,
+        );
+        created = uploadResponse.data ?? created;
+      } catch (_) {
+        await _apiClient.dio.delete<void>('/api/marketplace/${created['id']}');
+        rethrow;
+      }
+    }
+
+    return AdModel.fromJson(created, resolveUrl: _apiConfig.resolveUrl);
+  }
+
+  DioMediaType _imageContentType(String filename) {
+    final extension = filename.toLowerCase().split('.').last;
+    return switch (extension) {
+      'png' => DioMediaType('image', 'png'),
+      'webp' => DioMediaType('image', 'webp'),
+      _ => DioMediaType('image', 'jpeg'),
+    };
   }
 }

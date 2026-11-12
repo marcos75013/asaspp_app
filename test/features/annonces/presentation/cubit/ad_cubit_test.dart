@@ -16,6 +16,12 @@ class _FakeAdsRepository implements AdsRepository {
     final ad = ads.firstWhere((item) => item.id == id);
     return ad.copyWith(isFavorite: !ad.isFavorite);
   }
+
+  @override
+  Future<AdModel> createAd(
+    CreateAdInput input,
+    List<AdImageUpload> images,
+  ) async => _sale;
 }
 
 final _sale = AdModel(

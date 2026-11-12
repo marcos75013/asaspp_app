@@ -25,9 +25,7 @@ class AdModel {
     this.isFavorite = false,
   });
 
-  AdModel copyWith({
-    bool? isFavorite,
-  }) {
+  AdModel copyWith({bool? isFavorite}) {
     return AdModel(
       id: id,
       title: title,
@@ -39,6 +37,47 @@ class AdModel {
       createdAt: createdAt,
       type: type,
       isFavorite: isFavorite ?? this.isFavorite,
+    );
+  }
+
+  factory AdModel.fromJson(
+    Map<String, dynamic> json, {
+    required String Function(String) resolveUrl,
+  }) {
+    final images =
+        (json['images'] as List<dynamic>? ?? const [])
+            .whereType<Map>()
+            .map((image) => Map<String, dynamic>.from(image))
+            .toList()
+          ..sort(
+            (left, right) => ((left['position'] as num?)?.toInt() ?? 0)
+                .compareTo((right['position'] as num?)?.toInt() ?? 0),
+          );
+    final firstName = json['authorFirstName'] as String? ?? '';
+    final lastName = json['authorLastName'] as String? ?? '';
+    final sellerName = '$firstName $lastName'.trim();
+
+    return AdModel(
+      id: '${json['id'] ?? ''}',
+      title: json['title'] as String? ?? '',
+      description: json['description'] as String? ?? '',
+      image: images.isEmpty
+          ? ''
+          : resolveUrl(images.first['url'] as String? ?? ''),
+      price: (json['price'] as num?)?.toDouble() ?? 0,
+      sellerName: sellerName.isEmpty
+          ? (json['authorEmail'] as String? ?? '')
+          : sellerName,
+      sellerAvatar: 'assets/jpgs/macron.jpg',
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+          DateTime.fromMillisecondsSinceEpoch(0),
+      type: switch (json['type']) {
+        'WANTED' => AdType.recherche,
+        'GIFT' => AdType.don,
+        _ => AdType.vente,
+      },
+      isFavorite: json['favorite'] as bool? ?? false,
     );
   }
 }

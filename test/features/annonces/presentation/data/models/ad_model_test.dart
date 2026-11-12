@@ -1,0 +1,37 @@
+import 'package:asaspp_app/features/annonces/presentation/data/models/ad_model.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('parses a marketplace listing returned by the backend', () {
+    final ad = AdModel.fromJson({
+      'id': 42,
+      'authorFirstName': 'Jean',
+      'authorLastName': 'Martin',
+      'type': 'SALE',
+      'title': 'Détendeur',
+      'description': 'Révisé cette année',
+      'price': 120.50,
+      'favorite': true,
+      'createdAt': '2026-11-12T09:00:00',
+      'images': [
+        {'id': 2, 'url': '/uploads/marketplace/1/second.jpg', 'position': 1},
+        {'id': 1, 'url': '/uploads/marketplace/1/first.jpg', 'position': 0},
+      ],
+    }, resolveUrl: (url) => 'http://localhost:8080$url');
+
+    expect(ad.id, '42');
+    expect(ad.sellerName, 'Jean Martin');
+    expect(ad.type, AdType.vente);
+    expect(ad.price, 120.50);
+    expect(ad.isFavorite, isTrue);
+    expect(ad.image, 'http://localhost:8080/uploads/marketplace/1/first.jpg');
+  });
+
+  test('maps wanted and gift listing types', () {
+    AdModel parse(String type) =>
+        AdModel.fromJson({'type': type}, resolveUrl: (url) => url);
+
+    expect(parse('WANTED').type, AdType.recherche);
+    expect(parse('GIFT').type, AdType.don);
+  });
+}

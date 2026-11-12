@@ -4,10 +4,7 @@ import '../data/models/ad_model.dart';
 class AdDetailPage extends StatefulWidget {
   final AdModel ad;
 
-  const AdDetailPage({
-    super.key,
-    required this.ad,
-  });
+  const AdDetailPage({super.key, required this.ad});
 
   @override
   State<AdDetailPage> createState() => _AdDetailPageState();
@@ -48,12 +45,22 @@ class _AdDetailPageState extends State<AdDetailPage> {
             right: 0,
             child: Hero(
               tag: ad.id,
-              child: Image.asset(
-                ad.image,
-                height: 450,
-                fit: BoxFit.cover,
-                filterQuality: FilterQuality.low, // ⚡ important
-              ),
+              child: ad.image.isEmpty
+                  ? Container(
+                      height: 450,
+                      color: const Color(0xFF16384F),
+                      child: const Icon(
+                        Icons.sell_outlined,
+                        color: Colors.white54,
+                        size: 64,
+                      ),
+                    )
+                  : Image.network(
+                      ad.image,
+                      height: 450,
+                      fit: BoxFit.cover,
+                      filterQuality: FilterQuality.low,
+                    ),
             ),
           ),
 
@@ -68,13 +75,10 @@ class _AdDetailPageState extends State<AdDetailPage> {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.4),
+                      color: Colors.black.withValues(alpha: 0.4),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: Colors.white,
-                    ),
+                    child: const Icon(Icons.arrow_back, color: Colors.white),
                   ),
                 ),
               ),
@@ -104,14 +108,14 @@ class _AdDetailPageState extends State<AdDetailPage> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          Colors.white.withOpacity(0.92),
-                          Colors.white.withOpacity(0.85),
+                          Colors.white.withValues(alpha: 0.92),
+                          Colors.white.withValues(alpha: 0.85),
                         ],
                       ),
 
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.25),
+                          color: Colors.black.withValues(alpha: 0.25),
                           blurRadius: 25,
                           offset: const Offset(0, -5),
                         ),
@@ -133,7 +137,9 @@ class _AdDetailPageState extends State<AdDetailPage> {
 
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFF00B4D8),
                             borderRadius: BorderRadius.circular(20),
@@ -167,8 +173,7 @@ class _AdDetailPageState extends State<AdDetailPage> {
                           children: [
                             CircleAvatar(
                               radius: 22,
-                              backgroundImage:
-                              AssetImage(ad.sellerAvatar),
+                              backgroundImage: AssetImage(ad.sellerAvatar),
                             ),
                             const SizedBox(width: 12),
                             Text(
@@ -188,16 +193,10 @@ class _AdDetailPageState extends State<AdDetailPage> {
                           width: double.infinity,
                           child: ElevatedButton(
                             style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                              const Color(0xFF00B4D8),
-                              padding:
-                              const EdgeInsets.symmetric(
-                                vertical: 16,
-                              ),
-                              shape:
-                              RoundedRectangleBorder(
-                                borderRadius:
-                                BorderRadius.circular(20),
+                              backgroundColor: const Color(0xFF00B4D8),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(20),
                               ),
                             ),
                             onPressed: () {},

@@ -5,12 +5,14 @@ class AdsState {
   final AdType? selectedFilter;
   final String searchQuery;
   final bool isLoading;
+  final String? errorMessage;
 
   AdsState({
     required this.ads,
     required this.selectedFilter,
     required this.searchQuery,
     required this.isLoading,
+    required this.errorMessage,
   });
 
   factory AdsState.initial() => AdsState(
@@ -18,6 +20,7 @@ class AdsState {
     selectedFilter: null,
     searchQuery: "",
     isLoading: false,
+    errorMessage: null,
   );
 
   AdsState copyWith({
@@ -25,12 +28,18 @@ class AdsState {
     AdType? selectedFilter,
     String? searchQuery,
     bool? isLoading,
+    String? errorMessage,
+    bool clearError = false,
+    bool clearSelectedFilter = false,
   }) {
     return AdsState(
       ads: ads ?? this.ads,
-      selectedFilter: selectedFilter ?? this.selectedFilter,
+      selectedFilter: clearSelectedFilter
+          ? null
+          : selectedFilter ?? this.selectedFilter,
       searchQuery: searchQuery ?? this.searchQuery,
       isLoading: isLoading ?? this.isLoading,
+      errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
     );
   }
 }

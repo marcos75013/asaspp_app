@@ -1,20 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/auth_storage.dart';
+import '../../data/services/ads_repository.dart';
+import '../../data/services/mobile_ads_api_service.dart';
 import '../cubit/ad_cubit.dart';
 import '../cubit/ad_state.dart';
 import '../data/models/ad_model.dart';
-import '../widgets/ad_card.dart' hide AdsState;
+import '../widgets/ad_card.dart';
 import 'create_ad_page.dart';
 
 class AdsPage extends StatelessWidget {
-  const AdsPage({super.key});
+  final AdsRepository? repository;
+
+  const AdsPage({super.key, this.repository});
 
   @override
   Widget build(BuildContext context) {
-    final bottomSafe = MediaQuery.of(context).padding.bottom;
-
     return BlocProvider(
-      create: (_) => AdsCubit(),
+      create: (_) =>
+          AdsCubit(repository ?? MobileAdsApiService(ApiClient(AuthStorage())))
+            ..loadAds(),
       child: Scaffold(
         backgroundColor: const Color(0xFF0A1E2D),
 
@@ -35,8 +41,8 @@ class AdsPage extends StatelessWidget {
                         fontSize: 26,
                         fontWeight: FontWeight.bold,
                       ),
-
                     ),
+
                     /// ➕ PUBLISH BUTTON
                     Tooltip(
                       message: "Créer une annonce",
@@ -62,7 +68,7 @@ class AdsPage extends StatelessWidget {
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
+                                  color: Colors.black.withValues(alpha: 0.3),
                                   blurRadius: 10,
                                   offset: const Offset(0, 4),
                                 ),
@@ -70,11 +76,7 @@ class AdsPage extends StatelessWidget {
                             ),
                             child: Row(
                               children: const [
-                                Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
+                                Icon(Icons.add, color: Colors.white, size: 18),
                                 SizedBox(width: 6),
                                 Text(
                                   "Publier",
@@ -104,16 +106,15 @@ class AdsPage extends StatelessWidget {
                       style: const TextStyle(color: Colors.white),
                       decoration: InputDecoration(
                         hintText: "Rechercher une annonce...",
-                        hintStyle:
-                        const TextStyle(color: Colors.white54),
-                        prefixIcon:
-                        const Icon(Icons.search, color: Colors.white54),
+                        hintStyle: const TextStyle(color: Colors.white54),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.white54,
+                        ),
                         filled: true,
-                        fillColor:
-                        Colors.white.withOpacity(0.08),
+                        fillColor: Colors.white.withValues(alpha: 0.08),
                         border: OutlineInputBorder(
-                          borderRadius:
-                          BorderRadius.circular(30),
+                          borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,
                         ),
                       ),
@@ -131,8 +132,7 @@ class AdsPage extends StatelessWidget {
               BlocBuilder<AdsCubit, AdsState>(
                 builder: (context, state) {
                   return Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _FilterButton(
                         label: "Tous",
@@ -142,19 +142,15 @@ class AdsPage extends StatelessWidget {
                       ),
                       _FilterButton(
                         label: "Vente",
-                        selected:
-                        state.selectedFilter == AdType.vente,
-                        onTap: () => context
-                            .read<AdsCubit>()
-                            .filterByType(AdType.vente),
+                        selected: state.selectedFilter == AdType.vente,
+                        onTap: () =>
+                            context.read<AdsCubit>().filterByType(AdType.vente),
                       ),
                       _FilterButton(
                         label: "Don",
-                        selected:
-                        state.selectedFilter == AdType.don,
-                        onTap: () => context
-                            .read<AdsCubit>()
-                            .filterByType(AdType.don),
+                        selected: state.selectedFilter == AdType.don,
+                        onTap: () =>
+                            context.read<AdsCubit>().filterByType(AdType.don),
                       ),
                     ],
                   );
@@ -167,34 +163,39 @@ class AdsPage extends StatelessWidget {
               Expanded(
                 child: BlocBuilder<AdsCubit, AdsState>(
                   builder: (context, state) {
-                    final filtered =
-                    context.read<AdsCubit>().getFilteredAds();
+                    if (state.isLoading && state.ads.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final filtered = context.read<AdsCubit>().getFilteredAds();
 
                     if (filtered.isEmpty) {
                       return const Center(
                         child: Text(
                           "Aucune annonce trouvée",
-                          style:
-                          TextStyle(color: Colors.white70),
+                          style: TextStyle(color: Colors.white70),
                         ),
                       );
                     }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(
-                        16,
-                        0,
-                        16,
-                        140, // ⬅️ espace pour FAB + navbar
+                    return RefreshIndicator(
+                      onRefresh: context.read<AdsCubit>().loadAds,
+                      child: ListView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: const EdgeInsets.fromLTRB(
+                          16,
+                          0,
+                          16,
+                          140, // ⬅️ espace pour FAB + navbar
+                        ),
+                        itemCount: filtered.length,
+                        itemBuilder: (context, index) {
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 20),
+                            child: AdCard(ad: filtered[index]),
+                          );
+                        },
                       ),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding:
-                          const EdgeInsets.only(bottom: 20),
-                          child: AdCard(ad: filtered[index]),
-                        );
-                      },
                     );
                   },
                 ),
@@ -206,6 +207,7 @@ class AdsPage extends StatelessWidget {
     );
   }
 }
+
 class _FilterButton extends StatelessWidget {
   final String label;
   final bool selected;
@@ -223,19 +225,16 @@ class _FilterButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
-        padding:
-        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: selected
               ? const Color(0xFF00B4D8)
-              : Colors.white.withOpacity(0.1),
+              : Colors.white.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            color: selected ? Colors.white : Colors.white70,
-          ),
+          style: TextStyle(color: selected ? Colors.white : Colors.white70),
         ),
       ),
     );

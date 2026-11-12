@@ -1,70 +1,83 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../core/network/api_client.dart';
+import '../../../core/storage/auth_storage.dart';
+import '../data/models/association_document_model.dart';
+import '../data/services/documents_repository.dart';
+import '../data/services/mobile_documents_api_service.dart';
 
 class DocumentsLibraryPage extends StatefulWidget {
-  const DocumentsLibraryPage({super.key});
+  final DocumentsRepository? repository;
+
+  const DocumentsLibraryPage({super.key, this.repository});
 
   @override
-  State<DocumentsLibraryPage> createState() =>
-      _DocumentsLibraryPageState();
+  State<DocumentsLibraryPage> createState() => _DocumentsLibraryPageState();
 }
 
 class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
-
-  String selectedCategory = "Tous";
+  int? selectedCategoryId;
   String search = "";
+  List<AssociationDocumentModel> documents = const [];
+  List<DocumentCategoryModel> categories = const [];
+  bool loading = true;
+  String? errorMessage;
 
-  final List<Map<String, String>> documents = [
-    {
-      "title": "Règlement FFESSM 2024",
-      "subtitle": "Fédération Française d'Études et de Sports Sous-Marins",
-      "type": "PDF",
-      "category": "Règlement",
-      "url": "https://psp.ffessm.fr/les-reglements-officiels"
-    },
-    {
-      "title": "Plongeur Merguez certifié ",
-      "subtitle": "Modèle officiel à fournir annuellement",
-      "type": "PDF",
-      "category": "Médical",
-      "url": "https://example.com/certificat.pdf"
-    },
-    {
-      "title": "Tables MN90",
-      "subtitle": "Tables officielles de décompression",
-      "type": "PDF",
-      "category": "Sécurité",
-      "url": "https://ffessm-ctr-aura.fr/wp-content/uploads/2019/03/MN90.pdf"
-    },
-    {
-      "title": "Certificat médical - CACI 2024/2025",
-      "subtitle": "Lien vers le partenaire assurance",
-      "type": "Lien",
-      "category": "Divers",
-      "url": "https://plongee.ffessm.fr/certificat-medical-caci"
-    },
-  ];
+  late final DocumentsRepository _repository =
+      widget.repository ?? MobileDocumentsApiService(ApiClient(AuthStorage()));
 
-  List<String> categories = [
-    "Tous",
-    "Règlement",
-    "Médical",
-    "Sécurité",
-    "Formation",
-    "Divers"
-  ];
+  @override
+  void initState() {
+    super.initState();
+    loadDocuments();
+  }
+
+  Future<void> loadDocuments() async {
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+    try {
+      final values = await Future.wait([
+        _repository.getPublishedDocuments(),
+        _repository.getCategories(),
+      ]);
+      if (!mounted) return;
+      setState(() {
+        documents = values[0] as List<AssociationDocumentModel>;
+        categories = values[1] as List<DocumentCategoryModel>;
+      });
+    } catch (_) {
+      if (mounted) setState(() => errorMessage = 'Chargement impossible.');
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
+  }
+
+  Future<void> openDocument(AssociationDocumentModel document) async {
+    try {
+      final uri = await _repository.download(document);
+      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+      if (!opened) throw StateError('Aucune application disponible');
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d’ouvrir ce document.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-
     final filteredDocs = documents.where((doc) {
       final matchesCategory =
-          selectedCategory == "Tous" ||
-              doc["category"] == selectedCategory;
+          selectedCategoryId == null || doc.categoryId == selectedCategoryId;
 
+      final query = search.toLowerCase();
       final matchesSearch =
-      doc["title"]!.toLowerCase().contains(search.toLowerCase());
+          doc.title.toLowerCase().contains(query) ||
+          doc.originalFilename.toLowerCase().contains(query);
 
       return matchesCategory && matchesSearch;
     }).toList();
@@ -78,7 +91,6 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
       ),
       body: Stack(
         children: [
-
           /// 🌊 Background image
           Image.asset(
             "assets/pngs/mer.png",
@@ -88,14 +100,11 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
           ),
 
           /// Dark overlay
-          Container(
-            color: Colors.black.withOpacity(0.4),
-          ),
+          Container(color: Colors.black.withValues(alpha: 0.4)),
 
           SafeArea(
             child: Column(
               children: [
-
                 const SizedBox(height: 16),
 
                 /// 🔎 SEARCH BAR GLASS
@@ -112,12 +121,13 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           hintText: "Rechercher un document...",
-                          hintStyle:
-                          const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.search,
-                              color: Colors.white),
+                          hintStyle: const TextStyle(color: Colors.white70),
+                          prefixIcon: const Icon(
+                            Icons.search,
+                            color: Colors.white,
+                          ),
                           filled: true,
-                          fillColor: Colors.white.withOpacity(0.1),
+                          fillColor: Colors.white.withValues(alpha: 0.1),
                           border: InputBorder.none,
                         ),
                       ),
@@ -133,34 +143,34 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: categories.length,
+                    itemCount: categories.length + 1,
                     itemBuilder: (context, index) {
-                      final cat = categories[index];
-                      final isSelected = cat == selectedCategory;
+                      final category = index == 0
+                          ? null
+                          : categories[index - 1];
+                      final isSelected = category?.id == selectedCategoryId;
 
                       return GestureDetector(
                         onTap: () {
                           setState(() {
-                            selectedCategory = cat;
+                            selectedCategoryId = category?.id;
                           });
                         },
                         child: Container(
-                          margin:
-                          const EdgeInsets.only(right: 10),
-                          padding:
-                          const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 8),
+                          margin: const EdgeInsets.only(right: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
                           decoration: BoxDecoration(
                             color: isSelected
                                 ? Colors.blueAccent
-                                : Colors.white.withOpacity(0.2),
-                            borderRadius:
-                            BorderRadius.circular(20),
+                                : Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
-                            cat,
-                            style: const TextStyle(
-                                color: Colors.white),
+                            category?.name ?? 'Tous',
+                            style: const TextStyle(color: Colors.white),
                           ),
                         ),
                       );
@@ -172,16 +182,28 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
 
                 /// 📄 DOCUMENTS
                 Expanded(
-                  child: ListView.builder(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: filteredDocs.length,
-                    itemBuilder: (context, index) {
-                      final doc = filteredDocs[index];
+                  child: loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : errorMessage != null
+                      ? Center(
+                          child: Text(
+                            errorMessage!,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                        )
+                      : RefreshIndicator(
+                          onRefresh: loadDocuments,
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: filteredDocs.length,
+                            itemBuilder: (context, index) {
+                              final doc = filteredDocs[index];
 
-                      return _buildGlassCard(doc);
-                    },
-                  ),
+                              return _buildGlassCard(doc);
+                            },
+                          ),
+                        ),
                 ),
               ],
             ),
@@ -191,7 +213,7 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
     );
   }
 
-  Widget _buildGlassCard(Map<String, String> doc) {
+  Widget _buildGlassCard(AssociationDocumentModel doc) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: ClipRRect(
@@ -199,32 +221,24 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.12),
+              color: Colors.white.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.2),
-              ),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
-
                 /// ICON
                 Container(
                   height: 36,
                   width: 36,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
-                    doc["type"] == "PDF"
-                        ? Icons.picture_as_pdf
-                        : Icons.link,
+                    doc.isPdf ? Icons.picture_as_pdf : Icons.link,
                     color: Colors.white,
                     size: 18,
                   ),
@@ -238,7 +252,7 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        doc["title"]!,
+                        doc.title,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
@@ -247,7 +261,9 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        doc["subtitle"]!,
+                        doc.description.isEmpty
+                            ? '${doc.categoryName} · ${doc.originalFilename}'
+                            : doc.description,
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12.5,
@@ -266,7 +282,7 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                   height: 32,
                   width: 32,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
@@ -276,13 +292,7 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                       color: Colors.white,
                       size: 16,
                     ),
-                    onPressed: () async {
-                      final uri = Uri.parse(doc["url"]!);
-                      await launchUrl(
-                        uri,
-                        mode: LaunchMode.externalApplication,
-                      );
-                    },
+                    onPressed: () => openDocument(doc),
                   ),
                 ),
               ],

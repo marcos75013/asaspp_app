@@ -27,13 +27,9 @@ class _GalleryPageState extends State<GalleryPage> {
   String? errorMessage;
   List<GalleryModel> galleries = const [];
 
-  final List<String> types = [
+  List<String> get types => [
     'Tous',
-    'Mer',
-    'Fosse',
-    'Carrière',
-    'Nuit',
-    'Apéro',
+    ...{for (final gallery in galleries) gallery.type}.toList()..sort(),
   ];
 
   @override
@@ -46,6 +42,7 @@ class _GalleryPageState extends State<GalleryPage> {
     setState(() {
       isLoading = true;
       errorMessage = null;
+      galleries = const [];
     });
 
     try {
@@ -54,7 +51,10 @@ class _GalleryPageState extends State<GalleryPage> {
           MobileGalleryApiService(ApiClient(AuthStorage()));
       final albums = await repository.getPublishedAlbums();
       if (!mounted) return;
-      setState(() => galleries = albums);
+      setState(() {
+        galleries = albums;
+        if (!types.contains(selectedType)) selectedType = 'Tous';
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() => errorMessage = 'Impossible de charger les albums.');

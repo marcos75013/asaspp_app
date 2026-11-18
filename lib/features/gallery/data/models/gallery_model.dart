@@ -39,6 +39,7 @@ class GalleryModel {
       id: '${json['id'] ?? ''}',
       title: json['title'] as String? ?? '',
       date:
+          DateTime.tryParse(json['outingDate'] as String? ?? '') ??
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       coverImage: cover == null
@@ -48,7 +49,9 @@ class GalleryModel {
           .map((photo) => resolveUrl(photo['url'] as String? ?? ''))
           .where((url) => url.isNotEmpty)
           .toList(),
-      type: 'Tous',
+      type: (json['category'] as String?)?.trim().isNotEmpty == true
+          ? (json['category'] as String).trim()
+          : 'Sans catégorie',
     );
   }
 }

@@ -7,6 +7,8 @@ void main() {
       'id': 12,
       'title': 'Sortie en mer',
       'createdAt': '2026-11-12T10:30:00',
+      'outingDate': '2026-11-10',
+      'category': 'Randonnée',
       'coverPhotoId': 2,
       'photos': [
         {'id': 2, 'url': '/uploads/gallery/1/12/cover.jpg', 'position': 1},
@@ -16,6 +18,8 @@ void main() {
 
     expect(album.id, '12');
     expect(album.title, 'Sortie en mer');
+    expect(album.date, DateTime(2026, 11, 10));
+    expect(album.type, 'Randonnée');
     expect(
       album.coverImage,
       'http://localhost:8080/uploads/gallery/1/12/cover.jpg',

@@ -49,7 +49,6 @@ flutter:
 
   assets:
     - assets/jpgs/
-    - assets/lotties/
     - assets/pngs/
     - assets/gallery/
     - assets/annonces/

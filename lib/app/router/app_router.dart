@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import '../../core/network/api_client.dart';
+import '../../core/network/auth_session.dart';
 import '../../core/storage/auth_storage.dart';
 import '../../features/annonces/presentation/data/models/ad_model.dart';
 import '../../features/association_selection/presentation/pages/association_selection_page.dart';
@@ -27,6 +28,9 @@ import '../../features/auth/presentation/pages/login_screen.dart';
 
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
+  refreshListenable: sessionExpired,
+  redirect: (context, state) => sessionExpired.value && state.matchedLocation != '/login'
+      ? '/login' : null,
   routes: [
     GoRoute(
       path: '/splash',

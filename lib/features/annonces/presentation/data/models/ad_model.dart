@@ -8,6 +8,7 @@ class AdModel {
   final double price;
   final String sellerName;
   final String sellerAvatar;
+  final int? authorId;
   final DateTime createdAt;
   final AdType type;
   final bool isFavorite;
@@ -20,6 +21,7 @@ class AdModel {
     required this.price,
     required this.sellerName,
     required this.sellerAvatar,
+    this.authorId,
     required this.createdAt,
     required this.type,
     this.isFavorite = false,
@@ -34,6 +36,7 @@ class AdModel {
       price: price,
       sellerName: sellerName,
       sellerAvatar: sellerAvatar,
+      authorId: authorId,
       createdAt: createdAt,
       type: type,
       isFavorite: isFavorite ?? this.isFavorite,
@@ -68,7 +71,8 @@ class AdModel {
       sellerName: sellerName.isEmpty
           ? (json['authorEmail'] as String? ?? '')
           : sellerName,
-      sellerAvatar: 'assets/jpgs/macron.jpg',
+      sellerAvatar: resolveUrl(json['authorAvatarUrl'] as String? ?? ''),
+      authorId: (json['authorId'] as num?)?.toInt(),
       createdAt:
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),

@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../core/widgets/member_avatar.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/auth_storage.dart';
+import '../../../user/data/profile_updates.dart';
+import '../../data/services/mobile_ads_api_service.dart';
 import '../data/models/ad_model.dart';
 
 class AdDetailPage extends StatefulWidget {
@@ -12,11 +17,14 @@ class AdDetailPage extends StatefulWidget {
 
 class _AdDetailPageState extends State<AdDetailPage> {
   final ScrollController _scrollController = ScrollController();
+  AdModel? _freshAd;
   double scrollOffset = 0;
 
   @override
   void initState() {
     super.initState();
+    profileUpdates.addListener(_reloadAd);
+    _reloadAd();
 
     /// ⚡ Optimisation : limiter les rebuilds inutiles
     _scrollController.addListener(() {
@@ -30,9 +38,27 @@ class _AdDetailPageState extends State<AdDetailPage> {
     });
   }
 
+  Future<void> _reloadAd() async {
+    try {
+      final ad = await MobileAdsApiService(
+        ApiClient(AuthStorage()),
+      ).getAd(widget.ad.id);
+      if (mounted) setState(() => _freshAd = ad);
+    } catch (_) {
+      // Keep the current announcement visible if refreshing its author fails.
+    }
+  }
+
+  @override
+  void dispose() {
+    profileUpdates.removeListener(_reloadAd);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final ad = widget.ad;
+    final ad = _freshAd ?? widget.ad;
 
     return Scaffold(
       backgroundColor: const Color(0xFF0A1E2D),
@@ -171,9 +197,10 @@ class _AdDetailPageState extends State<AdDetailPage> {
 
                         Row(
                           children: [
-                            CircleAvatar(
+                            MemberAvatar(
                               radius: 22,
-                              backgroundImage: AssetImage(ad.sellerAvatar),
+                              url: ad.sellerAvatar,
+                              name: ad.sellerName,
                             ),
                             const SizedBox(width: 12),
                             Text(

@@ -2,11 +2,20 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/services/ads_repository.dart';
 import '../data/models/ad_model.dart';
 import 'ad_state.dart';
+import '../../../user/data/profile_updates.dart';
 
 class AdsCubit extends Cubit<AdsState> {
   final AdsRepository _repository;
 
-  AdsCubit(this._repository) : super(AdsState.initial());
+  AdsCubit(this._repository) : super(AdsState.initial()) {
+    profileUpdates.addListener(loadAds);
+  }
+
+  @override
+  Future<void> close() {
+    profileUpdates.removeListener(loadAds);
+    return super.close();
+  }
 
   void search(String query) {
     emit(state.copyWith(searchQuery: query));

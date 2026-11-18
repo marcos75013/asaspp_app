@@ -5,6 +5,7 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
 import '../../data/models/association_about.dart';
 import '../../data/services/association_about_repository.dart';
+import '../../../user/data/profile_updates.dart';
 
 class AboutUsPage extends StatefulWidget {
   final AssociationAboutRepository? repository;
@@ -25,6 +26,13 @@ class _AboutUsPageState extends State<AboutUsPage> {
   void initState() {
     super.initState();
     _load();
+    profileUpdates.addListener(_load);
+  }
+
+  @override
+  void dispose() {
+    profileUpdates.removeListener(_load);
+    super.dispose();
   }
 
   Future<void> _load() async {

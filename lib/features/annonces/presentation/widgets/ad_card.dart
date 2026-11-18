@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/widgets/member_avatar.dart';
 import '../cubit/ad_cubit.dart';
 import '../data/models/ad_model.dart';
 import '../pages/ad_detail_page.dart';
@@ -81,9 +82,10 @@ class AdCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      CircleAvatar(
+                      MemberAvatar(
                         radius: 12,
-                        backgroundImage: AssetImage(ad.sellerAvatar),
+                        url: ad.sellerAvatar,
+                        name: ad.sellerName,
                       ),
                       const SizedBox(width: 8),
                       Text(

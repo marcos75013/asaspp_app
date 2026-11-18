@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
 
+import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/auth_storage.dart';
+import '../../../../core/widgets/member_avatar.dart';
 import '../../../context/data/models/association_role.dart';
 import '../../../context/data/models/mobile_association_model.dart';
 import '../../../context/data/models/mobile_user_model.dart';
+import '../../../context/cubit/context_cubit.dart';
+import '../../../context/cubit/context_state.dart';
+import '../../data/profile_updates.dart';
+import '../../data/services/mobile_profile_api_service.dart';
 
 class UserProfileSheet extends StatelessWidget {
   final MobileUserModel user;
   final MobileAssociationModel? association;
 
-  const UserProfileSheet({
-    super.key,
-    required this.user,
-    this.association,
-  });
+  const UserProfileSheet({super.key, required this.user, this.association});
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +27,7 @@ class UserProfileSheet extends StatelessWidget {
       maxChildSize: 0.95,
       builder: (_, controller) {
         return ClipRRect(
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(30),
-          ),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.vertical(
@@ -52,12 +55,7 @@ class UserProfileSheet extends StatelessWidget {
               children: [
                 _dragHandle(),
                 const SizedBox(height: 30),
-                const Center(
-                  child: Hero(
-                    tag: "user-avatar",
-                    child: _GlowingAvatar(),
-                  ),
-                ),
+                _ProfileAvatarControls(user: user),
                 const SizedBox(height: 20),
                 Center(
                   child: Text(
@@ -73,10 +71,7 @@ class UserProfileSheet extends StatelessWidget {
                 Center(
                   child: Text(
                     _roleLabel(association?.role),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.black54,
-                    ),
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
                   ),
                 ),
                 const SizedBox(height: 30),
@@ -104,10 +99,7 @@ class UserProfileSheet extends StatelessWidget {
                   Colors.blueAccent.withOpacity(0.9),
                 ),
                 const SizedBox(height: 12),
-                _actionButton(
-                  "Se déconnecter",
-                  Colors.red.withOpacity(0.85),
-                ),
+                _actionButton("Se déconnecter", Colors.red.withOpacity(0.85)),
                 const SizedBox(height: 40),
               ],
             ),
@@ -156,10 +148,7 @@ class UserProfileSheet extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(
-                      color: Colors.black54,
-                      fontSize: 13,
-                    ),
+                    style: const TextStyle(color: Colors.black54, fontSize: 13),
                   ),
                   const SizedBox(height: 4),
                   Text(
@@ -171,7 +160,7 @@ class UserProfileSheet extends StatelessWidget {
                   ),
                 ],
               ),
-            )
+            ),
           ],
         ),
       ),
@@ -180,11 +169,7 @@ class UserProfileSheet extends StatelessWidget {
 
   Widget _modulesCard(List<String> modules) {
     if (modules.isEmpty) {
-      return _profileTile(
-        Icons.apps,
-        "Modules",
-        "Aucun module disponible",
-      );
+      return _profileTile(Icons.apps, "Modules", "Aucun module disponible");
     }
 
     return Container(
@@ -209,10 +194,7 @@ class UserProfileSheet extends StatelessWidget {
               SizedBox(width: 16),
               Text(
                 "Modules disponibles",
-                style: TextStyle(
-                  color: Colors.black54,
-                  fontSize: 13,
-                ),
+                style: TextStyle(color: Colors.black54, fontSize: 13),
               ),
             ],
           ),
@@ -222,10 +204,7 @@ class UserProfileSheet extends StatelessWidget {
             runSpacing: 8,
             children: modules.map((module) {
               return Chip(
-                label: Text(
-                  module,
-                  style: const TextStyle(fontSize: 12),
-                ),
+                label: Text(module, style: const TextStyle(fontSize: 12)),
               );
             }).toList(),
           ),
@@ -238,17 +217,12 @@ class UserProfileSheet extends StatelessWidget {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         padding: const EdgeInsets.symmetric(vertical: 16),
         elevation: 4,
       ),
       onPressed: () {},
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white),
-      ),
+      child: Text(text, style: const TextStyle(color: Colors.white)),
     );
   }
 
@@ -264,58 +238,159 @@ class UserProfileSheet extends StatelessWidget {
   }
 }
 
-class _GlowingAvatar extends StatefulWidget {
-  const _GlowingAvatar();
+class _ProfileAvatarControls extends StatefulWidget {
+  final MobileUserModel user;
+  const _ProfileAvatarControls({required this.user});
 
   @override
-  State<_GlowingAvatar> createState() => _GlowingAvatarState();
+  State<_ProfileAvatarControls> createState() => _ProfileAvatarControlsState();
 }
 
-class _GlowingAvatarState extends State<_GlowingAvatar>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _glowAnimation;
+class _ProfileAvatarControlsState extends State<_ProfileAvatarControls> {
+  late final MobileProfileApiService _profile = MobileProfileApiService(
+    ApiClient(AuthStorage()),
+  );
+  PreparedAvatar? _preview;
+  bool _busy = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
+    _refresh();
+  }
 
-    _controller =
-    AnimationController(vsync: this, duration: const Duration(seconds: 2))
-      ..repeat(reverse: true);
+  Future<void> _refresh() async {
+    try {
+      final user = await _profile.getProfile();
+      if (mounted) context.read<ContextCubit>().updateUser(user);
+    } catch (_) {
+      if (mounted)
+        setState(() => _error = 'Impossible de charger la photo du profil.');
+    }
+  }
 
-    _glowAnimation =
-        Tween<double>(begin: 4, end: 16).animate(_controller);
+  Future<void> _choose() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final image = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (image == null) return;
+      final preview = await AvatarPreparer().prepare(image);
+      if (mounted) setState(() => _preview = preview);
+    } catch (error) {
+      if (mounted)
+        setState(
+          () => _error = error is AvatarPreparationException
+              ? error.message
+              : 'Cette image ne peut pas être convertie.',
+        );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _save() async {
+    final preview = _preview;
+    if (preview == null) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final user = await _profile.uploadAvatar(preview);
+      if (!mounted) return;
+      context.read<ContextCubit>().updateUser(user);
+      notifyProfileUpdated();
+      setState(() => _preview = null);
+    } catch (_) {
+      if (mounted)
+        setState(() => _error = 'Impossible d’enregistrer cette photo.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _delete() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final user = await _profile.deleteAvatar();
+      if (!mounted) return;
+      context.read<ContextCubit>().updateUser(user);
+      notifyProfileUpdated();
+      setState(() => _preview = null);
+    } catch (_) {
+      if (mounted)
+        setState(() => _error = 'Impossible de supprimer cette photo.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _glowAnimation,
-      builder: (_, __) {
-        return Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.cyanAccent.withOpacity(0.4),
-                blurRadius: _glowAnimation.value,
-                spreadRadius: 1,
+    return BlocBuilder<ContextCubit, ContextState>(
+      builder: (context, state) {
+        final user = state.context?.user ?? widget.user;
+        return Column(
+          children: [
+            Center(
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.cyanAccent.withValues(alpha: .4),
+                      blurRadius: 12,
+                    ),
+                  ],
+                ),
+                child: _preview == null
+                    ? MemberAvatar(
+                        url: user.avatarUrl,
+                        name: '${user.firstName} ${user.lastName}',
+                        radius: 55,
+                      )
+                    : CircleAvatar(
+                        radius: 55,
+                        backgroundImage: MemoryImage(_preview!.bytes),
+                      ),
               ),
-            ],
-          ),
-          child: const CircleAvatar(
-            radius: 55,
-            backgroundImage: AssetImage('assets/jpgs/macron.jpg'),
-          ),
+            ),
+            const SizedBox(height: 12),
+            if (_busy) const CircularProgressIndicator(),
+            if (_error != null)
+              Text(_error!, style: const TextStyle(color: Colors.red)),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              children: [
+                TextButton(
+                  onPressed: _busy ? null : _choose,
+                  child: Text(
+                    user.avatarUrl == null ? 'Choisir une photo' : 'Remplacer',
+                  ),
+                ),
+                if (_preview != null)
+                  TextButton(
+                    onPressed: _busy ? null : _save,
+                    child: const Text('Enregistrer'),
+                  ),
+                if (user.avatarUrl != null)
+                  TextButton(
+                    onPressed: _busy ? null : _delete,
+                    child: const Text('Supprimer'),
+                  ),
+              ],
+            ),
+          ],
         );
       },
     );
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 }

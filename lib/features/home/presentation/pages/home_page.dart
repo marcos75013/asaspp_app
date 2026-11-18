@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/config/api_config.dart';
+import '../../../../core/widgets/member_avatar.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/feature_tile.dart';
 import '../../../context/cubit/context_cubit.dart';
@@ -18,8 +18,6 @@ import 'club_message_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
-
-  static const ApiConfig _apiConfig = ApiConfig();
 
   Future<void> _refreshContent(BuildContext context) async {
     await Future.wait([
@@ -39,17 +37,12 @@ class HomePage extends StatelessWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) {
-        return UserProfileSheet(user: user, association: association);
+        return BlocProvider.value(
+          value: context.read<ContextCubit>(),
+          child: UserProfileSheet(user: user, association: association),
+        );
       },
     );
-  }
-
-  ImageProvider _avatarProvider(String? avatarUrl) {
-    if (avatarUrl == null || avatarUrl.isEmpty) {
-      return const AssetImage('assets/jpgs/macron.jpg');
-    }
-
-    return NetworkImage(_apiConfig.resolveUrl(avatarUrl));
   }
 
   @override
@@ -77,9 +70,11 @@ class HomePage extends StatelessWidget {
                     children: [
                       Hero(
                         tag: "user-avatar",
-                        child: CircleAvatar(
+                        child: MemberAvatar(
                           radius: 26,
-                          backgroundImage: _avatarProvider(user?.avatarUrl),
+                          url: user?.avatarUrl,
+                          name:
+                              '${user?.firstName ?? ''} ${user?.lastName ?? ''}',
                         ),
                       ),
                       const SizedBox(height: 6),

@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../messages/presentation/cubit/message_cubit.dart';
 import '../../../messages/presentation/cubit/message_state.dart';
+import '../../../../core/widgets/member_avatar.dart';
 
 class ClubMessageCard extends StatelessWidget {
   const ClubMessageCard({super.key});
@@ -30,7 +31,12 @@ class ClubMessageCard extends StatelessWidget {
             ? message!.authorName
             : 'Le club';
 
-        return _MessageCard(title: title, content: content, author: author);
+        return _MessageCard(
+          title: title,
+          content: content,
+          author: author,
+          avatarUrl: message?.authorAvatarUrl,
+        );
       },
     );
   }
@@ -40,11 +46,13 @@ class _MessageCard extends StatelessWidget {
   final String title;
   final String content;
   final String author;
+  final String? avatarUrl;
 
   const _MessageCard({
     required this.title,
     required this.content,
     required this.author,
+    required this.avatarUrl,
   });
 
   @override
@@ -130,13 +138,10 @@ class _MessageCard extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            child: ClipOval(
-                              child: Image.asset(
-                                'assets/jpgs/macron.jpg',
-                                width: 56,
-                                height: 56,
-                                fit: BoxFit.cover,
-                              ),
+                            child: MemberAvatar(
+                              radius: 28,
+                              url: avatarUrl,
+                              name: author,
                             ),
                           ),
 

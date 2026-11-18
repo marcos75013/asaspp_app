@@ -1,7 +1,7 @@
 class ApiConfig {
   static const String defaultBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8080',
+    defaultValue: 'https://multi-asso-api.onrender.com',
   );
 
   final String baseUrl;

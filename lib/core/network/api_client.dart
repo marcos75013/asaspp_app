@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../config/api_config.dart';
 import '../storage/auth_storage.dart';
+import 'auth_session.dart';
 
 class ApiClient {
   final AuthStorage _authStorage;
@@ -16,7 +17,6 @@ class ApiClient {
             baseUrl: _apiConfig.baseUrl,
             connectTimeout: const Duration(seconds: 10),
             receiveTimeout: const Duration(seconds: 10),
-            headers: {'Content-Type': 'application/json'},
           ),
         )
         ..interceptors.add(
@@ -29,11 +29,21 @@ class ApiClient {
                 options.headers['Authorization'] = 'Bearer $token';
               }
 
-              if (associationId != null) {
+              final accountProfile =
+                  options.path == '/api/mobile/profile' ||
+                  options.path.startsWith('/api/mobile/profile/');
+              if (associationId != null && !accountProfile) {
                 options.headers['X-Association-Id'] = associationId.toString();
               }
 
               handler.next(options);
+            },
+            onError: (error, handler) async {
+              if (error.response?.statusCode == 401) {
+                await _authStorage.clear();
+                sessionExpired.value = true;
+              }
+              handler.next(error);
             },
           ),
         );

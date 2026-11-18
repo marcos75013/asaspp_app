@@ -4,6 +4,7 @@ class MobileMessageModel {
   final String content;
   final String? authorFirstName;
   final String? authorLastName;
+  final String? authorAvatarUrl;
   final DateTime createdAt;
 
   const MobileMessageModel({
@@ -12,6 +13,7 @@ class MobileMessageModel {
     required this.content,
     this.authorFirstName,
     this.authorLastName,
+    this.authorAvatarUrl,
     required this.createdAt,
   });
 
@@ -29,6 +31,7 @@ class MobileMessageModel {
       content: json['content'] ?? '',
       authorFirstName: json['authorFirstName'],
       authorLastName: json['authorLastName'],
+      authorAvatarUrl: json['createdByAvatarUrl'] as String?,
       createdAt:
           DateTime.tryParse(json['createdAt'] ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),

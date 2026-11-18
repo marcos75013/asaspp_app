@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
+import '../../../core/widgets/member_avatar.dart';
 
 class CarpoolCard extends StatelessWidget {
   final String creatorName;
   final int remainingSeats;
   final VoidCallback onReserve;
+  final String? avatarUrl;
+  final bool booked;
+  final bool enabled;
 
   const CarpoolCard({
     super.key,
     required this.creatorName,
     required this.remainingSeats,
     required this.onReserve,
+    this.avatarUrl,
+    this.booked = false,
+    this.enabled = true,
   });
 
   @override
@@ -20,17 +27,20 @@ class CarpoolCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
+        color: Colors.white.withValues(alpha: 0.9),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isFull
               ? Colors.grey
-              : const Color(0xFFD4AF37).withOpacity(0.7),
+              : const Color(0xFFD4AF37).withValues(alpha: 0.7),
           width: 1.3,
         ),
       ),
       child: Row(
         children: [
+          MemberAvatar(radius: 20, url: avatarUrl, name: creatorName),
+          const SizedBox(width: 10),
+
           /// 👤 INFOS
           Expanded(
             child: Column(
@@ -45,9 +55,7 @@ class CarpoolCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  isFull
-                      ? 'Complet'
-                      : '$remainingSeats place(s) restante(s)',
+                  isFull ? 'Complet' : '$remainingSeats place(s) restante(s)',
                   style: TextStyle(
                     color: isFull ? Colors.redAccent : Colors.green,
                     fontWeight: FontWeight.w500,
@@ -59,14 +67,14 @@ class CarpoolCard extends StatelessWidget {
 
           /// ✅ ACTION
           ElevatedButton(
-            onPressed: isFull ? null : onReserve,
+            onPressed: (!enabled || (isFull && !booked)) ? null : onReserve,
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFD4AF37),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            child: const Text('Réserver'),
+            child: Text(booked ? 'Annuler' : 'Réserver'),
           ),
         ],
       ),

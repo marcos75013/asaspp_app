@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import '../pages/next_dive_card.dart';
+import '../../../context/cubit/context_cubit.dart';
 
 class NextEventsCarousel extends StatefulWidget {
   const NextEventsCarousel({super.key});
@@ -92,35 +93,46 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
               ),
             ),
             const SizedBox(height: 12),
-            Center(
-              child: SizedBox(
-                width: MediaQuery.of(context).size.width * 0.88,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          context.push(
-                            '/covoiturage/create',
-                            extra: currentEvent.diveType,
-                          );
-                        },
-                        label: const Text('Créer un covoiturage'),
-                        style: _carpoolButtonStyle(),
+            if (context
+                    .read<ContextCubit>()
+                    .state
+                    .context
+                    ?.currentAssociation
+                    ?.modules
+                    .contains('CARPOOLING') ==
+                true)
+              Center(
+                child: SizedBox(
+                  width: MediaQuery.of(context).size.width * 0.88,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () {
+                            context.push(
+                              '/covoiturage/create',
+                              extra: currentEvent,
+                            );
+                          },
+                          label: const Text('Créer un covoiturage'),
+                          style: _carpoolButtonStyle(),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () => context.push('/covoiturage/join'),
-                        label: const Text("je m'y infiltre"),
-                        style: _carpoolButtonStyle(),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => context.push(
+                            '/covoiturage/join',
+                            extra: currentEvent,
+                          ),
+                          label: const Text("je m'y infiltre"),
+                          style: _carpoolButtonStyle(),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 12),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,

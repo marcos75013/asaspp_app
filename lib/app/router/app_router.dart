@@ -58,13 +58,14 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: '/covoiturage/create',
       builder: (context, state) {
-        final type = state.extra as DiveType;
-        return CreateCarpoolScreen(diveType: type);
+        final event = state.extra as NextEventModel;
+        return CreateCarpoolScreen(event: event);
       },
     ),
     GoRoute(
       path: '/covoiturage/join',
-      builder: (context, state) => const JoinCarpoolScreen(),
+      builder: (context, state) =>
+          JoinCarpoolScreen(event: state.extra as NextEventModel),
     ),
 
     GoRoute(

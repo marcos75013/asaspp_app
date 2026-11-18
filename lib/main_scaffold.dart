@@ -23,6 +23,7 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
+  int _aboutVisit = 0;
 
   late final List<Widget> _pages;
 
@@ -49,7 +50,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         ],
         child: const HomePage(),
       ),
-      const AboutUsPage(),
+      AboutUsPage(key: ValueKey(_aboutVisit)),
       const GalleryPage(),
       const AdsPage(), // ⬅️ Petites annonces
     ];
@@ -110,12 +111,7 @@ class _MainScaffoldState extends State<MainScaffold> {
           activeIndex: _currentIndex,
 
           /// 👉 LE CERCLE affichera TOUJOURS ce plongeur
-          activeIcons: [
-            _diverIcon(),
-            _diverIcon(),
-            _diverIcon(),
-            _diverIcon(),
-          ],
+          activeIcons: [_diverIcon(), _diverIcon(), _diverIcon(), _diverIcon()],
 
           /// 👉 Icônes + labels
           inactiveIcons: [
@@ -151,6 +147,10 @@ class _MainScaffoldState extends State<MainScaffold> {
           onTap: (index) {
             setState(() {
               _currentIndex = index;
+              if (index == 1) {
+                _aboutVisit++;
+                _pages[1] = AboutUsPage(key: ValueKey(_aboutVisit));
+              }
             });
           },
         ),

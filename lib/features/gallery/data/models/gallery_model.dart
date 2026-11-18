@@ -4,6 +4,7 @@ class GalleryModel {
   final DateTime date;
   final String coverImage;
   final List<String> photos;
+  final List<int> photoIds;
   final String type;
 
   GalleryModel({
@@ -12,6 +13,7 @@ class GalleryModel {
     required this.date,
     required this.coverImage,
     required this.photos,
+    this.photoIds = const [],
     required this.type,
   });
 
@@ -48,6 +50,10 @@ class GalleryModel {
       photos: photos
           .map((photo) => resolveUrl(photo['url'] as String? ?? ''))
           .where((url) => url.isNotEmpty)
+          .toList(),
+      photoIds: photos
+          .where((photo) => (photo['url'] as String? ?? '').isNotEmpty)
+          .map((photo) => (photo['id'] as num?)?.toInt() ?? 0)
           .toList(),
       type: (json['category'] as String?)?.trim().isNotEmpty == true
           ? (json['category'] as String).trim()

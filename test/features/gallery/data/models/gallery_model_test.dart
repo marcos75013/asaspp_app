@@ -28,6 +28,7 @@ void main() {
       'http://localhost:8080/uploads/gallery/1/12/first.jpg',
       'http://localhost:8080/uploads/gallery/1/12/cover.jpg',
     ]);
+    expect(album.photoIds, [1, 2]);
   });
 
   test('supports an album without photos', () {

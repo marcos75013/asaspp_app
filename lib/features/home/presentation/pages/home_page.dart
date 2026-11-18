@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/member_avatar.dart';
+import '../../../../core/config/api_config.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../../core/widgets/feature_tile.dart';
 import '../../../context/cubit/context_cubit.dart';
 import '../../../context/cubit/context_state.dart';
 import '../../../ducumentslib/presentation/widgets/documents_library_card.dart';
 import '../../../messages/presentation/cubit/message_cubit.dart';
-import '../../../paiement/presentation/widgets/payment_home_card.dart';
 import '../../../splash/presentation/widget/bubbles_layer.dart';
 import '../../../user/presentation/pages/user_profile_sheet.dart';
 import '../cubit/home_cubit.dart';
@@ -50,6 +50,8 @@ class HomePage extends StatelessWidget {
     return BlocBuilder<ContextCubit, ContextState>(
       builder: (context, contextState) {
         final user = contextState.context?.user;
+        final association = contextState.context?.currentAssociation;
+        final modules = association?.modules ?? const <String>[];
 
         return Scaffold(
           extendBodyBehindAppBar: true,
@@ -59,7 +61,14 @@ class HomePage extends StatelessWidget {
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
-            title: Image.asset('assets/pngs/logo_asaspp.png', height: 120),
+            title: association?.logoUrl?.isNotEmpty == true
+                ? Image.network(
+                    const ApiConfig().resolveUrl(association!.logoUrl!),
+                    height: 100,
+                    errorBuilder: (_, error, stack) =>
+                        Text(association.associationName),
+                  )
+                : Text(association?.associationName ?? 'MultiAsso'),
             actions: [
               Padding(
                 padding: const EdgeInsets.only(right: 16, top: 12),
@@ -124,20 +133,27 @@ class HomePage extends StatelessWidget {
                         const SizedBox(height: 16),
                         const WelcomeSection(),
                         const SizedBox(height: 12),
-                        const NextEventsCarousel(),
-                        const ClubMessageCard(),
-                        const SizedBox(height: 6),
-                        const PaymentHomeCard(),
-                        const SizedBox(height: 2),
-                        FeatureTile(
-                          title: "Quiz Plongée",
-                          subtitle: "Teste tes connaissances",
-                          icon: Icons.quiz,
-                          gradient: [Color(0xFF0061FF), Color(0xFF60EFFF)],
-                          route: "/quiz",
-                        ),
-                        const SizedBox(height: 2),
-                        const DocumentsLibraryCard(),
+                        if (modules.contains('EVENTS'))
+                          const NextEventsCarousel(),
+                        if (modules.contains('CLUB_COMMUNICATION'))
+                          const ClubMessageCard(),
+                        if (modules.contains('QUIZ')) ...[
+                          const SizedBox(height: 2),
+                          FeatureTile(
+                            title: 'Quiz',
+                            subtitle: 'Teste tes connaissances',
+                            icon: Icons.quiz,
+                            gradient: const [
+                              Color(0xFF0061FF),
+                              Color(0xFF60EFFF),
+                            ],
+                            route: '/quiz',
+                          ),
+                        ],
+                        if (modules.contains('DOCUMENT_LIBRARY')) ...[
+                          const SizedBox(height: 2),
+                          const DocumentsLibraryCard(),
+                        ],
                         const SizedBox(height: 46),
                       ],
                     ),

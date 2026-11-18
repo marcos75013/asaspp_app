@@ -3,6 +3,7 @@ import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'core/network/api_client.dart';
+import 'core/config/api_config.dart';
 import 'core/storage/auth_storage.dart';
 import 'core/theme/app_colors.dart';
 import 'features/annonces/presentation/pages/ads_page.dart';
@@ -13,6 +14,8 @@ import 'features/home/data/services/mobile_event_api_service.dart';
 import 'features/home/presentation/cubit/home_cubit.dart';
 import 'features/messages/data/services/mobile_message_api_service.dart';
 import 'features/messages/presentation/cubit/message_cubit.dart';
+import 'features/context/cubit/context_cubit.dart';
+import 'features/context/cubit/context_state.dart';
 
 class MainScaffold extends StatefulWidget {
   const MainScaffold({super.key});
@@ -76,6 +79,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         Text(
           label,
           textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             fontSize: active ? 9 : 13, // ⬅️ TITRES PLUS GRANDS
             fontWeight: active ? FontWeight.w700 : FontWeight.w500,
@@ -87,13 +92,19 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  /// 🧑‍🤿 Icône UNIQUE (toujours la même)
-  Widget _diverIcon() {
-    return Image.asset(
-      'assets/pngs/plongeur1.png',
-      width: 80,
-      height: 80,
-      fit: BoxFit.cover,
+  Widget _activeIcon(String? imageUrl, IconData fallback) {
+    if (imageUrl == null || imageUrl.trim().isEmpty) {
+      return Icon(fallback, size: 34, color: AppColors.primaryBlue);
+    }
+    return ClipOval(
+      child: Image.network(
+        const ApiConfig().resolveUrl(imageUrl),
+        width: 72,
+        height: 72,
+        fit: BoxFit.cover,
+        errorBuilder: (_, error, stack) =>
+            Icon(fallback, size: 34, color: AppColors.primaryBlue),
+      ),
     );
   }
 
@@ -101,60 +112,84 @@ class _MainScaffoldState extends State<MainScaffold> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Scaffold(
-      extendBody: true,
-      body: _pages[_currentIndex],
-      bottomNavigationBar: SafeArea(
-        bottom: true,
-        child: CircleNavBar(
-          height: 72,
-          activeIndex: _currentIndex,
+    return BlocBuilder<ContextCubit, ContextState>(
+      builder: (context, state) {
+        final association = state.context?.currentAssociation;
+        final modules = association?.modules ?? const <String>[];
+        final tabs = [
+          0,
+          1,
+          if (modules.contains('PHOTO_GALLERY')) 2,
+          if (modules.contains('MARKETPLACE')) 3,
+        ];
+        final selected = tabs.contains(_currentIndex) ? _currentIndex : 0;
+        const icons = [
+          Icons.home,
+          Icons.groups,
+          Icons.photo_library,
+          Icons.campaign,
+        ];
+        return Scaffold(
+          extendBody: true,
+          body: _pages[selected],
+          bottomNavigationBar: SafeArea(
+            bottom: true,
+            child: CircleNavBar(
+              height: 72,
+              activeIndex: tabs.indexOf(selected),
 
-          /// 👉 LE CERCLE affichera TOUJOURS ce plongeur
-          activeIcons: [_diverIcon(), _diverIcon(), _diverIcon(), _diverIcon()],
+              /// 👉 LE CERCLE affichera TOUJOURS ce plongeur
+              activeIcons: [
+                for (final index in tabs)
+                  _activeIcon(association?.navigationImageUrl, icons[index]),
+              ],
 
-          /// 👉 Icônes + labels
-          inactiveIcons: [
-            _navItem(
-              icon: Icons.home,
-              label: 'Accueil',
-              active: _currentIndex == 0,
-            ),
-            _navItem(
-              icon: Icons.event,
-              label: 'Asaspp',
-              active: _currentIndex == 1,
-            ),
-            _navItem(
-              icon: Icons.photo_library,
-              label: 'Galerie',
-              active: _currentIndex == 2,
-            ),
-            _navItem(
-              icon: Icons.campaign, // ⬅️ icône annonces
-              label: 'Annonces',
-              active: _currentIndex == 3,
-            ),
-          ],
+              /// 👉 Icônes + labels
+              inactiveIcons: [
+                _navItem(
+                  icon: Icons.home,
+                  label: 'Accueil',
+                  active: _currentIndex == 0,
+                ),
+                _navItem(
+                  icon: Icons.event,
+                  label: association?.associationName ?? 'Association',
+                  active: _currentIndex == 1,
+                ),
+                if (tabs.contains(2))
+                  _navItem(
+                    icon: Icons.photo_library,
+                    label: 'Galerie',
+                    active: _currentIndex == 2,
+                  ),
+                if (tabs.contains(3))
+                  _navItem(
+                    icon: Icons.campaign, // ⬅️ icône annonces
+                    label: 'Annonces',
+                    active: _currentIndex == 3,
+                  ),
+              ],
 
-          /// 🎨 STYLE
-          color: theme.colorScheme.surface.withValues(alpha: 0.95),
-          circleColor: AppColors.background,
-          circleWidth: 72,
-          elevation: 12,
-          shadowColor: Colors.black26,
+              /// 🎨 STYLE
+              color: theme.colorScheme.surface.withValues(alpha: 0.95),
+              circleColor: AppColors.background,
+              circleWidth: 72,
+              elevation: 12,
+              shadowColor: Colors.black26,
 
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-              if (index == 1) {
-                _aboutVisit++;
-                _pages[1] = AboutUsPage(key: ValueKey(_aboutVisit));
-              }
-            });
-          },
-        ),
-      ),
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = tabs[index];
+                  if (_currentIndex == 1) {
+                    _aboutVisit++;
+                    _pages[1] = AboutUsPage(key: ValueKey(_aboutVisit));
+                  }
+                });
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 }

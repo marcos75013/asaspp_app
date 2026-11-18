@@ -4,6 +4,7 @@ class MobileAssociationModel {
   final int associationId;
   final String associationName;
   final String? logoUrl;
+  final String? navigationImageUrl;
   final AssociationRole role;
   final List<String> modules;
   final String? type;
@@ -12,6 +13,7 @@ class MobileAssociationModel {
     required this.associationId,
     required this.associationName,
     this.logoUrl,
+    this.navigationImageUrl,
     required this.role,
     required this.modules,
     this.type,
@@ -24,6 +26,9 @@ class MobileAssociationModel {
       associationId: json['associationId'] ?? json['id'] ?? 0,
       associationName: json['associationName'] ?? json['name'] ?? '',
       logoUrl: json['logoUrl'],
+      navigationImageUrl:
+          json['navigationImageUrl'] as String? ??
+          json['navigationIconUrl'] as String?,
       role: associationRoleFromJson(
         json['role'] ?? (roles.isNotEmpty ? roles.first : 'MEMBER'),
       ),

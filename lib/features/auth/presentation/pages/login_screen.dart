@@ -26,28 +26,17 @@ class LoginScreen extends StatelessWidget {
         );
       },
       child: Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            /// 🌊 Background mer
-            Image.asset('assets/pngs/bg_mer.png', fit: BoxFit.cover),
-
-            /// 🫧 Bulles animées
-            // const BubblesLayer(),
-
-            /// 🌑 Voile sombre
-            Container(color: Colors.black.withValues(alpha: 0.35)),
-
-            /// 🧑‍🤿 Contenu centré
-            const SafeArea(
-              child: Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                  child: LoginForm(),
-                ),
+        backgroundColor: Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 440),
+                child: LoginForm(),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

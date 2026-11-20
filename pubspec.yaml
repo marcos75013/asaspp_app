@@ -34,6 +34,7 @@ dependencies:
   flutter_animate: ^4.5.2
   dio: ^5.10.0
   shared_preferences: ^2.5.5
+  flutter_native_splash: ^2.4.4
 
 
 
@@ -42,7 +43,6 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-  flutter_native_splash: ^2.4.4
 
 flutter:
   uses-material-design: true

@@ -9,6 +9,8 @@ class AdModel {
   final String sellerName;
   final String sellerAvatar;
   final int? authorId;
+  final String? contactPhone;
+  final String? sellerEmail;
   final DateTime createdAt;
   final AdType type;
   final bool isFavorite;
@@ -22,6 +24,8 @@ class AdModel {
     required this.sellerName,
     required this.sellerAvatar,
     this.authorId,
+    this.contactPhone,
+    this.sellerEmail,
     required this.createdAt,
     required this.type,
     this.isFavorite = false,
@@ -37,6 +41,8 @@ class AdModel {
       sellerName: sellerName,
       sellerAvatar: sellerAvatar,
       authorId: authorId,
+      contactPhone: contactPhone,
+      sellerEmail: sellerEmail,
       createdAt: createdAt,
       type: type,
       isFavorite: isFavorite ?? this.isFavorite,
@@ -73,6 +79,8 @@ class AdModel {
           : sellerName,
       sellerAvatar: resolveUrl(json['authorAvatarUrl'] as String? ?? ''),
       authorId: (json['authorId'] as num?)?.toInt(),
+      contactPhone: json['contactPhone'] as String?,
+      sellerEmail: json['authorEmail'] as String?,
       createdAt:
           DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),

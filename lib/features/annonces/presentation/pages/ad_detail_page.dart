@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/widgets/member_avatar.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
@@ -46,6 +47,51 @@ class _AdDetailPageState extends State<AdDetailPage> {
       if (mounted) setState(() => _freshAd = ad);
     } catch (_) {
       // Keep the current announcement visible if refreshing its author fails.
+    }
+  }
+
+  Future<void> _contactSeller(AdModel ad) async {
+    final phone = ad.contactPhone?.trim();
+    final email = ad.sellerEmail?.trim();
+    if ((phone == null || phone.isEmpty) && (email == null || email.isEmpty)) {
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (phone != null && phone.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.phone),
+                title: Text(phone),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await _openContact(Uri(scheme: 'tel', path: phone));
+                },
+              ),
+            if (email != null && email.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.email),
+                title: Text(email),
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await _openContact(Uri(scheme: 'mailto', path: email));
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openContact(Uri uri) async {
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) &&
+        mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible d’ouvrir le contact.')),
+      );
     }
   }
 
@@ -226,7 +272,11 @@ class _AdDetailPageState extends State<AdDetailPage> {
                                 borderRadius: BorderRadius.circular(20),
                               ),
                             ),
-                            onPressed: () {},
+                            onPressed:
+                                (ad.contactPhone?.trim().isNotEmpty == true ||
+                                    ad.sellerEmail?.trim().isNotEmpty == true)
+                                ? () => _contactSeller(ad)
+                                : null,
                             child: const Text(
                               "Contacter le vendeur",
                               style: TextStyle(fontSize: 16),

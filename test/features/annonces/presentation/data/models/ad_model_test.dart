@@ -7,6 +7,8 @@ void main() {
       'id': 42,
       'authorFirstName': 'Jean',
       'authorLastName': 'Martin',
+      'authorEmail': 'jean@example.test',
+      'contactPhone': '+33123456789',
       'type': 'SALE',
       'title': 'Détendeur',
       'description': 'Révisé cette année',
@@ -21,6 +23,8 @@ void main() {
 
     expect(ad.id, '42');
     expect(ad.sellerName, 'Jean Martin');
+    expect(ad.sellerEmail, 'jean@example.test');
+    expect(ad.contactPhone, '+33123456789');
     expect(ad.type, AdType.vente);
     expect(ad.price, 120.50);
     expect(ad.isFavorite, isTrue);

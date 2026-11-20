@@ -1,18 +1,54 @@
 # ASASPP App
 
-Application mobile MultiAsso.
+Application mobile MultiAsso — branche `feature/mobile-session`.
 
-## Configuration de l'API
+## Connexion au backend en ligne
 
-L'URL du backend est fournie au build avec `API_BASE_URL`. Sans paramètre,
-l'application utilise `http://localhost:8080`.
+Le backend utilisé par défaut est **https://multi-asso-api.onrender.com**.
+Aucun serveur local ni tunnel USB vers un backend local n’est nécessaire.
+
+### VS Code
+
+1. Ouvrir ce dépôt sur la branche `feature/mobile-session`.
+2. Choisir le téléphone ou l’émulateur dans VS Code.
+3. Dans « Exécuter et déboguer », choisir **Flutter — backend Render**, puis lancer.
+
+Cette configuration fournit explicitement l’adresse Render à Flutter et n’exécute
+pas de tâche `adb reverse` vers un serveur local.
+
+### Ligne de commande
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://192.168.1.36:8080
+flutter pub get
+flutter run --dart-define=API_BASE_URL=https://multi-asso-api.onrender.com
 ```
 
-Pour un émulateur Android, utiliser généralement :
+L’adresse est fixée à la compilation. Après un changement d’adresse ou de
+configuration de lancement, arrêter complètement l’application et la relancer :
+un simple hot reload ne suffit pas. Une ancienne option
+`--dart-define=API_BASE_URL=...` dans une configuration personnelle peut remplacer
+l’adresse par défaut ; utiliser la configuration Render fournie ci-dessus.
+
+### APK Android
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://10.0.2.2:8080
+flutter build apk --release --dart-define=API_BASE_URL=https://multi-asso-api.onrender.com
 ```
+
+Le manifeste principal déclare la permission Internet, y compris pour les APK de
+production. La permission du manifeste debug seule ne suffit pas pour un APK
+release.
+
+Utiliser un compte membre créé sur le BO en ligne. Le mot de passe demandé est
+celui du compte membre, pas celui de PostgreSQL/Neon.
+
+## Vérifications
+
+```bash
+flutter analyze
+flutter test
+```
+
+L’API de connexion mobile est `POST /api/mobile/auth/token`. Le profil et le
+contexte sont ensuite récupérés auprès du même backend. Cette configuration ne
+change ni la base de données ni les mots de passe.

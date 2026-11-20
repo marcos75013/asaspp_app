@@ -60,3 +60,5 @@ macos/Podfile
 # ===== Desktop flutter generated =====
 linux/flutter/
 windows/flutter/
+.vercel
+.env*

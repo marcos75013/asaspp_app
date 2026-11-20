@@ -1,0 +1,13 @@
+.dart_tool/
+.git/
+.idea/
+.vercel/
+.vscode/
+.env*
+build/
+android/
+ios/
+linux/
+macos/
+windows/
+test/

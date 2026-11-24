@@ -110,17 +110,28 @@ class _NextDiveCardState extends State<NextDiveCard>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          event.site,
+                          event.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: AppTextStyles.headline.copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 12),
+                        if (event.site != event.title) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            event.site,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: Color(0xFF34445A)),
+                          ),
+                        ],
+                        const SizedBox(height: 8),
                         _InfoLine(icon: Icons.calendar_today, text: event.date),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         _InfoLine(icon: Icons.access_time, text: event.time),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 6),
 
                         Row(
                           children: [
@@ -315,10 +326,15 @@ class _InfoLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16),
+        Icon(icon, size: 16, color: const Color(0xFF34445A)),
         const SizedBox(width: 8),
         Flexible(
-          child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: Color(0xFF34445A)),
+          ),
         ),
       ],
     );

@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:typed_data';
 
 import 'package:asaspp_app/core/config/api_config.dart';
@@ -51,8 +52,9 @@ void main() {
     'keeps shuffled question and choice indexes when submitting answers',
     () async {
       SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
       final storage = AuthStorage();
-      await storage.saveToken('token');
+      await storage.saveSession('token', null);
       await storage.saveActiveAssociationId(7);
       final adapter = _QuizAdapter();
       final client = ApiClient(

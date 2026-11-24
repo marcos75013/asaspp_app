@@ -7,6 +7,8 @@ class MobileAuthApiService {
 
   MobileAuthApiService(this._apiClient);
 
+  Future<void> logout() => _apiClient.logout();
+
   Future<MobileLoginResponse> login(MobileLoginRequest request) async {
     final response = await _apiClient.dio.post(
       '/api/mobile/auth/token',

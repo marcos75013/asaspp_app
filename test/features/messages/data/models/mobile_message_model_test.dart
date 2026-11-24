@@ -7,6 +7,9 @@ void main() {
       'id': 7,
       'title': 'Sortie club',
       'content': 'Rendez-vous samedi matin.',
+      'signature': 'Le bureau',
+      'createdByAvatarUrl':
+          '/profile-images/11111111-1111-1111-1111-111111111111',
       'authorFirstName': 'Alice',
       'authorLastName': 'Martin',
       'createdAt': '2026-11-11T10:30:00',
@@ -15,6 +18,11 @@ void main() {
     expect(message.id, 7);
     expect(message.title, 'Sortie club');
     expect(message.content, 'Rendez-vous samedi matin.');
+    expect(message.signature, 'Le bureau');
+    expect(
+      message.authorAvatarUrl,
+      '/profile-images/11111111-1111-1111-1111-111111111111',
+    );
     expect(message.authorName, 'Alice Martin');
     expect(message.createdAt, DateTime(2026, 11, 11, 10, 30));
   });

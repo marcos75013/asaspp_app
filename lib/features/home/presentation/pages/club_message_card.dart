@@ -6,6 +6,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../messages/presentation/cubit/message_cubit.dart';
 import '../../../messages/presentation/cubit/message_state.dart';
+import '../../../messages/data/models/mobile_message_model.dart';
 import '../../../../core/widgets/member_avatar.dart';
 
 class ClubMessageCard extends StatelessWidget {
@@ -15,6 +16,23 @@ class ClubMessageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<MessageCubit, MessageState>(
       builder: (context, state) {
+        if (state.status == MessageStatus.loaded && state.messages.isNotEmpty) {
+          return Column(
+            children: [
+              for (final message in state.messages)
+                InkWell(
+                  borderRadius: BorderRadius.circular(30),
+                  onTap: () => _showFullMessage(context, message),
+                  child: _MessageCard(
+                    title: message.title,
+                    content: message.content,
+                    author: _messageAuthor(message),
+                    avatarUrl: message.authorAvatarUrl,
+                  ),
+                ),
+            ],
+          );
+        }
         final message = state.messages.firstOrNull;
         final title = message?.title.trim().isNotEmpty == true
             ? message!.title
@@ -40,6 +58,41 @@ class ClubMessageCard extends StatelessWidget {
       },
     );
   }
+}
+
+String _messageAuthor(MobileMessageModel message) {
+  final signature = message.signature?.trim();
+  if (signature != null && signature.isNotEmpty) return signature;
+  return message.authorName.trim().isNotEmpty ? message.authorName : 'Le club';
+}
+
+void _showFullMessage(BuildContext context, MobileMessageModel message) {
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                message.title,
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 16),
+              Text(message.content),
+              const SizedBox(height: 20),
+              Text('— ${_messageAuthor(message)}'),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 class _MessageCard extends StatelessWidget {

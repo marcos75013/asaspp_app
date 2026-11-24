@@ -2,6 +2,7 @@ class MobileMessageModel {
   final int id;
   final String title;
   final String content;
+  final String? signature;
   final String? authorFirstName;
   final String? authorLastName;
   final String? authorAvatarUrl;
@@ -11,6 +12,7 @@ class MobileMessageModel {
     required this.id,
     required this.title,
     required this.content,
+    this.signature,
     this.authorFirstName,
     this.authorLastName,
     this.authorAvatarUrl,
@@ -29,6 +31,7 @@ class MobileMessageModel {
       id: json['id'] ?? 0,
       title: json['title'] ?? '',
       content: json['content'] ?? '',
+      signature: json['signature'] as String?,
       authorFirstName: json['authorFirstName'],
       authorLastName: json['authorLastName'],
       authorAvatarUrl: json['createdByAvatarUrl'] as String?,

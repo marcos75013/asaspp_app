@@ -77,4 +77,25 @@ void main() {
     await states;
     await cubit.close();
   });
+
+  test(
+    'clears messages while refreshing so another association cannot see them',
+    () async {
+      final cubit = MessageCubit(
+        messageRepository: _FakeMessageRepository.success([message]),
+      );
+      await cubit.loadMessages();
+      final loading = expectLater(
+        cubit.stream,
+        emits(
+          isA<MessageState>()
+              .having((state) => state.status, 'status', MessageStatus.loading)
+              .having((state) => state.messages, 'messages', isEmpty),
+        ),
+      );
+      await cubit.loadMessages();
+      await loading;
+      await cubit.close();
+    },
+  );
 }

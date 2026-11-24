@@ -6,6 +6,7 @@ import '../../../user/data/profile_updates.dart';
 
 class MessageCubit extends Cubit<MessageState> {
   final MobileMessageRepository _messageRepository;
+  int _requestId = 0;
 
   MessageCubit({required MobileMessageRepository messageRepository})
     : _messageRepository = messageRepository,
@@ -20,10 +21,12 @@ class MessageCubit extends Cubit<MessageState> {
   }
 
   Future<void> loadMessages() async {
-    emit(state.copyWith(status: MessageStatus.loading, errorMessage: null));
+    final requestId = ++_requestId;
+    emit(const MessageState(status: MessageStatus.loading));
 
     try {
       final messages = await _messageRepository.getPublishedMessages();
+      if (isClosed || requestId != _requestId) return;
       emit(
         state.copyWith(
           status: MessageStatus.loaded,
@@ -32,6 +35,7 @@ class MessageCubit extends Cubit<MessageState> {
         ),
       );
     } catch (_) {
+      if (isClosed || requestId != _requestId) return;
       emit(
         state.copyWith(
           status: MessageStatus.error,

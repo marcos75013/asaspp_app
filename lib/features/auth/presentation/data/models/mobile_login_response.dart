@@ -1,10 +1,12 @@
 class MobileLoginResponse {
   final String token;
+  final String? refreshToken;
   final String platformRole;
   final List<MobileLoginAssociation> associations;
 
   const MobileLoginResponse({
     required this.token,
+    this.refreshToken,
     required this.platformRole,
     required this.associations,
   });
@@ -12,6 +14,7 @@ class MobileLoginResponse {
   factory MobileLoginResponse.fromJson(Map<String, dynamic> json) {
     return MobileLoginResponse(
       token: json['token'] ?? '',
+      refreshToken: json['refreshToken'] as String?,
       platformRole: json['platformRole'] ?? 'NONE',
       associations: (json['associations'] as List<dynamic>? ?? [])
           .map((item) => MobileLoginAssociation.fromJson(item))

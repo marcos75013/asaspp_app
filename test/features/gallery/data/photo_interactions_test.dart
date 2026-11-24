@@ -1,3 +1,4 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:typed_data';
 
 import 'package:asaspp_app/core/config/api_config.dart';
@@ -42,8 +43,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   test('loads, likes and comments on the selected association photo', () async {
     SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
     final storage = AuthStorage();
-    await storage.saveToken('token');
+    await storage.saveSession('token', null);
     await storage.saveActiveAssociationId(12);
     final adapter = _Adapter();
     final client = ApiClient(

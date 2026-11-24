@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:asaspp_app/core/config/api_config.dart';
@@ -6,6 +7,7 @@ import 'package:asaspp_app/core/network/auth_session.dart';
 import 'package:asaspp_app/core/storage/auth_storage.dart';
 import 'package:asaspp_app/features/user/data/services/mobile_profile_api_service.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -25,6 +27,18 @@ class RecordingAdapter implements HttpClientAdapter {
         ? <int>[]
         : await requestStream.expand((chunk) => chunk).toList();
     bodies.add(String.fromCharCodes(bytes));
+    if (options.path == '/api/mobile/auth/refresh') {
+      return ResponseBody.fromString(
+        jsonEncode({
+          'token': accessToken(const Duration(hours: 1)),
+          'refreshToken': 'rotated',
+        }),
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
     return ResponseBody.fromString(
       '{"id":7,"email":"a@b.test","firstName":"A","lastName":"B","avatarUrl":"/profile-images/new"}',
       statusCode,
@@ -38,10 +52,16 @@ class RecordingAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
+String accessToken(Duration lifetime) {
+  final expires = DateTime.now().add(lifetime).millisecondsSinceEpoch ~/ 1000;
+  return 'header.${base64Url.encode(utf8.encode(jsonEncode({'exp': expires})))}.signature';
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUp(() {
     SharedPreferences.setMockInitialValues({});
+    FlutterSecureStorage.setMockInitialValues({});
     sessionExpired.value = false;
   });
 
@@ -50,7 +70,7 @@ void main() {
     () async {
       final adapter = RecordingAdapter();
       final storage = AuthStorage();
-      await storage.saveToken('test-token');
+      await storage.saveSession('test-token', null);
       await storage.saveActiveAssociationId(42);
       final client = ApiClient(
         storage,
@@ -80,7 +100,7 @@ void main() {
   test('401 expires session while 403 preserves it', () async {
     final adapter = RecordingAdapter()..statusCode = 403;
     final storage = AuthStorage();
-    await storage.saveToken('test-token');
+    await storage.saveSession('test-token', null);
     final client = ApiClient(
       storage,
       apiConfig: const ApiConfig(baseUrl: 'https://example.test'),
@@ -90,11 +110,41 @@ void main() {
       client.dio.get('/restricted'),
       throwsA(isA<DioException>()),
     );
-    expect(await storage.getToken(), 'test-token');
+    expect((await storage.getSession()).token, 'test-token');
     expect(sessionExpired.value, false);
     adapter.statusCode = 401;
     await expectLater(client.dio.get('/expired'), throwsA(isA<DioException>()));
-    expect(await storage.getToken(), isNull);
+    expect((await storage.getSession()).token, isNull);
     expect(sessionExpired.value, true);
   });
+
+  test(
+    'concurrent requests share one renewal and store the rotated token',
+    () async {
+      final adapter = RecordingAdapter();
+      final storage = AuthStorage();
+      await storage.saveSession(
+        accessToken(const Duration(hours: -1)),
+        'original',
+      );
+      final client = ApiClient(
+        storage,
+        apiConfig: const ApiConfig(baseUrl: 'https://example.test'),
+      );
+      client.dio.httpClientAdapter = adapter;
+
+      await Future.wait([client.dio.get('/first'), client.dio.get('/second')]);
+
+      expect(
+        adapter.requests.where((request) => request.path.endsWith('/refresh')),
+        hasLength(1),
+      );
+      final session = await storage.getSession();
+      expect(session.refreshToken, 'rotated');
+      expect(
+        adapter.requests.last.headers['Authorization'],
+        'Bearer ${session.token}',
+      );
+    },
+  );
 }

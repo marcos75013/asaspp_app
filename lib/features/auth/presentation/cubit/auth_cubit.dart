@@ -29,7 +29,10 @@ class AuthCubit extends Cubit<AuthState> {
         MobileLoginRequest(email: email, password: password),
       );
 
-      await _authStorage.saveToken(loginResponse.token);
+      await _authStorage.saveSession(
+        loginResponse.token,
+        loginResponse.refreshToken,
+      );
       sessionExpired.value = false;
 
       final mobileContext = await _contextApiService.getContext();
@@ -75,7 +78,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> logout() async {
-    await _authStorage.clear();
+    await _authApiService.logout();
     emit(state.copyWith(status: AuthStatus.unauthenticated));
   }
 }

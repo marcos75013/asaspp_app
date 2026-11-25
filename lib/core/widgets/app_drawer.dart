@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../features/context/cubit/context_cubit.dart';
 import '../../features/context/data/models/association_role.dart';
+import '../../features/events/presentation/pages/about_us_page.dart';
 import '../config/api_config.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -71,6 +72,14 @@ class AppDrawer extends StatelessWidget {
               onTap: () {
                 context.go('/home');
               },
+            ),
+
+            _DrawerItem(
+              icon: Icons.groups,
+              title: 'Qui sommes-nous',
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const AboutUsPage()),
+              ),
             ),
 
             if (mobileContext != null && mobileContext.associations.length > 1)

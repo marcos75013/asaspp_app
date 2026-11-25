@@ -1,4 +1,4 @@
-enum DiveType { mer, piscine, carriere, apero, formation, stage, fosse }
+enum DiveType { mer, piscine, carriere, apero, formation, stage, fosse, autre }
 
 enum ParticipationStatus { none, going, maybe, notGoing, waitlisted }
 
@@ -6,6 +6,8 @@ class NextEventModel {
   final int id;
   final String title;
   final String site;
+  final String category;
+  final String? categoryImageUrl;
   final DateTime startDate;
   final DateTime? endDate;
   final int goingCount;
@@ -17,6 +19,8 @@ class NextEventModel {
     required this.id,
     required this.title,
     required this.site,
+    this.category = '',
+    this.categoryImageUrl,
     required this.startDate,
     this.endDate,
     this.goingCount = 0,
@@ -65,6 +69,8 @@ class NextEventModel {
       id: id,
       title: title,
       site: site,
+      category: category,
+      categoryImageUrl: categoryImageUrl,
       startDate: startDate,
       endDate: endDate,
       goingCount: goingCount,
@@ -82,13 +88,15 @@ class NextEventModel {
     return NextEventModel(
       id: json['id'] as int? ?? 0,
       title: title,
-      site: location.isEmpty ? title : location,
+      site: location,
+      category: category,
+      categoryImageUrl: json['categoryImageUrl'] as String?,
       startDate:
           DateTime.tryParse(json['startDate'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       endDate: DateTime.tryParse(json['endDate'] as String? ?? ''),
       goingCount: (json['goingCount'] as num?)?.toInt() ?? 0,
-      diveType: _diveTypeFrom('$category $title $location'),
+      diveType: _diveTypeFrom(category),
       message: json['description'] as String? ?? '',
       participation: _participationFrom(json['currentUserStatus'] as String?),
     );
@@ -109,7 +117,8 @@ DiveType _diveTypeFrom(String value) {
   if (normalized.contains('formation')) return DiveType.formation;
   if (normalized.contains('stage')) return DiveType.stage;
 
-  return DiveType.mer;
+  if (normalized.contains('mer')) return DiveType.mer;
+  return DiveType.autre;
 }
 
 ParticipationStatus _participationFrom(String? value) {

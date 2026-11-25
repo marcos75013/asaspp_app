@@ -157,7 +157,7 @@ class _TrainingCalendarPageState extends State<TrainingCalendarPage> {
             ),
             const SizedBox(height: 6),
             Text('${event.date} ${event.startDate.year} à ${event.time}'),
-            if (event.site != event.title) Text(event.site),
+            if (event.site.trim().isNotEmpty) Text(event.site),
             TextButton.icon(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(

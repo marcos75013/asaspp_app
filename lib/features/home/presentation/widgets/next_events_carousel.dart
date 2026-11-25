@@ -66,7 +66,7 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
           children: [
             const SizedBox(height: 16),
             SizedBox(
-              height: 180,
+              height: 230,
               child: PageView.builder(
                 controller: _pageController,
                 itemCount: events.length,

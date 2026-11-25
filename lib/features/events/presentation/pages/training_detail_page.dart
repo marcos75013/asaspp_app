@@ -6,10 +6,12 @@ import '../../../home/data/models/next_event_model.dart';
 class TrainingDetailPage extends StatefulWidget {
   final NextEventModel training;
   final ApiClient apiClient;
+  final bool isEvent;
   const TrainingDetailPage({
     super.key,
     required this.training,
     required this.apiClient,
+    this.isEvent = false,
   });
   @override
   State<TrainingDetailPage> createState() => _TrainingDetailPageState();
@@ -32,7 +34,7 @@ class _TrainingDetailPageState extends State<TrainingDetailPage> {
     });
     try {
       final result = await widget.apiClient.dio.get<List<dynamic>>(
-        '/api/mobile/trainings/${widget.training.id}/participants',
+        '/api/mobile/${widget.isEvent ? 'events' : 'trainings'}/${widget.training.id}/participants',
       );
       if (mounted) {
         setState(
@@ -53,7 +55,9 @@ class _TrainingDetailPageState extends State<TrainingDetailPage> {
     final e = widget.training;
     final participants = _participants;
     return Scaffold(
-      appBar: AppBar(title: const Text('Entraînement')),
+      appBar: AppBar(
+        title: Text(widget.isEvent ? 'Événement' : 'Entraînement'),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -64,7 +68,7 @@ class _TrainingDetailPageState extends State<TrainingDetailPage> {
             Text(
               'Fin : ${e.endDate!.day.toString().padLeft(2, '0')}/${e.endDate!.month.toString().padLeft(2, '0')}/${e.endDate!.year} à ${e.endDate!.hour.toString().padLeft(2, '0')}h${e.endDate!.minute.toString().padLeft(2, '0')}',
             ),
-          if (e.site != e.title) Text(e.site),
+          if (e.site.trim().isNotEmpty) Text(e.site),
           if (e.message.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 8),

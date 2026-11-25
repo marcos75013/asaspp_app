@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/config/api_config.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/auth_storage.dart';
+import '../../../events/presentation/pages/training_detail_page.dart';
 import '../../data/models/next_event_model.dart';
 import '../cubit/home_cubit.dart';
 import '../widgets/triangle_clipper.dart';
@@ -118,7 +122,7 @@ class _NextDiveCardState extends State<NextDiveCard>
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        if (event.site != event.title) ...[
+                        if (event.site.trim().isNotEmpty) ...[
                           const SizedBox(height: 2),
                           Text(
                             event.site,
@@ -131,8 +135,19 @@ class _NextDiveCardState extends State<NextDiveCard>
                         _InfoLine(icon: Icons.calendar_today, text: event.date),
                         const SizedBox(height: 4),
                         _InfoLine(icon: Icons.access_time, text: event.time),
-                        const SizedBox(height: 6),
-
+                        TextButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => TrainingDetailPage(
+                                training: event,
+                                apiClient: ApiClient(AuthStorage()),
+                                isEvent: true,
+                              ),
+                            ),
+                          ),
+                          icon: const Icon(Icons.group_outlined, size: 18),
+                          label: Text('${event.goingCount} participant(s)'),
+                        ),
                         Row(
                           children: [
                             Expanded(
@@ -195,13 +210,20 @@ class _NextDiveCardState extends State<NextDiveCard>
                         clipper: TopRightTriangleClipper(),
                         child: Stack(
                           children: [
-                            Image.asset(
-                              _imageForDiveType(event.diveType),
-                              width: 96,
-                              height: 96,
-                              fit: BoxFit.cover,
-                              filterQuality: FilterQuality.low, // ⚡ important
-                            ),
+                            if (event.categoryImageUrl?.trim().isNotEmpty ==
+                                true)
+                              Image.network(
+                                const ApiConfig().resolveUrl(
+                                  event.categoryImageUrl!,
+                                ),
+                                width: 96,
+                                height: 96,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) =>
+                                    _fallbackImage(event.diveType),
+                              )
+                            else
+                              _fallbackImage(event.diveType),
                             Container(
                               width: 96,
                               height: 96,
@@ -219,27 +241,33 @@ class _NextDiveCardState extends State<NextDiveCard>
                             Positioned(
                               top: 8,
                               right: 8,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    _labelForDiveType(
-                                      event.diveType,
-                                    ).toUpperCase(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.6,
+                              child: SizedBox(
+                                width: 80,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                      (event.category.isNotEmpty
+                                              ? event.category
+                                              : 'Événement')
+                                          .toUpperCase(),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w700,
+                                        letterSpacing: 0.6,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Icon(
-                                    _iconForDiveType(event.diveType),
-                                    color: Colors.white,
-                                    size: 18,
-                                  ),
-                                ],
+                                    const SizedBox(height: 4),
+                                    Icon(
+                                      _iconForDiveType(event.diveType),
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -256,8 +284,21 @@ class _NextDiveCardState extends State<NextDiveCard>
     );
   }
 
+  Widget _fallbackImage(DiveType type) {
+    if (type == DiveType.autre) {
+      return Container(width: 96, height: 96, color: const Color(0xFF34527A));
+    }
+    return Image.asset(
+      _imageForDiveType(type),
+      width: 96,
+      height: 96,
+      fit: BoxFit.cover,
+    );
+  }
+
   String _imageForDiveType(DiveType type) {
     switch (type) {
+      case DiveType.autre:
       case DiveType.mer:
         return 'assets/pngs/mer.png';
       case DiveType.piscine:
@@ -280,6 +321,8 @@ class _NextDiveCardState extends State<NextDiveCard>
 
 IconData _iconForDiveType(DiveType type) {
   switch (type) {
+    case DiveType.autre:
+      return Icons.event;
     case DiveType.mer:
       return Icons.waves;
     case DiveType.fosse:
@@ -293,25 +336,6 @@ IconData _iconForDiveType(DiveType type) {
       return Icons.school;
     case DiveType.stage:
       return Icons.workspace_premium;
-  }
-}
-
-String _labelForDiveType(DiveType type) {
-  switch (type) {
-    case DiveType.mer:
-      return 'Mer';
-    case DiveType.fosse:
-      return 'Fosse';
-    case DiveType.piscine:
-      return 'Piscine';
-    case DiveType.carriere:
-      return 'Carrière';
-    case DiveType.apero:
-      return 'Apéro';
-    case DiveType.formation:
-      return 'Formation';
-    case DiveType.stage:
-      return 'Stage';
   }
 }
 

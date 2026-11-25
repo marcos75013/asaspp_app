@@ -8,7 +8,8 @@ void main() {
       'title': 'Entraînement fosse',
       'description': 'Travail technique',
       'location': 'Fosse de Villeneuve',
-      'category': 'Entraînement',
+      'category': 'Fosse',
+      'categoryImageUrl': '/event-categories/image.png',
       'startDate': '2026-11-14T08:30:00',
       'currentUserStatus': 'MAYBE',
     });
@@ -18,6 +19,12 @@ void main() {
     expect(event.date, 'Samedi 14 novembre');
     expect(event.time, '08h30');
     expect(event.diveType, DiveType.fosse);
+    expect(event.category, 'Fosse');
+    expect(event.categoryImageUrl, '/event-categories/image.png');
+    expect(
+      event.copyWith(participation: ParticipationStatus.going).categoryImageUrl,
+      event.categoryImageUrl,
+    );
     expect(event.participation, ParticipationStatus.maybe);
   });
 
@@ -29,7 +36,7 @@ void main() {
       'currentUserStatus': 'WAITLISTED',
     });
 
-    expect(event.diveType, DiveType.mer);
+    expect(event.diveType, DiveType.autre);
     expect(event.participation, ParticipationStatus.waitlisted);
   });
 

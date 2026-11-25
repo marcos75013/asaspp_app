@@ -14,6 +14,8 @@ void main() {
       startDate: DateTime(2027, 2, 12, 15, 11),
       diveType: DiveType.stage,
       message: 'Stage N2 et N3',
+      category: 'Stage',
+      goingCount: 2,
     );
 
     await tester.pumpWidget(
@@ -22,7 +24,7 @@ void main() {
           body: Center(
             child: SizedBox(
               width: 390,
-              height: 180,
+              height: 230,
               child: NextDiveCard(event: event),
             ),
           ),
@@ -32,6 +34,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('NIOLON 2027'), findsOneWidget);
+    expect(find.text('STAGE'), findsOneWidget);
+    expect(find.text('2 participant(s)'), findsOneWidget);
     expect(find.text('Niolon UCPA'), findsOneWidget);
     final dateText = tester.widget<Text>(find.text(event.date));
     expect(dateText.style?.color, const Color(0xFF34445A));

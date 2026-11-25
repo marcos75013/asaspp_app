@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image/image.dart' as img;
 
 import '../../../../core/network/api_client.dart';
+import '../../../../core/storage/auth_storage.dart';
 import '../../../context/data/models/mobile_user_model.dart';
 
 class PreparedAvatar {
@@ -30,6 +31,31 @@ class MobileProfileApiService {
       '/api/mobile/profile',
     );
     return MobileUserModel.fromJson(response.data ?? {});
+  }
+
+  Future<MobileUserModel> updateProfile({
+    required String email,
+    required String phone,
+    String? currentPassword,
+  }) async {
+    final response = await client.dio.put<Map<String, dynamic>>(
+      '/api/mobile/profile',
+      data: {
+        'email': email.trim(),
+        'phone': phone.trim(),
+        'currentPassword': currentPassword,
+      },
+    );
+    final data = response.data!;
+    final token = data['token'] as String?;
+    if (token != null) {
+      final storage = AuthStorage();
+      final session = await storage.getSession();
+      await storage.saveSession(token, session.refreshToken);
+    }
+    return MobileUserModel.fromJson(
+      Map<String, dynamic>.from(data['user'] as Map),
+    );
   }
 
   Future<MobileUserModel> uploadAvatar(PreparedAvatar avatar) async {

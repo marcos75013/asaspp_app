@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:dio/dio.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
@@ -16,94 +17,124 @@ import '../../data/services/mobile_profile_api_service.dart';
 class UserProfileSheet extends StatelessWidget {
   final MobileUserModel user;
   final MobileAssociationModel? association;
+  final MobileProfileApiService? profileService;
 
-  const UserProfileSheet({super.key, required this.user, this.association});
+  const UserProfileSheet({
+    super.key,
+    required this.user,
+    this.association,
+    this.profileService,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.9,
-      minChildSize: 0.7,
-      maxChildSize: 0.95,
-      builder: (_, controller) {
-        return ClipRRect(
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-          child: Container(
-            decoration: BoxDecoration(
+    return BlocBuilder<ContextCubit, ContextState>(
+      builder: (context, state) {
+        final user = state.context?.user ?? this.user;
+        return DraggableScrollableSheet(
+          initialChildSize: 0.9,
+          minChildSize: 0.7,
+          maxChildSize: 0.95,
+          builder: (_, controller) {
+            return ClipRRect(
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(30),
               ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Colors.white.withOpacity(0.96),
-                  Colors.white.withOpacity(0.88),
-                ],
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.25),
-                  blurRadius: 30,
-                  offset: const Offset(0, -10),
-                ),
-              ],
-            ),
-            child: ListView(
-              controller: controller,
-              padding: const EdgeInsets.all(24),
-              children: [
-                _dragHandle(),
-                const SizedBox(height: 30),
-                _ProfileAvatarControls(user: user),
-                const SizedBox(height: 20),
-                Center(
-                  child: Text(
-                    "${user.firstName} ${user.lastName}",
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(30),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Colors.white.withOpacity(0.96),
+                      Colors.white.withOpacity(0.88),
+                    ],
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.25),
+                      blurRadius: 30,
+                      offset: const Offset(0, -10),
                     ),
-                  ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Center(
-                  child: Text(
-                    _roleLabel(association?.role),
-                    style: const TextStyle(fontSize: 14, color: Colors.black54),
-                  ),
+                child: ListView(
+                  controller: controller,
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    _dragHandle(),
+                    const SizedBox(height: 30),
+                    _ProfileAvatarControls(
+                      user: user,
+                      profileService: profileService,
+                    ),
+                    const SizedBox(height: 20),
+                    Center(
+                      child: Text(
+                        "${user.firstName} ${user.lastName}",
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Center(
+                      child: Text(
+                        _roleLabel(association?.role),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    _profileTile(Icons.email, "Email", user.email),
+                    _profileTile(
+                      Icons.phone,
+                      "Téléphone",
+                      user.phone ?? "Non renseigné",
+                    ),
+                    _profileTile(
+                      Icons.diversity_3,
+                      "Association active",
+                      association?.associationName ?? "Non renseignée",
+                    ),
+                    _profileTile(
+                      Icons.verified_user,
+                      "Rôle",
+                      _roleLabel(association?.role),
+                    ),
+                    const SizedBox(height: 20),
+                    _actionButton(
+                      "Modifier mon profil",
+                      Colors.blueAccent.withOpacity(0.9),
+                      onPressed: () => showDialog<void>(
+                        context: context,
+                        builder: (_) => BlocProvider.value(
+                          value: context.read<ContextCubit>(),
+                          child: _EditProfileDialog(
+                            user: user,
+                            profileService: profileService,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _actionButton(
+                      "Se déconnecter",
+                      Colors.red.withOpacity(0.85),
+                    ),
+                    const SizedBox(height: 40),
+                  ],
                 ),
-                const SizedBox(height: 30),
-                _profileTile(Icons.email, "Email", user.email),
-                _profileTile(
-                  Icons.phone,
-                  "Téléphone",
-                  user.phone ?? "Non renseigné",
-                ),
-                _profileTile(
-                  Icons.diversity_3,
-                  "Association active",
-                  association?.associationName ?? "Non renseignée",
-                ),
-                _profileTile(
-                  Icons.verified_user,
-                  "Rôle",
-                  _roleLabel(association?.role),
-                ),
-                const SizedBox(height: 20),
-                _modulesCard(association?.modules ?? []),
-                const SizedBox(height: 30),
-                _actionButton(
-                  "Modifier mon profil",
-                  Colors.blueAccent.withOpacity(0.9),
-                ),
-                const SizedBox(height: 12),
-                _actionButton("Se déconnecter", Colors.red.withOpacity(0.85)),
-                const SizedBox(height: 40),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
@@ -167,53 +198,7 @@ class UserProfileSheet extends StatelessWidget {
     );
   }
 
-  Widget _modulesCard(List<String> modules) {
-    if (modules.isEmpty) {
-      return _profileTile(Icons.apps, "Modules", "Aucun module disponible");
-    }
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Row(
-            children: [
-              Icon(Icons.apps, color: Colors.blueGrey),
-              SizedBox(width: 16),
-              Text(
-                "Modules disponibles",
-                style: TextStyle(color: Colors.black54, fontSize: 13),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: modules.map((module) {
-              return Chip(
-                label: Text(module, style: const TextStyle(fontSize: 12)),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionButton(String text, Color color) {
+  Widget _actionButton(String text, Color color, {VoidCallback? onPressed}) {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
         backgroundColor: color,
@@ -221,7 +206,7 @@ class UserProfileSheet extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 16),
         elevation: 4,
       ),
-      onPressed: () {},
+      onPressed: onPressed ?? () {},
       child: Text(text, style: const TextStyle(color: Colors.white)),
     );
   }
@@ -240,16 +225,17 @@ class UserProfileSheet extends StatelessWidget {
 
 class _ProfileAvatarControls extends StatefulWidget {
   final MobileUserModel user;
-  const _ProfileAvatarControls({required this.user});
+  final MobileProfileApiService? profileService;
+  const _ProfileAvatarControls({required this.user, this.profileService});
 
   @override
   State<_ProfileAvatarControls> createState() => _ProfileAvatarControlsState();
 }
 
 class _ProfileAvatarControlsState extends State<_ProfileAvatarControls> {
-  late final MobileProfileApiService _profile = MobileProfileApiService(
-    ApiClient(AuthStorage()),
-  );
+  late final MobileProfileApiService _profile =
+      widget.profileService ??
+      MobileProfileApiService(ApiClient(AuthStorage()));
   PreparedAvatar? _preview;
   bool _busy = false;
   String? _error;
@@ -393,4 +379,121 @@ class _ProfileAvatarControlsState extends State<_ProfileAvatarControls> {
       },
     );
   }
+}
+
+class _EditProfileDialog extends StatefulWidget {
+  final MobileUserModel user;
+  final MobileProfileApiService? profileService;
+  const _EditProfileDialog({required this.user, this.profileService});
+  @override
+  State<_EditProfileDialog> createState() => _EditProfileDialogState();
+}
+
+class _EditProfileDialogState extends State<_EditProfileDialog> {
+  final _form = GlobalKey<FormState>();
+  late final _email = TextEditingController(text: widget.user.email);
+  late final _phone = TextEditingController(text: widget.user.phone ?? '');
+  final _password = TextEditingController();
+  bool _busy = false;
+  String? _error;
+  bool get _emailChanged => _email.text.trim() != widget.user.email;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _phone.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    if (!_form.currentState!.validate()) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final user =
+          await (widget.profileService ??
+                  MobileProfileApiService(ApiClient(AuthStorage())))
+              .updateProfile(
+                email: _email.text,
+                phone: _phone.text,
+                currentPassword: _emailChanged ? _password.text : null,
+              );
+      if (!mounted) return;
+      context.read<ContextCubit>().updateUser(user);
+      notifyProfileUpdated();
+      Navigator.of(context).pop();
+    } on DioException catch (e) {
+      if (mounted)
+        setState(
+          () => _error = e.response?.data is Map
+              ? (e.response?.data['message'] as String? ??
+                    'Impossible de modifier le profil.')
+              : 'Impossible de modifier le profil.',
+        );
+    } catch (_) {
+      if (mounted) setState(() => _error = 'Impossible de modifier le profil.');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: const Text('Modifier mon profil'),
+    content: Form(
+      key: _form,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextFormField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'E-mail'),
+              onChanged: (_) => setState(() {}),
+              validator: (value) =>
+                  RegExp(
+                    r'^[^\s@]+@[^\s@]+\.[^\s@]+$',
+                  ).hasMatch(value?.trim() ?? '')
+                  ? null
+                  : 'Saisis une adresse e-mail valide.',
+            ),
+            TextFormField(
+              controller: _phone,
+              keyboardType: TextInputType.phone,
+              maxLength: 40,
+              decoration: const InputDecoration(labelText: 'Téléphone'),
+            ),
+            if (_emailChanged)
+              TextFormField(
+                controller: _password,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Mot de passe actuel',
+                  helperText: 'Requis pour modifier ton e-mail de connexion.',
+                ),
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Saisis ton mot de passe actuel.'
+                    : null,
+              ),
+            if (_error != null)
+              Text(_error!, style: const TextStyle(color: Colors.red)),
+          ],
+        ),
+      ),
+    ),
+    actions: [
+      TextButton(
+        onPressed: _busy ? null : () => Navigator.pop(context),
+        child: const Text('Annuler'),
+      ),
+      ElevatedButton(
+        onPressed: _busy ? null : _save,
+        child: Text(_busy ? 'Enregistrement…' : 'Enregistrer'),
+      ),
+    ],
+  );
 }

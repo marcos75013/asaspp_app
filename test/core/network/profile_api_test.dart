@@ -39,6 +39,24 @@ class RecordingAdapter implements HttpClientAdapter {
         },
       );
     }
+    if (options.path == '/api/mobile/profile' && options.method == 'PUT') {
+      return ResponseBody.fromString(
+        jsonEncode({
+          'user': {
+            'id': 7,
+            'email': 'new@example.test',
+            'firstName': 'A',
+            'lastName': 'B',
+            'phone': '0600000000',
+          },
+          'token': 'new-access',
+        }),
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
     return ResponseBody.fromString(
       '{"id":7,"email":"a@b.test","firstName":"A","lastName":"B","avatarUrl":"/profile-images/new"}',
       statusCode,
@@ -94,6 +112,32 @@ void main() {
           adapter.requests[1].headers[Headers.contentTypeHeader] as String;
       expect(type, startsWith('multipart/form-data; boundary='));
       expect(adapter.bodies[1], contains('name="file"'));
+    },
+  );
+
+  test(
+    'profile edit saves new access token and preserves refresh session',
+    () async {
+      final storage = AuthStorage();
+      await storage.saveSession(
+        accessToken(const Duration(hours: 1)),
+        'refresh',
+      );
+      await storage.saveActiveAssociationId(42);
+      final adapter = RecordingAdapter();
+      final client = ApiClient(storage);
+      client.dio.httpClientAdapter = adapter;
+      final user = await MobileProfileApiService(client).updateProfile(
+        email: 'new@example.test',
+        phone: '0600000000',
+        currentPassword: 'secret',
+      );
+      expect(user.email, 'new@example.test');
+      expect(user.phone, '0600000000');
+      expect((await storage.getSession()).token, 'new-access');
+      expect((await storage.getSession()).refreshToken, 'refresh');
+      expect(adapter.requests.single.headers['X-Association-Id'], isNull);
+      expect(jsonDecode(adapter.bodies.single)['currentPassword'], 'secret');
     },
   );
 

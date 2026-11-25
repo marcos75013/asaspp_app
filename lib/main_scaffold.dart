@@ -91,22 +91,6 @@ class _MainScaffoldState extends State<MainScaffold> {
     );
   }
 
-  Widget _activeIcon(String? imageUrl, IconData fallback) {
-    if (imageUrl == null || imageUrl.trim().isEmpty) {
-      return Icon(fallback, size: 34, color: AppColors.primaryBlue);
-    }
-    return ClipOval(
-      child: Image.network(
-        const ApiConfig().resolveUrl(imageUrl),
-        width: 72,
-        height: 72,
-        fit: BoxFit.cover,
-        errorBuilder: (_, error, stack) =>
-            Icon(fallback, size: 34, color: AppColors.primaryBlue),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -137,10 +121,12 @@ class _MainScaffoldState extends State<MainScaffold> {
               height: 72,
               activeIndex: tabs.indexOf(selected),
 
-              /// 👉 LE CERCLE affichera TOUJOURS ce plongeur
               activeIcons: [
                 for (final index in tabs)
-                  _activeIcon(association?.navigationImageUrl, icons[index]),
+                  AssociationNavigationIcon(
+                    imageUrl: association?.navigationImageUrl,
+                    fallback: icons[index],
+                  ),
               ],
 
               /// 👉 Icônes + labels
@@ -185,6 +171,33 @@ class _MainScaffoldState extends State<MainScaffold> {
           ),
         );
       },
+    );
+  }
+}
+
+class AssociationNavigationIcon extends StatelessWidget {
+  final String? imageUrl;
+  final IconData fallback;
+  const AssociationNavigationIcon({
+    super.key,
+    this.imageUrl,
+    required this.fallback,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null || imageUrl!.trim().isEmpty) {
+      return Icon(fallback, size: 34, color: AppColors.primaryBlue);
+    }
+    return ClipOval(
+      child: Image.network(
+        const ApiConfig().resolveUrl(imageUrl!),
+        width: 72,
+        height: 72,
+        fit: BoxFit.contain,
+        errorBuilder: (_, error, stack) =>
+            Icon(fallback, size: 34, color: AppColors.primaryBlue),
+      ),
     );
   }
 }

@@ -21,7 +21,7 @@ void main() {
     expect(event.participation, ParticipationStatus.maybe);
   });
 
-  test('maps waitlisted participation to the going action', () {
+  test('keeps waitlisted participation distinct from a confirmed place', () {
     final event = NextEventModel.fromJson({
       'id': 13,
       'title': 'Sortie mer',
@@ -30,7 +30,7 @@ void main() {
     });
 
     expect(event.diveType, DiveType.mer);
-    expect(event.participation, ParticipationStatus.going);
+    expect(event.participation, ParticipationStatus.waitlisted);
   });
 
   test('serializes participation statuses for the backend', () {

@@ -21,10 +21,23 @@ class Adapter implements HttpClientAdapter {
     Stream<Uint8List>? body,
     Future<void>? cancel,
   ) async {
+    if (options.path.endsWith('/participants')) {
+      return ResponseBody.fromString(
+        jsonEncode([
+          {'firstName': 'Alice', 'lastName': 'Martin', 'status': 'GOING'},
+          {'firstName': 'Benoît', 'lastName': 'Durand', 'status': null},
+        ]),
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
     final items = [
       {
         'id': 1,
         'title': 'Séance future',
+        'goingCount': 1,
         'startDate': DateTime.now()
             .add(const Duration(days: 5))
             .toIso8601String(),
@@ -37,6 +50,19 @@ class Adapter implements HttpClientAdapter {
             .toIso8601String(),
       },
     ];
+    if (options.method == 'PUT') {
+      return ResponseBody.fromString(
+        jsonEncode({
+          ...items.first,
+          'currentUserStatus': 'GOING',
+          'goingCount': 2,
+        }),
+        200,
+        headers: {
+          Headers.contentTypeHeader: ['application/json'],
+        },
+      );
+    }
     return ResponseBody.fromString(
       jsonEncode({'content': items, 'last': true}),
       fail ? 500 : 200,
@@ -65,6 +91,15 @@ void main() {
     expect(find.text('Séance future'), findsOneWidget);
     expect(find.text('Séance passée'), findsOneWidget);
     expect(find.text('Présent'), findsOneWidget);
+    await tester.tap(find.text('Présent'));
+    await tester.pumpAndSettle();
+    expect(find.text('2 présent(s) · Voir les participants'), findsOneWidget);
+    await tester.tap(find.text('2 présent(s) · Voir les participants'));
+    await tester.pumpAndSettle();
+    expect(find.text('Présents (1)'), findsOneWidget);
+    expect(find.text('Alice Martin'), findsOneWidget);
+    expect(find.text('Sans réponse (1)'), findsOneWidget);
+    expect(find.text('Benoît Durand'), findsOneWidget);
   });
   testWidgets('shows a retry when loading fails', (tester) async {
     SharedPreferences.setMockInitialValues({});

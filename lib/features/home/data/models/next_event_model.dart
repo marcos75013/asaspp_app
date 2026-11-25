@@ -1,12 +1,14 @@
 enum DiveType { mer, piscine, carriere, apero, formation, stage, fosse }
 
-enum ParticipationStatus { none, going, maybe, notGoing }
+enum ParticipationStatus { none, going, maybe, notGoing, waitlisted }
 
 class NextEventModel {
   final int id;
   final String title;
   final String site;
   final DateTime startDate;
+  final DateTime? endDate;
+  final int goingCount;
   final DiveType diveType;
   final String message;
   final ParticipationStatus participation;
@@ -16,6 +18,8 @@ class NextEventModel {
     required this.title,
     required this.site,
     required this.startDate,
+    this.endDate,
+    this.goingCount = 0,
     required this.diveType,
     required this.message,
     this.participation = ParticipationStatus.none,
@@ -62,6 +66,8 @@ class NextEventModel {
       title: title,
       site: site,
       startDate: startDate,
+      endDate: endDate,
+      goingCount: goingCount,
       diveType: diveType,
       message: message,
       participation: participation ?? this.participation,
@@ -80,6 +86,8 @@ class NextEventModel {
       startDate:
           DateTime.tryParse(json['startDate'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
+      endDate: DateTime.tryParse(json['endDate'] as String? ?? ''),
+      goingCount: (json['goingCount'] as num?)?.toInt() ?? 0,
       diveType: _diveTypeFrom('$category $title $location'),
       message: json['description'] as String? ?? '',
       participation: _participationFrom(json['currentUserStatus'] as String?),
@@ -106,7 +114,8 @@ DiveType _diveTypeFrom(String value) {
 
 ParticipationStatus _participationFrom(String? value) {
   return switch (value) {
-    'GOING' || 'WAITLISTED' => ParticipationStatus.going,
+    'GOING' => ParticipationStatus.going,
+    'WAITLISTED' => ParticipationStatus.waitlisted,
     'MAYBE' => ParticipationStatus.maybe,
     'NOT_GOING' => ParticipationStatus.notGoing,
     _ => ParticipationStatus.none,
@@ -118,6 +127,9 @@ String participationStatusToJson(ParticipationStatus status) {
     ParticipationStatus.going => 'GOING',
     ParticipationStatus.maybe => 'MAYBE',
     ParticipationStatus.notGoing => 'NOT_GOING',
+    ParticipationStatus.waitlisted => throw ArgumentError(
+      'Waitlist status is set by the server',
+    ),
     ParticipationStatus.none => throw ArgumentError(
       'A participation status is required',
     ),

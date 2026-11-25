@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'training_detail_page.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
 import '../../../home/data/models/next_event_model.dart';
@@ -138,44 +139,66 @@ class _TrainingCalendarPageState extends State<TrainingCalendarPage> {
 
   Widget _card(NextEventModel event, bool future) => Card(
     margin: const EdgeInsets.symmetric(vertical: 8),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            event.title,
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 6),
-          Text('${event.date} ${event.startDate.year} à ${event.time}'),
-          if (event.site != event.title) Text(event.site),
-          if (event.message.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(event.message),
-          ],
-          if (future)
-            Wrap(
-              spacing: 8,
-              children: [
-                for (final option in [
-                  (ParticipationStatus.going, 'Présent'),
-                  (ParticipationStatus.notGoing, 'Absent'),
-                ])
-                  OutlinedButton(
-                    onPressed: _saving == null
-                        ? () => _respond(event, option.$1)
-                        : null,
-                    style: OutlinedButton.styleFrom(
-                      backgroundColor: event.participation == option.$1
-                          ? Colors.green.withValues(alpha: .18)
-                          : null,
-                    ),
-                    child: Text(option.$2),
-                  ),
-              ],
+    child: InkWell(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) =>
+              TrainingDetailPage(training: event, apiClient: _client),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              event.title,
+              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
             ),
-        ],
+            const SizedBox(height: 6),
+            Text('${event.date} ${event.startDate.year} à ${event.time}'),
+            if (event.site != event.title) Text(event.site),
+            TextButton.icon(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) =>
+                      TrainingDetailPage(training: event, apiClient: _client),
+                ),
+              ),
+              icon: const Icon(Icons.group_outlined),
+              label: Text(
+                '${event.goingCount} présent(s) · Voir les participants',
+              ),
+            ),
+            if (event.participation == ParticipationStatus.waitlisted)
+              const Text('Inscrit sur liste d’attente'),
+            if (event.message.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(event.message),
+            ],
+            if (future)
+              Wrap(
+                spacing: 8,
+                children: [
+                  for (final option in [
+                    (ParticipationStatus.going, 'Présent'),
+                    (ParticipationStatus.notGoing, 'Absent'),
+                  ])
+                    OutlinedButton(
+                      onPressed: _saving == null
+                          ? () => _respond(event, option.$1)
+                          : null,
+                      style: OutlinedButton.styleFrom(
+                        backgroundColor: event.participation == option.$1
+                            ? Colors.green.withValues(alpha: .18)
+                            : null,
+                      ),
+                      child: Text(option.$2),
+                    ),
+                ],
+              ),
+          ],
+        ),
       ),
     ),
   );

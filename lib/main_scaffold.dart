@@ -7,7 +7,7 @@ import 'core/config/api_config.dart';
 import 'core/storage/auth_storage.dart';
 import 'core/theme/app_colors.dart';
 import 'features/annonces/presentation/pages/ads_page.dart';
-import 'features/events/presentation/pages/about_us_page.dart';
+import 'features/events/presentation/pages/training_calendar_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
 import 'features/gallery/presentation/pages/gallery_page.dart';
 import 'features/home/data/services/mobile_event_api_service.dart';
@@ -26,7 +26,6 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   int _currentIndex = 0;
-  int _aboutVisit = 0;
 
   late final List<Widget> _pages;
 
@@ -53,7 +52,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         ],
         child: const HomePage(),
       ),
-      AboutUsPage(key: ValueKey(_aboutVisit)),
+      const TrainingCalendarPage(),
       const GalleryPage(),
       const AdsPage(), // ⬅️ Petites annonces
     ];
@@ -125,7 +124,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         final selected = tabs.contains(_currentIndex) ? _currentIndex : 0;
         const icons = [
           Icons.home,
-          Icons.groups,
+          Icons.calendar_month,
           Icons.photo_library,
           Icons.campaign,
         ];
@@ -153,7 +152,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                 ),
                 _navItem(
                   icon: Icons.event,
-                  label: association?.associationName ?? 'Association',
+                  label: 'Calendrier',
                   active: _currentIndex == 1,
                 ),
                 if (tabs.contains(2))
@@ -180,10 +179,6 @@ class _MainScaffoldState extends State<MainScaffold> {
               onTap: (index) {
                 setState(() {
                   _currentIndex = tabs[index];
-                  if (_currentIndex == 1) {
-                    _aboutVisit++;
-                    _pages[1] = AboutUsPage(key: ValueKey(_aboutVisit));
-                  }
                 });
               },
             ),

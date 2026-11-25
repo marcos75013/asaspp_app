@@ -1,11 +1,11 @@
 {
-    "name": "asaspp_app",
-    "short_name": "asaspp_app",
+    "name": "MultiAsso",
+    "short_name": "MultiAsso",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#ffffff",
+    "theme_color": "#0d1b3e",
+    "description": "La plateforme qui simplifie la vie des associations.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

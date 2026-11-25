@@ -3,6 +3,7 @@ import '../../../home/data/models/next_event_model.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
 import '../../data/services/carpool_api_service.dart';
+import '../carpool_departure_validation.dart';
 
 class CreateCarpoolScreen extends StatefulWidget {
   final NextEventModel event;
@@ -31,43 +32,62 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
 
   Future<void> _pickDeparture() async {
     final now = DateTime.now();
-    final eventDate = widget.event.startDate.isAfter(now)
-        ? widget.event.startDate
-        : now;
+    final eventDate = widget.event.startDate;
+    if (!eventDate.isAfter(now)) {
+      setState(() => _error = 'Cet événement a déjà commencé.');
+      return;
+    }
     final date = await showDatePicker(
       context: context,
       firstDate: DateTime(now.year, now.month, now.day),
-      lastDate: DateTime(now.year + 3),
-      initialDate: eventDate,
+      lastDate: DateTime(eventDate.year, eventDate.month, eventDate.day),
+      initialDate: _departureTime ?? eventDate,
     );
     if (date == null || !mounted) return;
     final time = await showTimePicker(
       context: context,
-      initialTime: TimeOfDay.fromDateTime(eventDate),
+      initialTime: TimeOfDay.fromDateTime(_departureTime ?? eventDate),
     );
     if (time == null || !mounted) return;
-    setState(
-      () => _departureTime = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        time.hour,
-        time.minute,
-      ),
+    final departure = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
     );
+    final error = validateCarpoolDeparture(
+      departure: departure,
+      eventStart: eventDate,
+      now: DateTime.now(),
+    );
+    setState(() {
+      _departureTime = departure;
+      _error = error;
+    });
   }
 
   Future<void> _save() async {
     final seats = int.tryParse(_seats.text.trim());
+    final departureError = validateCarpoolDeparture(
+      departure: _departureTime,
+      eventStart: widget.event.startDate,
+      now: DateTime.now(),
+    );
     if (_location.text.trim().isEmpty ||
+        _location.text.trim().length > 180 ||
         seats == null ||
         seats < 1 ||
-        _departureTime == null ||
-        !_departureTime!.isAfter(DateTime.now())) {
+        _note.text.trim().length > 500) {
       setState(
         () => _error =
-            'Renseigne un lieu, une date future et au moins une place.',
+            'Renseigne un lieu (180 caractères maximum), au moins '
+            'une place et un commentaire de 500 caractères maximum.',
       );
+      return;
+    }
+    if (departureError != null) {
+      setState(() => _error = departureError);
       return;
     }
     setState(() {
@@ -174,15 +194,29 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
                       const SizedBox(height: 16),
 
                       ListTile(
-                        leading: const Icon(Icons.access_time),
+                        leading: const Icon(
+                          Icons.access_time,
+                          color: Color(0xFF34445A),
+                        ),
                         title: Text(
                           _departureTime == null
                               ? 'Date et heure de départ'
                               : '${_departureTime!.day}/${_departureTime!.month}/${_departureTime!.year} '
                                     '${_departureTime!.hour.toString().padLeft(2, '0')}:'
                                     '${_departureTime!.minute.toString().padLeft(2, '0')}',
+                          style: const TextStyle(color: Color(0xFF34445A)),
                         ),
                         onTap: _pickDeparture,
+                      ),
+
+                      Text(
+                        'Départ au plus tard le '
+                        '${widget.event.startDate.day.toString().padLeft(2, '0')}/'
+                        '${widget.event.startDate.month.toString().padLeft(2, '0')}/'
+                        '${widget.event.startDate.year} à '
+                        '${widget.event.startDate.hour.toString().padLeft(2, '0')}h'
+                        '${widget.event.startDate.minute.toString().padLeft(2, '0')}.',
+                        style: const TextStyle(color: Color(0xFF34445A)),
                       ),
 
                       const SizedBox(height: 16),
@@ -225,9 +259,10 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
                         ),
                         child: Text(
                           _saving ? 'Création…' : 'Créer le covoiturage',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
+                            color: Color(0xFF172334),
                           ),
                         ),
                       ),
@@ -265,15 +300,23 @@ class _FormField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            color: Color(0xFF172334),
+          ),
+        ),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
+          style: const TextStyle(color: Color(0xFF172334)),
           maxLines: maxLines,
           keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hint,
-            prefixIcon: Icon(icon),
+            hintStyle: const TextStyle(color: Color(0xFF65758A)),
+            prefixIcon: Icon(icon, color: const Color(0xFF65758A)),
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(

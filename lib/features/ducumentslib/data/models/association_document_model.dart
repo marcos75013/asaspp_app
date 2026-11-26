@@ -8,6 +8,7 @@ class AssociationDocumentModel {
   final String contentType;
   final int fileSize;
   final DateTime createdAt;
+  final String? externalUrl;
 
   const AssociationDocumentModel({
     required this.id,
@@ -19,10 +20,12 @@ class AssociationDocumentModel {
     required this.contentType,
     required this.fileSize,
     required this.createdAt,
+    this.externalUrl,
   });
 
   factory AssociationDocumentModel.fromJson(Map<String, dynamic> json) {
     return AssociationDocumentModel(
+      externalUrl: json['externalUrl'] as String?,
       id: (json['id'] as num?)?.toInt() ?? 0,
       categoryId: (json['categoryId'] as num?)?.toInt(),
       categoryName: json['categoryName'] as String? ?? 'Sans catégorie',
@@ -37,6 +40,7 @@ class AssociationDocumentModel {
     );
   }
 
+  bool get isLink => externalUrl?.trim().isNotEmpty == true;
   bool get isPdf => contentType == 'application/pdf';
 }
 

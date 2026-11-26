@@ -57,9 +57,20 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
 
   Future<void> openDocument(AssociationDocumentModel document) async {
     try {
-      final uri = await _repository.download(document);
-      final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
-      if (!opened) throw StateError('Aucune application disponible');
+      if (document.isLink) {
+        final uri = Uri.tryParse(document.externalUrl!.trim());
+        if (uri == null ||
+            !['http', 'https'].contains(uri.scheme.toLowerCase()) ||
+            uri.host.isEmpty ||
+            uri.userInfo.isNotEmpty) {
+          throw StateError('Lien invalide');
+        }
+        if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+          throw StateError('Aucune application disponible');
+        }
+      } else {
+        await _repository.openFile(document);
+      }
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -85,7 +96,7 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text("Bibliothèque Plongée"),
+        title: const Text("Bibliothèque"),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -186,9 +197,34 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                       ? const Center(child: CircularProgressIndicator())
                       : errorMessage != null
                       ? Center(
-                          child: Text(
-                            errorMessage!,
-                            style: const TextStyle(color: Colors.white),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                errorMessage!,
+                                style: const TextStyle(color: Colors.white),
+                              ),
+                              TextButton(
+                                onPressed: loadDocuments,
+                                child: const Text('Réessayer'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : filteredDocs.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text(
+                                'Aucune ressource disponible.',
+                                style: TextStyle(color: Colors.white),
+                              ),
+                              TextButton(
+                                onPressed: loadDocuments,
+                                child: const Text('Actualiser'),
+                              ),
+                            ],
                           ),
                         )
                       : RefreshIndicator(
@@ -238,7 +274,11 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
-                    doc.isPdf ? Icons.picture_as_pdf : Icons.link,
+                    doc.isLink
+                        ? Icons.link
+                        : doc.isPdf
+                        ? Icons.picture_as_pdf
+                        : Icons.insert_drive_file_outlined,
                     color: Colors.white,
                     size: 18,
                   ),
@@ -262,7 +302,9 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                       const SizedBox(height: 4),
                       Text(
                         doc.description.isEmpty
-                            ? '${doc.categoryName} · ${doc.originalFilename}'
+                            ? (doc.isLink
+                                  ? '${doc.categoryName} · Lien'
+                                  : '${doc.categoryName} · ${doc.originalFilename}')
                             : doc.description,
                         style: const TextStyle(
                           color: Colors.white70,

@@ -9,6 +9,7 @@ import 'package:asaspp_app/features/home_page_admin/presentation/pages/write_mes
 import 'package:asaspp_app/features/user/presentation/cubit/user_cubit.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
@@ -70,7 +71,7 @@ class _HomePageAdminState extends State<HomePageAdmin> {
         /// bouton retour maintenant ici
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => context.go('/home'),
         ),
 
         title: Row(
@@ -154,7 +155,7 @@ class _HomePageAdminState extends State<HomePageAdmin> {
               width: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -167,7 +168,7 @@ class _HomePageAdminState extends State<HomePageAdmin> {
               width: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withOpacity(0.05),
+                color: Colors.white.withValues(alpha: 0.05),
               ),
             ),
           ),
@@ -263,13 +264,13 @@ class _AdminCardState extends State<_AdminCard> {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
 
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
 
-                    border: Border.all(color: Colors.white.withOpacity(0.25)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
 
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.35),
+                        color: Colors.black.withValues(alpha: 0.35),
                         blurRadius: 30,
                         offset: const Offset(0, 10),
                       ),
@@ -304,7 +305,7 @@ class _AdminCardState extends State<_AdminCard> {
                                     gradient: LinearGradient(
                                       colors: [
                                         Colors.transparent,
-                                        Colors.black.withOpacity(0.35),
+                                        Colors.black.withValues(alpha: 0.35),
                                       ],
                                       begin: Alignment.topCenter,
                                       end: Alignment.bottomCenter,
@@ -340,8 +341,8 @@ class _AdminCardState extends State<_AdminCard> {
 
                       /// BOUTON +
                       Positioned(
-                        top: 100,
-                        right: 64,
+                        top: 10,
+                        right: 10,
                         child: TweenAnimationBuilder(
                           tween: Tween<double>(begin: 0.9, end: 1.1),
                           duration: const Duration(seconds: 2),
@@ -357,7 +358,7 @@ class _AdminCardState extends State<_AdminCard> {
                               borderRadius: BorderRadius.circular(30),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withValues(alpha: 0.8),
                                   blurRadius: 10,
                                 ),
                               ],

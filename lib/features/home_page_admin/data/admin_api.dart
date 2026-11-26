@@ -27,4 +27,12 @@ class AdminApi {
   Future<void> delete(String path, int id) async {
     await client.dio.delete<void>('$path/$id');
   }
+
+  Future<int> createAlbum(Map<String, dynamic> fields) async {
+    final response = await client.dio.post<Map<String, dynamic>>(
+      '/api/gallery',
+      queryParameters: fields,
+    );
+    return (response.data!['id'] as num).toInt();
+  }
 }

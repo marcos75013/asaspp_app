@@ -13,6 +13,7 @@ import '../../features/context/data/services/mobile_context_api_service.dart';
 import '../../features/ducumentslib/presentation/documents_library_page.dart';
 import '../../features/home/data/models/next_event_model.dart';
 import '../../features/home_page_admin/presentation/pages/home_page_admin.dart';
+import '../../features/home_page_admin/presentation/widgets/admin_access_guard.dart';
 import '../../features/paiement/presentation/pages/payment_list_page.dart';
 import '../../features/quiz/presentation/pages/quiz_game_page.dart';
 import '../../features/quiz/data/member_quiz.dart';
@@ -94,7 +95,8 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: '/admin-home',
-      builder: (context, state) => const HomePageAdmin(),
+      builder: (context, state) =>
+          const AdminAccessGuard(child: HomePageAdmin()),
     ),
   ],
 );

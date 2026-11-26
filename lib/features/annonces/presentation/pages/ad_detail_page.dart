@@ -136,27 +136,6 @@ class _AdDetailPageState extends State<AdDetailPage> {
             ),
           ),
 
-          /// 🔙 BACK BUTTON
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.only(left: 12, top: 8),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: GestureDetector(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.4),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.arrow_back, color: Colors.white),
-                  ),
-                ),
-              ),
-            ),
-          ),
-
           /// 🧊 CONTENT (sans blur runtime)
           SingleChildScrollView(
             controller: _scrollController,
@@ -290,6 +269,24 @@ class _AdDetailPageState extends State<AdDetailPage> {
                   ),
                 ),
               ],
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            child: SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12, top: 8),
+                child: IconButton(
+                  tooltip: 'Retour aux annonces',
+                  onPressed: () => Navigator.of(context).pop(),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.4),
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.arrow_back),
+                ),
+              ),
             ),
           ),
         ],

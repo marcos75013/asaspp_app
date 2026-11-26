@@ -35,4 +35,19 @@ class AdminApi {
     );
     return (response.data!['id'] as num).toInt();
   }
+
+  Future<Map<String, dynamic>> createMember(Map<String, dynamic> fields) async {
+    final response = await client.dio.post<Map<String, dynamic>>(
+      '/api/admin-association/members',
+      data: fields,
+    );
+    return response.data ?? {};
+  }
+
+  Future<void> setMemberRole(int id, String role) async {
+    await client.dio.put<dynamic>(
+      '/api/admin-association/members/$id/role',
+      data: {'role': role},
+    );
+  }
 }

@@ -9,6 +9,7 @@ import '../../../context/cubit/context_cubit.dart';
 import '../../../context/cubit/context_state.dart';
 import '../../../ducumentslib/presentation/widgets/documents_library_card.dart';
 import '../../../messages/presentation/cubit/message_cubit.dart';
+import '../../../paiement/presentation/widgets/payment_home_card.dart';
 import '../../../splash/presentation/widget/bubbles_layer.dart';
 import '../../../user/presentation/pages/user_profile_sheet.dart';
 import '../cubit/home_cubit.dart';
@@ -154,6 +155,7 @@ class HomePage extends StatelessWidget {
                           const SizedBox(height: 2),
                           const DocumentsLibraryCard(),
                         ],
+                        const PaymentHomeCard(),
                         const SizedBox(height: 46),
                       ],
                     ),

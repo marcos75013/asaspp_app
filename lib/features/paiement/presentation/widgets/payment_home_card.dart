@@ -175,7 +175,7 @@ class PaymentHomeCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            "PAYER MA COMMANDE",
+                            "PAIEMENTS",
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context)
@@ -190,7 +190,7 @@ class PaymentHomeCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            "Règle tes commandes en toute sécurité.",
+                            "Retrouve les liens de paiement de ton association.",
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context)

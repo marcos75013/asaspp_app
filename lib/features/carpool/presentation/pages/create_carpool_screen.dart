@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
 import '../../../home/data/models/next_event_model.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
@@ -103,6 +104,15 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
         note: _note.text,
       );
       if (mounted) Navigator.of(context).pop(true);
+    } on DioException catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error.response?.data is Map
+              ? (error.response?.data['message'] as String? ??
+                    'Impossible de créer le covoiturage.')
+              : 'Impossible de créer le covoiturage.',
+        );
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Impossible de créer le covoiturage.');

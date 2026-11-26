@@ -1,5 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:dio/dio.dart';
+import '../../../../core/widgets/member_avatar.dart';
+import '../../data/models/carpool_passenger.dart';
 
 import '../../data/models/carpool_model.dart';
 import '../../data/services/carpool_api_service.dart';
@@ -10,16 +13,16 @@ import '../../../../core/storage/auth_storage.dart';
 
 class JoinCarpoolScreen extends StatefulWidget {
   final NextEventModel event;
-  const JoinCarpoolScreen({super.key, required this.event});
+  final CarpoolApiService? api;
+  const JoinCarpoolScreen({super.key, required this.event, this.api});
 
   @override
   State<JoinCarpoolScreen> createState() => _JoinCarpoolScreenState();
 }
 
 class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
-  late final CarpoolApiService _api = CarpoolApiService(
-    ApiClient(AuthStorage()),
-  );
+  late final CarpoolApiService _api =
+      widget.api ?? CarpoolApiService(ApiClient(AuthStorage()));
   List<CarpoolModel> _carpools = const [];
   bool _loading = true;
   String? _error;
@@ -67,6 +70,15 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
         await _api.book(carpool.id);
       }
       await _load();
+    } on DioException catch (error) {
+      if (mounted) {
+        setState(
+          () => _error = error.response?.data is Map
+              ? (error.response?.data['message'] as String? ??
+                    'Impossible de modifier la réservation.')
+              : 'Impossible de modifier la réservation.',
+        );
+      }
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Impossible de modifier la réservation.');
@@ -74,6 +86,54 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
     } finally {
       if (mounted) setState(() => _busyPostId = null);
     }
+  }
+
+  void _showPassengers(CarpoolModel carpool) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: FutureBuilder<List<CarpoolPassenger>>(
+            future: _api.passengers(carpool.id),
+            builder: (context, snapshot) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Passagers de ${carpool.creatorName}',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 12),
+                if (snapshot.connectionState != ConnectionState.done)
+                  const Center(child: CircularProgressIndicator())
+                else if (snapshot.hasError)
+                  const Text('Impossible de charger les passagers.')
+                else if (snapshot.data!.isEmpty)
+                  const Text('Aucune réservation pour le moment.')
+                else
+                  Flexible(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        for (final passenger in snapshot.data!)
+                          ListTile(
+                            leading: MemberAvatar(
+                              radius: 20,
+                              url: passenger.avatarUrl,
+                              name: passenger.name,
+                            ),
+                            title: Text(passenger.name),
+                          ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -127,10 +187,28 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
                         const SizedBox(height: 24),
 
                         /// 📋 LISTE DES COVOITURAGES
+                        if (_error != null && !_loading) ...[
+                          Text(
+                            _error!,
+                            style: const TextStyle(color: Colors.red),
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        if (_carpools.any(
+                          (post) => post.ownedByCurrentUser,
+                        )) ...[
+                          const Text(
+                            'Tu proposes déjà un trajet pour cet événement : tu ne peux pas réserver une place dans un autre covoiturage.',
+                          ),
+                          const SizedBox(height: 12),
+                        ],
                         if (_loading)
                           const Center(child: CircularProgressIndicator())
-                        else if (_error != null)
-                          TextButton(onPressed: _load, child: Text(_error!))
+                        else if (_error != null && _carpools.isEmpty)
+                          TextButton(
+                            onPressed: _load,
+                            child: const Text('Réessayer'),
+                          )
                         else if (_carpools.isEmpty)
                           const Text('Aucun covoiturage disponible')
                         else
@@ -140,9 +218,17 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
                               remainingSeats: carpool.remainingSeats,
                               avatarUrl: carpool.authorAvatarUrl,
                               booked: carpool.bookedByCurrentUser,
+                              owned: carpool.ownedByCurrentUser,
+                              onShowPassengers: carpool.ownedByCurrentUser
+                                  ? () => _showPassengers(carpool)
+                                  : null,
                               enabled:
                                   !carpool.ownedByCurrentUser &&
-                                  _busyPostId != carpool.id,
+                                  (!_carpools.any(
+                                        (post) => post.ownedByCurrentUser,
+                                      ) ||
+                                      carpool.bookedByCurrentUser) &&
+                                  _busyPostId == null,
                               onReserve: () => _toggleBooking(carpool),
                             ),
                           ),

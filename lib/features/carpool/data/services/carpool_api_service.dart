@@ -1,5 +1,6 @@
 import '../../../../core/network/api_client.dart';
 import '../models/carpool_model.dart';
+import '../models/carpool_passenger.dart';
 
 class CarpoolApiService {
   final ApiClient _client;
@@ -33,6 +34,18 @@ class CarpoolApiService {
       },
     );
     return CarpoolModel.fromJson(response.data ?? const {});
+  }
+
+  Future<List<CarpoolPassenger>> passengers(int postId) async {
+    final response = await _client.dio.get<List<dynamic>>(
+      '/api/carpools/$postId/passengers',
+    );
+    return (response.data ?? const [])
+        .whereType<Map>()
+        .map(
+          (item) => CarpoolPassenger.fromJson(Map<String, dynamic>.from(item)),
+        )
+        .toList();
   }
 
   Future<CarpoolModel> book(int postId) async {

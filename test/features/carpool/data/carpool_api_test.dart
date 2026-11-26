@@ -33,7 +33,11 @@ class _CarpoolAdapter implements HttpClientAdapter {
         '"availableSeatCount":2,"bookedByCurrentUser":false,'
         '"ownedByCurrentUser":false,"active":true}';
     return ResponseBody.fromString(
-      options.method == 'GET' ? '[$post]' : post,
+      options.path.endsWith('/passengers')
+          ? '[{"userId":42,"firstName":"Alice","lastName":"Martin","avatarUrl":"/profile-images/abc"}]'
+          : options.method == 'GET'
+          ? '[$post]'
+          : post,
       200,
       headers: {
         Headers.contentTypeHeader: ['application/json'],
@@ -68,11 +72,15 @@ void main() {
       departureTime: DateTime(2026, 12, 1, 8),
       seatCount: 3,
     );
+    final passengers = await api.passengers(8);
+    expect(passengers.single.name, 'Alice Martin');
+    expect(passengers.single.avatarUrl, '/profile-images/abc');
     await api.book(8);
     await api.cancelBooking(8);
     expect(adapter.requests.map((r) => '${r.method} ${r.path}'), [
       'GET /api/events/4/carpools',
       'POST /api/events/4/carpools',
+      'GET /api/carpools/8/passengers',
       'POST /api/carpools/8/bookings',
       'DELETE /api/carpools/8/bookings/mine',
     ]);

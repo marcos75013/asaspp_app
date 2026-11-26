@@ -8,6 +8,8 @@ class CarpoolCard extends StatelessWidget {
   final String? avatarUrl;
   final bool booked;
   final bool enabled;
+  final VoidCallback? onShowPassengers;
+  final bool owned;
 
   const CarpoolCard({
     super.key,
@@ -17,6 +19,8 @@ class CarpoolCard extends StatelessWidget {
     this.avatarUrl,
     this.booked = false,
     this.enabled = true,
+    this.onShowPassengers,
+    this.owned = false,
   });
 
   @override
@@ -61,6 +65,12 @@ class CarpoolCard extends StatelessWidget {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                if (onShowPassengers != null)
+                  TextButton.icon(
+                    onPressed: onShowPassengers,
+                    icon: const Icon(Icons.people_outline, size: 18),
+                    label: const Text('Voir les passagers'),
+                  ),
               ],
             ),
           ),
@@ -74,7 +84,13 @@ class CarpoolCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(14),
               ),
             ),
-            child: Text(booked ? 'Annuler' : 'Réserver'),
+            child: Text(
+              owned
+                  ? 'Mon trajet'
+                  : booked
+                  ? 'Annuler'
+                  : 'Réserver',
+            ),
           ),
         ],
       ),

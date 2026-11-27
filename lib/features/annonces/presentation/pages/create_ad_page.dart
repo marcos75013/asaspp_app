@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'dart:typed_data';
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../data/services/ads_repository.dart';
 import '../data/models/ad_model.dart';
@@ -16,7 +17,7 @@ class CreateAdPage extends StatefulWidget {
 class _CreateAdPageState extends State<CreateAdPage> {
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
-  final List<XFile> _images = [];
+  final List<AdImageUpload> _images = [];
   final _titleController = TextEditingController();
   final _priceController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -37,15 +38,22 @@ class _CreateAdPageState extends State<CreateAdPage> {
   Future<void> _pickImage() async {
     if (_images.length >= 5) return;
 
-    final XFile? image = await _picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
-
-    if (image != null) {
+    try {
+      final image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+      if (image == null || !mounted) return;
+      final bytes = await image.readAsBytes();
+      if (!mounted || _images.length >= 5 || _saving) return;
       setState(() {
-        _images.add(image);
+        _images.add(AdImageUpload(bytes: bytes, filename: image.name));
+        _errorMessage = null;
       });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _errorMessage = 'Impossible d’ouvrir cette photo.');
+      }
     }
   }
 
@@ -64,12 +72,6 @@ class _CreateAdPageState extends State<CreateAdPage> {
 
     try {
       final priceText = _priceController.text.trim().replaceAll(',', '.');
-      final uploads = <AdImageUpload>[];
-      for (final image in _images) {
-        uploads.add(
-          AdImageUpload(bytes: await image.readAsBytes(), filename: image.name),
-        );
-      }
       await widget.repository.createAd(
         CreateAdInput(
           type: _type,
@@ -80,7 +82,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
               ? null
               : _phoneController.text.trim(),
         ),
-        uploads,
+        List.of(_images),
       );
       if (mounted) Navigator.pop(context, true);
     } catch (_) {
@@ -94,233 +96,124 @@ class _CreateAdPageState extends State<CreateAdPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FA),
-      body: Stack(
-        children: [
-          /// 🔵 HEADER GRADIENT
-          Container(
-            height: 220,
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFF00B4D8), Color(0xFF0A1E2D)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-          ),
-
-          SafeArea(
-            child: Column(
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Nouvelle annonce')),
+        body: SafeArea(
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              padding: PulseTheme.pagePadding,
               children: [
-                /// 🔙 HEADER CONTENT
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 16,
-                  ),
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      const Text(
-                        "Nouvelle annonce",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
+                _modernField(
+                  controller: _titleController,
+                  label: "Titre",
+                  required: true,
                 ),
 
                 const SizedBox(height: 20),
 
-                /// 💎 CARD FLOTTANTE
-                Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 20),
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.08),
-                          blurRadius: 30,
-                          offset: const Offset(0, 15),
-                        ),
-                      ],
+                DropdownButtonFormField<AdType>(
+                  initialValue: _type,
+                  decoration: _fieldDecoration("Type d'annonce"),
+                  items: const [
+                    DropdownMenuItem(value: AdType.vente, child: Text('Vente')),
+                    DropdownMenuItem(
+                      value: AdType.recherche,
+                      child: Text('Recherche'),
                     ),
-                    child: SingleChildScrollView(
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _modernField(
-                              controller: _titleController,
-                              label: "Titre",
-                              required: true,
-                            ),
+                    DropdownMenuItem(value: AdType.don, child: Text('Don')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() => _type = value);
+                    }
+                  },
+                ),
 
-                            const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                            DropdownButtonFormField<AdType>(
-                              initialValue: _type,
-                              decoration: _fieldDecoration("Type d'annonce"),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: AdType.vente,
-                                  child: Text('Vente'),
-                                ),
-                                DropdownMenuItem(
-                                  value: AdType.recherche,
-                                  child: Text('Recherche'),
-                                ),
-                                DropdownMenuItem(
-                                  value: AdType.don,
-                                  child: Text('Don'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                if (value != null) {
-                                  setState(() => _type = value);
-                                }
-                              },
-                            ),
+                _modernField(
+                  controller: _priceController,
+                  label: "Prix (€)",
+                  keyboardType: TextInputType.number,
+                  enabled: _type != AdType.don,
+                  validator: (value) {
+                    if (_type != AdType.vente) return null;
+                    final price = double.tryParse(
+                      (value ?? '').replaceAll(',', '.'),
+                    );
+                    return price == null || price <= 0
+                        ? 'Indiquez un prix supérieur à zéro.'
+                        : null;
+                  },
+                ),
 
-                            const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                            _modernField(
-                              controller: _priceController,
-                              label: "Prix (€)",
-                              keyboardType: TextInputType.number,
-                              enabled: _type != AdType.don,
-                              validator: (value) {
-                                if (_type != AdType.vente) return null;
-                                final price = double.tryParse(
-                                  (value ?? '').replaceAll(',', '.'),
-                                );
-                                return price == null || price <= 0
-                                    ? 'Indiquez un prix supérieur à zéro.'
-                                    : null;
-                              },
-                            ),
+                _modernField(
+                  controller: _descriptionController,
+                  label: "Description",
+                  maxLines: 4,
+                  required: true,
+                ),
 
-                            const SizedBox(height: 20),
+                const SizedBox(height: 30),
 
-                            _modernField(
-                              controller: _descriptionController,
-                              label: "Description",
-                              maxLines: 4,
-                              required: true,
-                            ),
+                const Text(
+                  "Contact",
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                ),
 
-                            const SizedBox(height: 30),
+                const SizedBox(height: 16),
 
-                            const Text(
-                              "Contact",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
+                _readOnlyModern(label: "Annonceur", value: "Compte connecté"),
 
-                            const SizedBox(height: 16),
+                const SizedBox(height: 20),
 
-                            _readOnlyModern(
-                              label: "Annonceur",
-                              value: "Compte connecté",
-                            ),
+                _modernField(
+                  controller: _phoneController,
+                  label: "Numéro de téléphone",
+                  keyboardType: TextInputType.phone,
+                ),
 
-                            const SizedBox(height: 20),
+                const SizedBox(height: 30),
 
-                            _modernField(
-                              controller: _phoneController,
-                              label: "Numéro de téléphone",
-                              keyboardType: TextInputType.phone,
-                            ),
+                const Text(
+                  "Images",
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                ),
 
-                            const SizedBox(height: 30),
+                const SizedBox(height: 16),
 
-                            const Text(
-                              "Images",
-                              style: TextStyle(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
+                _imageBox(),
 
-                            const SizedBox(height: 16),
+                const SizedBox(height: 40),
 
-                            _imageBox(),
-
-                            const SizedBox(height: 40),
-
-                            if (_errorMessage != null) ...[
-                              Text(
-                                _errorMessage!,
-                                style: const TextStyle(color: Colors.red),
-                              ),
-                              const SizedBox(height: 12),
-                            ],
-
-                            /// 🚀 BOUTON PREMIUM
-                            SizedBox(
-                              width: double.infinity,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(20),
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0xFF00B4D8),
-                                      Color(0xFF0A1E2D),
-                                    ],
-                                  ),
-                                ),
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    padding: const EdgeInsets.symmetric(
-                                      vertical: 18,
-                                    ),
-                                  ),
-                                  onPressed: _saving ? null : _submit,
-                                  child: Text(
-                                    _saving
-                                        ? 'Publication…'
-                                        : "Publier l'annonce",
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                if (_errorMessage != null) ...[
+                  Text(
+                    _errorMessage!,
+                    style: TextStyle(color: theme.colorScheme.error),
                   ),
+                  const SizedBox(height: 12),
+                ],
+
+                FilledButton(
+                  onPressed: _saving ? null : _submit,
+                  child: Text(_saving ? 'Publication…' : "Publier l'annonce"),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
+
+  ColorScheme get _colors =>
+      PulseTheme.build(Theme.of(context).brightness).colorScheme;
 
   Widget _modernField({
     required TextEditingController controller,
@@ -352,7 +245,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
       labelText: label,
       floatingLabelBehavior: FloatingLabelBehavior.auto,
       filled: true,
-      fillColor: const Color(0xFFF2F4F7),
+      fillColor: _colors.surfaceContainerHighest,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
@@ -368,7 +261,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
       decoration: InputDecoration(
         labelText: label,
         filled: true,
-        fillColor: const Color(0xFFE9EDF2),
+        fillColor: _colors.surfaceContainerHighest,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -405,7 +298,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
                       width: 100,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: Colors.grey.shade300),
+                        border: Border.all(color: _colors.outlineVariant),
                       ),
                       child: const Center(
                         child: Icon(
@@ -422,7 +315,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
               final image = _images[index];
 
               return Container(
-                key: ValueKey(image.path),
+                key: ObjectKey(image),
                 margin: const EdgeInsets.only(right: 12),
                 child: Stack(
                   children: [
@@ -432,7 +325,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(18),
                         image: DecorationImage(
-                          image: FileImage(File(image.path)),
+                          image: MemoryImage(Uint8List.fromList(image.bytes)),
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -480,7 +373,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
 
         Text(
           "${_images.length}/5 photos — Maintenez et glissez pour réorganiser",
-          style: const TextStyle(fontSize: 12, color: Colors.grey),
+          style: TextStyle(fontSize: 12, color: _colors.onSurfaceVariant),
         ),
       ],
     );

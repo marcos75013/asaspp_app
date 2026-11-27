@@ -279,17 +279,24 @@ class _ClubTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modules =
-        context
-            .watch<ContextCubit>()
-            .state
-            .context
-            ?.currentAssociation
-            ?.modules ??
-        const <String>[];
+    final mobileContext = context.watch<ContextCubit>().state.context;
+    final association = mobileContext?.currentAssociation;
+    final modules = association?.modules ?? const <String>[];
     return _TabSection(
       title: 'Club',
+      header: PulseAssociationHeader(
+        name: association?.associationName ?? 'MultiAsso',
+        logoUrl: association?.logoUrl,
+        onSwitch: mobileContext != null && mobileContext.associations.length > 1
+            ? () => context.go('/association-selection', extra: mobileContext)
+            : null,
+      ),
       children: [
+        if (modules.contains('CLUB_COMMUNICATION')) ...[
+          const PulseSectionTitle('Actualités du club'),
+          const ClubMessageCard(),
+        ],
+        const PulseSectionTitle('Découvrir le club'),
         _TabLink(
           Icons.groups_outlined,
           'Qui sommes-nous',
@@ -307,11 +314,6 @@ class _ClubTab extends StatelessWidget {
             'Annonces',
             () => _openPage(context, const AdsPage(), title: 'Annonces'),
           ),
-        if (modules.contains('CLUB_COMMUNICATION')) ...[
-          const SizedBox(height: 16),
-          Text('Actualités', style: Theme.of(context).textTheme.titleLarge),
-          const ClubMessageCard(),
-        ],
       ],
     );
   }

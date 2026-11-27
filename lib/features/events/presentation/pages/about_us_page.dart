@@ -65,211 +65,193 @@ class _AboutUsPageState extends State<AboutUsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
     final about = _about;
     final presentation = about?.presentation;
-    return Scaffold(
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset('assets/pngs/bg_mer.png', fit: BoxFit.cover),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.blue.shade900.withValues(alpha: .4),
-                    Colors.black.withValues(alpha: .65),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SafeArea(
-            child: RefreshIndicator(
-              onRefresh: _load,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: () => Navigator.maybePop(context),
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              presentation?.title ?? 'Qui sommes-nous',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            if (about != null)
-                              Text(
-                                about.associationName,
-                                style: const TextStyle(color: Colors.white70),
-                              ),
-                          ],
-                        ),
-                      ),
-                      if (about?.logoUrl case final String url
-                          when url.isNotEmpty)
-                        Image.network(
-                          const ApiConfig().resolveUrl(url),
-                          height: 70,
-                          errorBuilder: (_, error, stack) =>
-                              const SizedBox.shrink(),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  if (_loading)
-                    const Center(child: CircularProgressIndicator()),
-                  if (_error != null)
-                    _GlassCard(
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        body: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(16),
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.maybePop(context),
+                      icon: Icon(Icons.arrow_back, color: colors.onSurface),
+                    ),
+                    Expanded(
                       child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _error!,
-                            style: const TextStyle(color: Colors.white),
+                            presentation?.title ?? 'Qui sommes-nous',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: colors.onSurface,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                          TextButton(
-                            onPressed: _load,
-                            child: const Text('Réessayer'),
-                          ),
+                          if (about != null)
+                            Text(
+                              about.associationName,
+                              style: TextStyle(color: colors.onSurfaceVariant),
+                            ),
                         ],
                       ),
                     ),
-                  if (!_loading && _error == null && about != null) ...[
-                    if (presentation!.configured &&
-                        presentation.introduction.isNotEmpty) ...[
-                      _GlassCard(
-                        child: Text(
-                          presentation.introduction,
-                          style: theme.textTheme.bodyLarge?.copyWith(
-                            color: Colors.white,
-                          ),
+                    if (about?.logoUrl case final String url
+                        when url.isNotEmpty)
+                      Image.network(
+                        const ApiConfig().resolveUrl(url),
+                        height: 70,
+                        errorBuilder: (_, error, stack) =>
+                            const SizedBox.shrink(),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                if (_loading) const Center(child: CircularProgressIndicator()),
+                if (_error != null)
+                  _AboutCard(
+                    child: Column(
+                      children: [
+                        Text(
+                          _error!,
+                          style: TextStyle(color: colors.onSurface),
+                        ),
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Réessayer'),
+                        ),
+                      ],
+                    ),
+                  ),
+                if (!_loading && _error == null && about != null) ...[
+                  if (presentation!.configured &&
+                      presentation.introduction.isNotEmpty) ...[
+                    _AboutCard(
+                      child: Text(
+                        presentation.introduction,
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: colors.onSurface,
                         ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                    if (!presentation.configured) ...[
-                      const _GlassCard(
-                        child: Text(
-                          'La présentation de cette association n’est pas encore disponible.',
-                          style: TextStyle(color: Colors.white),
-                        ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  if (!presentation.configured) ...[
+                    _AboutCard(
+                      child: Text(
+                        'La présentation de cette association n’est pas encore disponible.',
+                        style: TextStyle(color: colors.onSurface),
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                    if (presentation.configured &&
-                        presentation.values.isNotEmpty) ...[
-                      _GlassCard(
-                        child: Column(
-                          children: [
-                            for (final value in presentation.values)
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (_icon(value.icon) case final icon?) ...[
-                                      Icon(icon, color: Colors.white),
-                                      const SizedBox(width: 12),
-                                    ],
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            value.title,
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          Text(
-                                            value.text,
-                                            style: const TextStyle(
-                                              color: Colors.white70,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  if (presentation.configured &&
+                      presentation.values.isNotEmpty) ...[
+                    _AboutCard(
+                      child: Column(
+                        children: [
+                          for (final value in presentation.values)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (_icon(value.icon) case final icon?) ...[
+                                    Icon(icon, color: colors.onSurface),
+                                    const SizedBox(width: 12),
                                   ],
-                                ),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          value.title,
+                                          style: TextStyle(
+                                            color: colors.onSurface,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          value.text,
+                                          style: TextStyle(
+                                            color: colors.onSurfaceVariant,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                          ],
-                        ),
+                            ),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                    if (presentation.configured &&
-                        presentation.activities.isNotEmpty) ...[
-                      _GlassCard(
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  if (presentation.configured &&
+                      presentation.activities.isNotEmpty) ...[
+                    _AboutCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Ce que nous faisons',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: colors.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          for (final activity in presentation.activities)
+                            Text(
+                              '• $activity',
+                              style: TextStyle(
+                                color: colors.onSurfaceVariant,
+                                height: 1.6,
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                  for (final section in about.displaySections)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _AboutCard(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Ce que nous faisons',
+                              section.title,
                               style: theme.textTheme.titleLarge?.copyWith(
-                                color: Colors.lightBlueAccent,
+                                color: colors.primary,
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            for (final activity in presentation.activities)
-                              Text(
-                                '• $activity',
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  height: 1.6,
-                                ),
+                            const SizedBox(height: 16),
+                            for (final position in section.orderedPositions)
+                              _PositionTile(
+                                position: position,
+                                member: about.members[position.membershipId],
                               ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                    for (final section in about.displaySections)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: _GlassCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                section.title,
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  color: Colors.lightBlueAccent,
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              for (final position in section.orderedPositions)
-                                _PositionTile(
-                                  position: position,
-                                  member: about.members[position.membershipId],
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
-                  ],
-                  const SizedBox(height: 40),
+                    ),
                 ],
-              ),
+                const SizedBox(height: 40),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -342,23 +324,13 @@ class _PositionTile extends StatelessWidget {
       .join();
 }
 
-class _GlassCard extends StatelessWidget {
+class _AboutCard extends StatelessWidget {
   final Widget child;
-  const _GlassCard({required this.child});
+  const _AboutCard({required this.child});
+
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      gradient: LinearGradient(
-        colors: [
-          Colors.white.withValues(alpha: .2),
-          Colors.white.withValues(alpha: .15),
-        ],
-      ),
-      border: Border.all(color: Colors.white.withValues(alpha: .25)),
-    ),
-    child: child,
+  Widget build(BuildContext context) => Card(
+    margin: EdgeInsets.zero,
+    child: Padding(padding: PulseTheme.pagePadding, child: child),
   );
 }

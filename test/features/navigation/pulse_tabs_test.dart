@@ -1,3 +1,4 @@
+import 'package:asaspp_app/core/theme/pulse_appearance.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -29,11 +30,12 @@ class _DemoContext extends ContextCubit {
       ContextState(
         status: ContextStatus.loaded,
         context: MobileContextModel.fromJson({
-          'user': {'id': 1, 'firstName': 'Camille'},
+          'user': {'id': 1, 'firstName': 'Camille', 'lastName': 'Martin'},
           'associations': [
             {
               'id': 1,
               'name': 'Club Pulse',
+              'role': 'ADMIN',
               'modules': [
                 'QUIZ',
                 'DOCUMENT_LIBRARY',
@@ -137,6 +139,8 @@ void main() {
       final cubit = _DemoContext();
       addTearDown(cubit.close);
       final capture = GlobalKey();
+      final appearance = PulseAppearance();
+      addTearDown(appearance.dispose);
       await tester.pumpWidget(
         RepaintBoundary(
           key: capture,
@@ -145,7 +149,10 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: BlocProvider<ContextCubit>.value(
               value: cubit,
-              child: MainScaffold(apiClient: api),
+              child: PulseAppearanceScope(
+                appearance: appearance,
+                child: MainScaffold(apiClient: api),
+              ),
             ),
           ),
         ),
@@ -197,6 +204,17 @@ void main() {
       expect(find.text('Moniteurs'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _capture(tester, capture, 'organigramme-${brightness.name}');
+      await tester.tap(find.byIcon(Icons.arrow_back));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Profil'));
+      await tester.pumpAndSettle();
+      expect(find.text('Camille Martin'), findsOneWidget);
+      expect(find.text('Administrateur'), findsOneWidget);
+      expect(find.text('Apparence'), findsOneWidget);
+      expect(find.text('Espace admin'), findsOneWidget);
+      expectCentered(4);
+      expect(tester.takeException(), isNull);
+      await _capture(tester, capture, 'profil-${brightness.name}');
     });
   }
 }

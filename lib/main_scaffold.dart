@@ -264,13 +264,15 @@ class _TabLink extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback onTap;
-  const _TabLink(this.icon, this.label, this.onTap);
+  final String? description;
+  const _TabLink(this.icon, this.label, this.onTap, {this.description});
 
   @override
   Widget build(BuildContext context) => Card(
     child: ListTile(
       leading: Icon(icon),
       title: Text(label),
+      subtitle: description == null ? null : Text(description!),
       trailing: const Icon(Icons.chevron_right),
       onTap: onTap,
     ),
@@ -459,6 +461,10 @@ class _ProfileTab extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Chip(
+                        backgroundColor: theme.colorScheme.primaryContainer,
+                        labelStyle: TextStyle(
+                          color: theme.colorScheme.onPrimaryContainer,
+                        ),
                         label: Text(
                           association.role == AssociationRole.admin
                               ? 'Administrateur'
@@ -472,20 +478,25 @@ class _ProfileTab extends StatelessWidget {
             },
           ),
           const PulseSectionTitle('Mon compte'),
-          _TabLink(Icons.person_outline, 'Mes informations', () {
-            showModalBottomSheet<void>(
-              context: context,
-              isScrollControlled: true,
-              backgroundColor: Colors.transparent,
-              builder: (_) => BlocProvider.value(
-                value: cubit,
-                child: UserProfileSheet(
-                  user: profile.user,
-                  association: association,
+          _TabLink(
+            Icons.person_outline,
+            'Mes informations',
+            () {
+              showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                backgroundColor: Colors.transparent,
+                builder: (_) => BlocProvider.value(
+                  value: cubit,
+                  child: UserProfileSheet(
+                    user: profile.user,
+                    association: association,
+                  ),
                 ),
-              ),
-            );
-          }),
+              );
+            },
+            description: 'Photo, e-mail et téléphone',
+          ),
           if (profile.associations.length > 1)
             _TabLink(
               Icons.swap_horiz,
@@ -500,6 +511,7 @@ class _ProfileTab extends StatelessWidget {
               Icons.admin_panel_settings_outlined,
               'Espace admin',
               () => context.go('/admin-home'),
+              description: 'Gérer mon association',
             ),
           ],
           const SizedBox(height: 16),

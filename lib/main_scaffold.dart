@@ -138,41 +138,51 @@ class _MainScaffoldState extends State<MainScaffold> {
             extendBody: true,
             body: _pages[_currentIndex],
             bottomNavigationBar: SafeArea(
-              child: CircleNavBar(
-                height: 72,
-                activeIndex: _currentIndex,
-                activeIcons: [
-                  for (var index = 0; index < labels.length; index++)
-                    Semantics(
-                      label: labels[index],
-                      selected: true,
-                      child: AssociationNavigationIcon(
-                        imageUrl: association?.navigationImageUrl,
-                        fallback: icons[index],
-                      ),
+              child: LayoutBuilder(
+                builder: (context, constraints) => MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    size: Size(
+                      constraints.maxWidth,
+                      MediaQuery.sizeOf(context).height,
                     ),
-                ],
-                inactiveIcons: [
-                  for (var index = 0; index < labels.length; index++)
-                    _navItem(
-                      icon: icons[index],
-                      label: labels[index],
-                      active: false,
-                    ),
-                ],
+                  ),
+                  child: CircleNavBar(
+                    height: 72,
+                    activeIndex: _currentIndex,
+                    activeIcons: [
+                      for (var index = 0; index < labels.length; index++)
+                        Semantics(
+                          label: labels[index],
+                          selected: true,
+                          child: AssociationNavigationIcon(
+                            imageUrl: association?.navigationImageUrl,
+                            fallback: icons[index],
+                          ),
+                        ),
+                    ],
+                    inactiveIcons: [
+                      for (var index = 0; index < labels.length; index++)
+                        _navItem(
+                          icon: icons[index],
+                          label: labels[index],
+                          active: false,
+                        ),
+                    ],
 
-                /// 🎨 STYLE
-                color: theme.colorScheme.surface.withValues(alpha: 0.95),
-                circleColor: AppColors.background,
-                circleWidth: 72,
-                elevation: 12,
-                shadowColor: Colors.black26,
+                    /// 🎨 STYLE
+                    color: theme.colorScheme.surface.withValues(alpha: 0.95),
+                    circleColor: AppColors.background,
+                    circleWidth: 72,
+                    elevation: 12,
+                    shadowColor: Colors.black26,
 
-                onTap: (index) {
-                  setState(() {
-                    _currentIndex = index;
-                  });
-                },
+                    onTap: (index) {
+                      setState(() {
+                        _currentIndex = index;
+                      });
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -194,7 +204,9 @@ class AssociationNavigationIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (imageUrl == null || imageUrl!.trim().isEmpty) {
-      return Icon(fallback, size: 34, color: AppColors.primaryBlue);
+      return Center(
+        child: Icon(fallback, size: 34, color: AppColors.primaryBlue),
+      );
     }
     return ClipOval(
       child: Image.network(
@@ -202,8 +214,9 @@ class AssociationNavigationIcon extends StatelessWidget {
         width: 72,
         height: 72,
         fit: BoxFit.contain,
-        errorBuilder: (_, error, stack) =>
-            Icon(fallback, size: 34, color: AppColors.primaryBlue),
+        errorBuilder: (_, error, stack) => Center(
+          child: Icon(fallback, size: 34, color: AppColors.primaryBlue),
+        ),
       ),
     );
   }

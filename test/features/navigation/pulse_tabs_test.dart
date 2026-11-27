@@ -1,3 +1,4 @@
+import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -114,6 +115,13 @@ void main() {
       expect(find.text('Club Pulse'), findsOneWidget);
       expect(tester.takeException(), isNull);
       expect(find.text('Sortie en mer'), findsOneWidget);
+      void expectCentered(int tab) {
+        final bar = tester.getRect(find.byType(CircleNavBar));
+        final icon = tester.getCenter(find.byType(AssociationNavigationIcon));
+        expect(icon.dx, closeTo(bar.left + bar.width * (tab + .5) / 5, 1));
+      }
+
+      expectCentered(0);
       await _capture(tester, capture, 'accueil-${brightness.name}');
       await tester.scrollUntilVisible(
         find.text('Préparer la sortie'),
@@ -132,6 +140,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Apprendre et progresser'), findsOneWidget);
       expect(find.text('Vie pratique'), findsOneWidget);
+      expectCentered(3);
       expect(find.text('Club Pulse'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _capture(tester, capture, 'services-${brightness.name}');

@@ -5,12 +5,14 @@ import '../config/api_config.dart';
 class PulseAssociationHeader extends StatelessWidget {
   final String name;
   final String? logoUrl;
+  final String caption;
   final VoidCallback? onSwitch;
 
   const PulseAssociationHeader({
     super.key,
     required this.name,
     this.logoUrl,
+    this.caption = 'ASSOCIATION ACTIVE',
     this.onSwitch,
   });
 
@@ -49,7 +51,7 @@ class PulseAssociationHeader extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('ASSOCIATION ACTIVE', style: theme.textTheme.labelSmall),
+              Text(caption, style: theme.textTheme.labelSmall),
               Text(
                 name,
                 maxLines: 1,

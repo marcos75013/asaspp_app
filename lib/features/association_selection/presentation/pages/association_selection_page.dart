@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/storage/auth_storage.dart';
+import '../../../../core/theme/pulse_theme.dart';
+import '../../../../core/widgets/pulse_association_header.dart';
+import '../../../context/data/models/association_role.dart';
 import '../../../context/data/models/mobile_association_model.dart';
 import '../../../context/data/models/mobile_context_model.dart';
 
 class AssociationSelectionPage extends StatefulWidget {
   final MobileContextModel mobileContext;
 
-  const AssociationSelectionPage({
-    super.key,
-    required this.mobileContext,
-  });
+  const AssociationSelectionPage({super.key, required this.mobileContext});
 
   @override
   State<AssociationSelectionPage> createState() =>
@@ -23,148 +23,108 @@ class _AssociationSelectionPageState extends State<AssociationSelectionPage> {
 
   MobileAssociationModel? _selectedAssociation;
   bool _loading = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
 
-    if (widget.mobileContext.associations.isNotEmpty) {
-      _selectedAssociation = widget.mobileContext.associations.first;
-    }
+    _selectedAssociation = widget.mobileContext.currentAssociation;
   }
 
   Future<void> _continue() async {
     final association = _selectedAssociation;
-
-    if (association == null) return;
-
-    setState(() => _loading = true);
-
-    await _authStorage.saveActiveAssociationId(association.associationId);
-
-    if (!mounted) return;
-
-    context.go('/home');
+    if (association == null || _loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      await _authStorage.saveActiveAssociationId(association.associationId);
+      if (mounted) context.go('/home');
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Impossible de sélectionner cette association. Réessaie.';
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final associations = widget.mobileContext.associations;
-
-    return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset(
-            'assets/pngs/bg_mer.png',
-            fit: BoxFit.cover,
-          ),
-          Container(
-            color: Colors.black.withOpacity(0.35),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Center(
-                child: SingleChildScrollView(
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.92),
-                      borderRadius: BorderRadius.circular(28),
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Image.asset(
-                          'assets/pngs/logo_asaspp.png',
-                          height: 110,
-                        ),
-                        const SizedBox(height: 24),
-                        const Text(
-                          'Choisir une association',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: Color(0xFF062B4F),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'Sélectionne l’association que tu souhaites ouvrir.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: Color(0xFF5B6472),
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        DropdownButtonFormField<MobileAssociationModel>(
-                          value: _selectedAssociation,
-                          isExpanded: true,
-                          decoration: InputDecoration(
-                            labelText: 'Association',
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(18),
-                            ),
-                          ),
-                          items: associations.map((association) {
-                            return DropdownMenuItem<MobileAssociationModel>(
-                              value: association,
-                              child: Text(
-                                association.associationName,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedAssociation = value;
-                            });
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: ElevatedButton(
-                            onPressed: _loading ? null : _continue,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF0B74C9),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                            ),
-                            child: _loading
-                                ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                                : const Text(
-                              'Continuer',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Mes associations')),
+        body: SafeArea(
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 560),
+              child: ListView(
+                shrinkWrap: true,
+                padding: PulseTheme.pagePadding,
+                children: [
+                  Text(
+                    'Choisir une association',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Sélectionne le club que tu souhaites ouvrir.',
+                    style: TextStyle(color: colors.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 16),
+                  if (associations.isEmpty)
+                    const Text('Aucune association disponible.'),
+                  for (final association in associations)
+                    Card(
+                      clipBehavior: Clip.antiAlias,
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        selected:
+                            _selectedAssociation?.associationId ==
+                            association.associationId,
+                        selectedTileColor: colors.primaryContainer,
+                        title: PulseAssociationHeader(
+                          name: association.associationName,
+                          logoUrl: association.logoUrl,
+                          caption: association.role == AssociationRole.admin
+                              ? 'Administrateur'
+                              : 'Membre',
+                        ),
+                        trailing: Icon(
+                          _selectedAssociation?.associationId ==
+                                  association.associationId
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                        ),
+                        onTap: _loading
+                            ? null
+                            : () => setState(
+                                () => _selectedAssociation = association,
+                              ),
+                      ),
+                    ),
+                  if (_error != null)
+                    Text(_error!, style: TextStyle(color: colors.error)),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: _loading || _selectedAssociation == null
+                        ? null
+                        : _continue,
+                    child: Text(_loading ? 'Ouverture…' : 'Continuer'),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

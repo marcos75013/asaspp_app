@@ -24,6 +24,17 @@ class _AdminEventFormState extends State<AdminEventForm> {
       attendance = false,
       recurring = false;
   String frequency = 'WEEKLY';
+  int recurrenceInterval = 1;
+  final recurrenceDays = <String>{};
+  static const weekdays = {
+    'MONDAY': 'Lun.',
+    'TUESDAY': 'Mar.',
+    'WEDNESDAY': 'Mer.',
+    'THURSDAY': 'Jeu.',
+    'FRIDAY': 'Ven.',
+    'SATURDAY': 'Sam.',
+    'SUNDAY': 'Dim.',
+  };
   String? error;
   @override
   void initState() {
@@ -88,6 +99,13 @@ class _AdminEventFormState extends State<AdminEventForm> {
       );
       return;
     }
+    if (recurring && until!.isBefore(DateUtils.dateOnly(start!))) {
+      setState(
+        () =>
+            error = 'La fin de récurrence doit être le jour du début ou après.',
+      );
+      return;
+    }
     if (end != null && end!.isBefore(start!)) {
       setState(() => error = 'La fin doit être après le début.');
       return;
@@ -110,11 +128,13 @@ class _AdminEventFormState extends State<AdminEventForm> {
         'attendanceTrackingEnabled': attendance,
         'capacity': null,
         'recurrenceFrequency': recurring ? frequency : null,
-        'recurrenceInterval': recurring ? 1 : null,
+        'recurrenceInterval': recurring ? recurrenceInterval : null,
         'recurrenceUntil': recurring
             ? '${until!.year.toString().padLeft(4, '0')}-${until!.month.toString().padLeft(2, '0')}-${until!.day.toString().padLeft(2, '0')}'
             : null,
-        'recurrenceDays': <String>[],
+        'recurrenceDays': recurring && frequency == 'WEEKLY'
+            ? weekdays.keys.where(recurrenceDays.contains).toList()
+            : <String>[],
       });
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -227,15 +247,51 @@ class _AdminEventFormState extends State<AdminEventForm> {
                 items: const [
                   DropdownMenuItem(
                     value: 'WEEKLY',
-                    child: Text('Chaque semaine'),
+                    child: Text('Hebdomadaire'),
                   ),
-                  DropdownMenuItem(
-                    value: 'MONTHLY',
-                    child: Text('Chaque mois'),
-                  ),
+                  DropdownMenuItem(value: 'MONTHLY', child: Text('Mensuelle')),
                 ],
                 onChanged: (v) => setState(() => frequency = v!),
               ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                initialValue: recurrenceInterval,
+                decoration: InputDecoration(
+                  labelText: frequency == 'WEEKLY'
+                      ? 'Toutes les N semaines'
+                      : 'Tous les N mois',
+                ),
+                items: [
+                  for (var interval = 1; interval <= 12; interval++)
+                    DropdownMenuItem(value: interval, child: Text('$interval')),
+                ],
+                onChanged: (value) =>
+                    setState(() => recurrenceInterval = value!),
+              ),
+              if (frequency == 'WEEKLY') ...[
+                const SizedBox(height: 12),
+                const Text('Jours de la semaine'),
+                const Text(
+                  'Sans sélection, la série reprend le jour de début.',
+                ),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    for (final day in weekdays.entries)
+                      FilterChip(
+                        label: Text(day.value),
+                        selected: recurrenceDays.contains(day.key),
+                        onSelected: (selected) => setState(() {
+                          if (selected) {
+                            recurrenceDays.add(day.key);
+                          } else {
+                            recurrenceDays.remove(day.key);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+              ],
               ListTile(
                 title: const Text('Répéter jusqu’au'),
                 subtitle: Text(label(until, dateOnly: true)),

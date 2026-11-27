@@ -38,7 +38,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Sortie'), findsOneWidget);
   });
-  testWidgets('envoie un entraînement à l’API avec son lieu', (tester) async {
+  testWidgets('envoie le lieu et la règle de récurrence de l’entraînement', (
+    tester,
+  ) async {
     final api = FakeEvents();
     await tester.pumpWidget(
       MaterialApp(home: AdminEventForm(training: true, api: api)),
@@ -52,6 +54,23 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('OK').last);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Entraînement récurrent'));
+    await tester.tap(find.text('Entraînement récurrent'));
+    await tester.pumpAndSettle();
+    final interval = find.byType(DropdownButtonFormField<int>);
+    await tester.ensureVisible(interval);
+    await tester.tap(interval);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('2').last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Lun.'));
+    await tester.tap(find.text('Lun.'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Répéter jusqu’au'));
+    await tester.tap(find.text('Répéter jusqu’au'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('OK').last);
+    await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Créer'));
     await tester.tap(find.text('Créer'));
     await tester.pumpAndSettle();
@@ -59,5 +78,9 @@ void main() {
     expect(api.body?['title'], 'Piscine');
     expect(api.body?['location'], 'Paris');
     expect(api.body?['startDate'], isNotNull);
+    expect(api.body?['recurrenceFrequency'], 'WEEKLY');
+    expect(api.body?['recurrenceInterval'], 2);
+    expect(api.body?['recurrenceDays'], ['MONDAY']);
+    expect(api.body?['recurrenceUntil'], isNotNull);
   });
 }

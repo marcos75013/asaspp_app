@@ -1,3 +1,4 @@
+import 'event_discussion_page.dart';
 import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/network/api_client.dart';
@@ -61,6 +62,21 @@ class _TrainingDetailPageState extends State<TrainingDetailPage> {
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.isEvent ? 'Événement' : 'Entraînement'),
+          actions: [
+            IconButton(
+              tooltip: 'Discussion',
+              icon: const Icon(Icons.forum_outlined),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => EventDiscussionPage(
+                    eventId: e.id,
+                    title: e.title,
+                    apiClient: widget.apiClient,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
         body: ListView(
           padding: const EdgeInsets.all(16),

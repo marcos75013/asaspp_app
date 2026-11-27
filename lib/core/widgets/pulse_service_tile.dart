@@ -76,6 +76,12 @@ class PulseServiceTile extends StatelessWidget {
     void open() => context.push(service.route);
     return Card(
       margin: compact ? EdgeInsets.zero : const EdgeInsets.only(bottom: 10),
+      color: compact
+          ? theme.colorScheme.surface
+          : Color.alphaBlend(
+              accent.withValues(alpha: .12),
+              theme.colorScheme.surface,
+            ),
       clipBehavior: Clip.antiAlias,
       child: compact
           ? InkWell(
@@ -100,8 +106,17 @@ class PulseServiceTile extends StatelessWidget {
             )
           : ListTile(
               onTap: open,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 3,
+              ),
               leading: badge,
-              title: Text(service.label),
+              title: Text(
+                service.label,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               subtitle: Text(service.description),
               trailing: const Icon(Icons.chevron_right),
             ),

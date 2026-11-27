@@ -109,7 +109,7 @@ class HomePage extends StatelessWidget {
                     Text(
                       name.isEmpty ? 'Bienvenue' : 'Salut, $name !',
                       style: theme.textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 4),

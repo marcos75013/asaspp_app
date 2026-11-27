@@ -310,6 +310,7 @@ class _ServicesTab extends StatelessWidget {
     return _TabSection(
       title: 'Services',
       children: [
+        const _ServicesIntro(),
         if (modules.contains('QUIZ') ||
             modules.contains('DOCUMENT_LIBRARY')) ...[
           const PulseSectionTitle('Apprendre et progresser'),
@@ -319,6 +320,52 @@ class _ServicesTab extends StatelessWidget {
         ],
         const PulseSectionTitle('Vie pratique'),
         const PulseServiceTile(service: PulseService.payments),
+      ],
+    );
+  }
+}
+
+class _ServicesIntro extends StatelessWidget {
+  const _ServicesIntro();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.brightness == Brightness.dark
+        ? PulseService.quiz.darkAccent
+        : PulseService.quiz.lightAccent;
+    final heading = theme.textTheme.headlineMedium?.copyWith(
+      fontWeight: FontWeight.w800,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'MES SERVICES',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: accent,
+            letterSpacing: 1.4,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text.rich(
+          TextSpan(
+            text: 'À toi de ',
+            style: heading,
+            children: [
+              TextSpan(
+                text: 'jouer.',
+                style: TextStyle(color: accent),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Tous les outils de ton association.',
+          style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+        ),
       ],
     );
   }

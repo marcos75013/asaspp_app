@@ -38,7 +38,12 @@ void main() {
     expect(find.text('2 participant(s)'), findsOneWidget);
     expect(find.text('Niolon UCPA'), findsOneWidget);
     final dateText = tester.widget<Text>(find.text(event.date));
-    expect(dateText.style?.color, const Color(0xFF34445A));
+    expect(
+      dateText.style?.color,
+      Theme.of(
+        tester.element(find.text(event.date)),
+      ).colorScheme.onSurfaceVariant,
+    );
     expect(tester.takeException(), isNull);
   });
 }

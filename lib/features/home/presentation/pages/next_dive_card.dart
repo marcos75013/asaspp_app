@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/config/api_config.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
@@ -57,6 +56,8 @@ class _NextDiveCardState extends State<NextDiveCard>
   @override
   Widget build(BuildContext context) {
     final event = widget.event;
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
 
     return FadeTransition(
       opacity: _fade,
@@ -72,40 +73,12 @@ class _NextDiveCardState extends State<NextDiveCard>
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
 
-                  /// 🎨 Glass effect optimisé (SANS blur)
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.95),
-                      Colors.white.withValues(alpha: 0.85),
-                    ],
-                  ),
-
+                  color: colors.surface,
                   border: Border.all(
-                    color: const Color(
-                      0xFFD4AF37,
-                    ).withValues(alpha: widget.highlighted ? 0.9 : 0.5),
-                    width: widget.highlighted ? 2 : 1.5,
+                    color: widget.highlighted
+                        ? colors.primary
+                        : colors.outlineVariant,
                   ),
-
-                  boxShadow: widget.highlighted
-                      ? [
-                          BoxShadow(
-                            color: const Color(
-                              0xFFD4AF37,
-                            ).withValues(alpha: 0.25),
-                            blurRadius: 16,
-                            spreadRadius: 1,
-                          ),
-                        ]
-                      : [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.08),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
                 ),
                 child: Stack(
                   children: [
@@ -117,7 +90,7 @@ class _NextDiveCardState extends State<NextDiveCard>
                           event.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: AppTextStyles.headline.copyWith(
+                          style: theme.textTheme.titleLarge?.copyWith(
                             fontSize: 18,
                             fontWeight: FontWeight.w600,
                           ),
@@ -128,7 +101,11 @@ class _NextDiveCardState extends State<NextDiveCard>
                             event.site,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(color: Color(0xFF34445A)),
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
                           ),
                         ],
                         const SizedBox(height: 8),
@@ -219,7 +196,7 @@ class _NextDiveCardState extends State<NextDiveCard>
                                 width: 96,
                                 height: 96,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) =>
+                                errorBuilder: (_, _, _) =>
                                     _fallbackImage(event.diveType),
                               )
                             else
@@ -350,14 +327,20 @@ class _InfoLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: const Color(0xFF34445A)),
+        Icon(
+          icon,
+          size: 16,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
         const SizedBox(width: 8),
         Flexible(
           child: Text(
             text,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: Color(0xFF34445A)),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ),
       ],

@@ -144,7 +144,7 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
                   width: isActive ? 14 : 6,
                   height: 6,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Theme.of(context).colorScheme.primary,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 );
@@ -159,7 +159,8 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
 
   ButtonStyle _carpoolButtonStyle() {
     return OutlinedButton.styleFrom(
-      backgroundColor: const Color(0xFFD4AF37),
+      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
       padding: const EdgeInsets.symmetric(vertical: 8),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );

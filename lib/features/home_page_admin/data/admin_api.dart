@@ -50,4 +50,36 @@ class AdminApi {
       data: {'role': role},
     );
   }
+
+  Future<({List<Map<String, dynamic>> items, bool last})> eventPage({
+    required bool training,
+    required int page,
+  }) async {
+    final response = await client.dio.get<Map<String, dynamic>>(
+      '/api/events',
+      queryParameters: {
+        'eventKind': training ? 'TRAINING' : 'EVENT',
+        'page': page,
+        'size': 25,
+        'sort': 'startDate,desc',
+      },
+    );
+    final data = response.data!;
+    return (
+      items: (data['content'] as List).cast<Map<String, dynamic>>(),
+      last: data['last'] == true,
+    );
+  }
+
+  Future<void> updateEvent(
+    int id,
+    Map<String, dynamic> fields, {
+    required bool following,
+  }) async {
+    await client.dio.patch<dynamic>(
+      '/api/events/$id',
+      data: fields,
+      queryParameters: {'scope': following ? 'SERIES' : 'OCCURRENCE'},
+    );
+  }
 }

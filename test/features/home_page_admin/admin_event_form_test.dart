@@ -5,6 +5,17 @@ import 'package:flutter_test/flutter_test.dart';
 
 class FakeEvents extends AdminApi {
   Map<String, dynamic>? body;
+  ({int id, bool following})? update;
+  @override
+  Future<void> updateEvent(
+    int id,
+    Map<String, dynamic> fields, {
+    required bool following,
+  }) async {
+    update = (id: id, following: following);
+    body = fields;
+  }
+
   @override
   Future<List<Map<String, dynamic>>> list(String path) async => [
     {'id': 3, 'name': 'Sortie'},
@@ -83,4 +94,42 @@ void main() {
     expect(api.body?['recurrenceDays'], ['MONDAY']);
     expect(api.body?['recurrenceUntil'], isNotNull);
   });
+  for (final following in [false, true]) {
+    testWidgets(
+      'modifie seulement les champs saisis, scope suivant=$following',
+      (tester) async {
+        final api = FakeEvents();
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AdminEventForm(
+              training: true,
+              api: api,
+              occurrence: {
+                'id': 42,
+                'title': 'Piscine',
+                'location': 'Paris',
+                'startDate': '2026-12-10T18:00:00',
+                'published': true,
+                'recurrenceSeriesId': 'series-test',
+              },
+            ),
+          ),
+        );
+        await tester.enterText(find.byType(TextFormField).at(1), 'Lyon');
+        if (following) {
+          final scope = find.byType(DropdownButtonFormField<bool>);
+          await tester.ensureVisible(scope);
+          await tester.tap(scope);
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Cette date et les suivantes').last);
+          await tester.pumpAndSettle();
+        }
+        await tester.ensureVisible(find.text('Enregistrer'));
+        await tester.tap(find.text('Enregistrer'));
+        await tester.pumpAndSettle();
+        expect(api.update, (id: 42, following: following));
+        expect(api.body, {'location': 'Lyon'});
+      },
+    );
+  }
 }

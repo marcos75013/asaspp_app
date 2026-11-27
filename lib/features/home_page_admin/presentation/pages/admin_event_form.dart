@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../data/admin_api.dart';
+import 'admin_event_list.dart';
 
 class AdminEventForm extends StatefulWidget {
   final bool training;
   final AdminApi? api;
-  const AdminEventForm({super.key, required this.training, this.api});
+  final Map<String, dynamic>? occurrence;
+  const AdminEventForm({
+    super.key,
+    required this.training,
+    this.api,
+    this.occurrence,
+  });
   @override
   State<AdminEventForm> createState() => _AdminEventFormState();
 }
@@ -36,10 +43,26 @@ class _AdminEventFormState extends State<AdminEventForm> {
     'SUNDAY': 'Dim.',
   };
   String? error;
+  bool following = false;
+  bool get editing => widget.occurrence != null;
+  bool get hasSeries => widget.occurrence?['recurrenceSeriesId'] != null;
+  DateTime? _date(String key) =>
+      DateTime.tryParse(widget.occurrence?[key] as String? ?? '');
   @override
   void initState() {
     super.initState();
-    if (!widget.training) loadCategories();
+    final occurrence = widget.occurrence;
+    if (occurrence != null) {
+      title.text = occurrence['title'] as String? ?? '';
+      location.text = occurrence['location'] as String? ?? '';
+      description.text = occurrence['description'] as String? ?? '';
+      start = _date('startDate');
+      end = _date('endDate');
+      published = occurrence['published'] == true;
+      attendance = occurrence['attendanceTrackingEnabled'] == true;
+    } else if (!widget.training) {
+      loadCategories();
+    }
   }
 
   Future<void> loadCategories() async {
@@ -72,8 +95,8 @@ class _AdminEventFormState extends State<AdminEventForm> {
     final day = await showDatePicker(
       context: context,
       initialDate: value ?? now,
-      firstDate: DateTime(now.year - 1),
-      lastDate: DateTime(now.year + 10),
+      firstDate: DateTime((value ?? now).year - 1),
+      lastDate: DateTime((value ?? now).year + 10, 12, 31),
     );
     if (day == null || !mounted) return null;
     if (!withTime) return day;
@@ -91,7 +114,7 @@ class _AdminEventFormState extends State<AdminEventForm> {
   Future<void> save() async {
     if (!form.currentState!.validate() || saving) return;
     if (start == null ||
-        (!widget.training && categoryId == null) ||
+        (!editing && !widget.training && categoryId == null) ||
         (recurring && until == null)) {
       setState(
         () => error =
@@ -115,27 +138,55 @@ class _AdminEventFormState extends State<AdminEventForm> {
       error = null;
     });
     try {
-      await api.save('/api/events', {
-        'eventKind': widget.training ? 'TRAINING' : 'EVENT',
-        'title': title.text.trim(),
-        'location': location.text.trim(),
-        'description': widget.training ? '' : description.text.trim(),
-        'categoryId': widget.training ? null : categoryId,
-        'category': '',
-        'startDate': start!.toIso8601String(),
-        'endDate': widget.training ? null : end?.toIso8601String(),
-        'published': published,
-        'attendanceTrackingEnabled': attendance,
-        'capacity': null,
-        'recurrenceFrequency': recurring ? frequency : null,
-        'recurrenceInterval': recurring ? recurrenceInterval : null,
-        'recurrenceUntil': recurring
-            ? '${until!.year.toString().padLeft(4, '0')}-${until!.month.toString().padLeft(2, '0')}-${until!.day.toString().padLeft(2, '0')}'
-            : null,
-        'recurrenceDays': recurring && frequency == 'WEEKLY'
-            ? weekdays.keys.where(recurrenceDays.contains).toList()
-            : <String>[],
-      });
+      if (editing) {
+        final occurrence = widget.occurrence!;
+        final fields = <String, dynamic>{
+          if (title.text.trim() != (occurrence['title'] ?? ''))
+            'title': title.text.trim(),
+          if (location.text.trim() != (occurrence['location'] ?? ''))
+            'location': location.text.trim(),
+          if (!widget.training &&
+              description.text.trim() != (occurrence['description'] ?? ''))
+            'description': description.text.trim(),
+          if (start != _date('startDate'))
+            'startDate': start!.toIso8601String(),
+          if (end != null && end != _date('endDate'))
+            'endDate': end!.toIso8601String(),
+          if (published != (occurrence['published'] == true))
+            'published': published,
+          if (attendance != (occurrence['attendanceTrackingEnabled'] == true))
+            'attendanceTrackingEnabled': attendance,
+        };
+        if (fields.isNotEmpty) {
+          await api.updateEvent(
+            (occurrence['id'] as num).toInt(),
+            fields,
+            following: following,
+          );
+        }
+      } else {
+        await api.save('/api/events', {
+          'eventKind': widget.training ? 'TRAINING' : 'EVENT',
+          'title': title.text.trim(),
+          'location': location.text.trim(),
+          'description': widget.training ? '' : description.text.trim(),
+          'categoryId': widget.training ? null : categoryId,
+          'category': '',
+          'startDate': start!.toIso8601String(),
+          'endDate': widget.training ? null : end?.toIso8601String(),
+          'published': published,
+          'attendanceTrackingEnabled': attendance,
+          'capacity': null,
+          'recurrenceFrequency': recurring ? frequency : null,
+          'recurrenceInterval': recurring ? recurrenceInterval : null,
+          'recurrenceUntil': recurring
+              ? '${until!.year.toString().padLeft(4, '0')}-${until!.month.toString().padLeft(2, '0')}-${until!.day.toString().padLeft(2, '0')}'
+              : null,
+          'recurrenceDays': recurring && frequency == 'WEEKLY'
+              ? weekdays.keys.where(recurrenceDays.contains).toList()
+              : <String>[],
+        });
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
@@ -145,7 +196,7 @@ class _AdminEventFormState extends State<AdminEventForm> {
       if (mounted) {
         setState(
           () => error =
-              'Impossible de créer cet élément. Vérifiez vos droits et les informations saisies.',
+              'Impossible d’enregistrer cet élément. Vérifiez vos droits et les informations saisies.',
         );
       }
     } finally {
@@ -157,8 +208,25 @@ class _AdminEventFormState extends State<AdminEventForm> {
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
       title: Text(
-        widget.training ? 'Créer un entraînement' : 'Créer un événement',
+        editing
+            ? 'Modifier cette date'
+            : widget.training
+            ? 'Créer un entraînement'
+            : 'Créer un événement',
       ),
+      actions: [
+        if (!editing)
+          IconButton(
+            tooltip: 'Modifier une date',
+            icon: const Icon(Icons.edit_calendar_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    AdminEventList(training: widget.training, api: api),
+              ),
+            ),
+          ),
+      ],
     ),
     body: Form(
       key: form,
@@ -187,9 +255,9 @@ class _AdminEventFormState extends State<AdminEventForm> {
           ),
           if (!widget.training) ...[
             const SizedBox(height: 16),
-            if (loading)
+            if (!editing && loading)
               const CircularProgressIndicator()
-            else
+            else if (!editing)
               DropdownButtonFormField<int>(
                 initialValue: categoryId,
                 decoration: const InputDecoration(
@@ -235,7 +303,7 @@ class _AdminEventFormState extends State<AdminEventForm> {
                 if (v != null) setState(() => end = v);
               },
             ),
-          if (widget.training) ...[
+          if (widget.training && !editing) ...[
             SwitchListTile(
               title: const Text('Entraînement récurrent'),
               value: recurring,
@@ -302,6 +370,24 @@ class _AdminEventFormState extends State<AdminEventForm> {
               ),
             ],
           ],
+          if (hasSeries)
+            DropdownButtonFormField<bool>(
+              initialValue: following,
+              decoration: const InputDecoration(labelText: 'Appliquer à'),
+              items: const [
+                DropdownMenuItem(
+                  value: false,
+                  child: Text('Cette date uniquement'),
+                ),
+                DropdownMenuItem(
+                  value: true,
+                  child: Text('Cette date et les suivantes'),
+                ),
+              ],
+              onChanged: saving
+                  ? null
+                  : (value) => setState(() => following = value!),
+            ),
           SwitchListTile(
             title: const Text('Visible par les membres'),
             value: published,
@@ -314,7 +400,13 @@ class _AdminEventFormState extends State<AdminEventForm> {
           ),
           ElevatedButton(
             onPressed: saving ? null : save,
-            child: Text(saving ? 'Enregistrement…' : 'Créer'),
+            child: Text(
+              saving
+                  ? 'Enregistrement…'
+                  : editing
+                  ? 'Enregistrer'
+                  : 'Créer',
+            ),
           ),
         ],
       ),

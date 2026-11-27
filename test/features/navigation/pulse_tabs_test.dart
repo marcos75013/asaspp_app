@@ -84,6 +84,46 @@ void main() {
                   'signature': 'Le bureau',
                 },
               ],
+              '/api/mobile/association/about' => {
+                'associationId': 1,
+                'associationName': 'Club Pulse',
+                'presentation': {
+                  'configured': true,
+                  'title': 'Qui sommes-nous',
+                  'introduction':
+                      'Nous réunissons les passionnés de sports nautiques.',
+                  'activities': ['Plongée', 'Natation'],
+                  'values': [
+                    {
+                      'title': 'Entraide',
+                      'text': 'On avance ensemble.',
+                      'icon': 'GROUP',
+                    },
+                  ],
+                },
+                'organization': {
+                  'members': [
+                    {'id': 5, 'name': 'Camille Martin'},
+                    {'id': 6, 'name': 'Alex Dupont'},
+                  ],
+                  'sections': [
+                    {
+                      'id': 'BUREAU',
+                      'title': 'Bureau',
+                      'positions': [
+                        {'id': 'a', 'title': 'Présidence', 'membershipId': 5},
+                      ],
+                    },
+                    {
+                      'id': 'ENCADREMENT',
+                      'title': 'Moniteurs',
+                      'positions': [
+                        {'id': 'b', 'title': 'Encadrement', 'membershipId': 6},
+                      ],
+                    },
+                  ],
+                },
+              },
               _ => null,
             };
             if (data == null) {
@@ -144,6 +184,19 @@ void main() {
       expect(find.text('Club Pulse'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _capture(tester, capture, 'services-${brightness.name}');
+      await tester.tap(find.text('Club'));
+      await tester.pumpAndSettle();
+      expect(find.text('Actualités du club'), findsOneWidget);
+      await _capture(tester, capture, 'club-${brightness.name}');
+      await tester.tap(find.text('Qui sommes-nous'));
+      await tester.pumpAndSettle();
+      expect(find.text('Bureau'), findsOneWidget);
+      expect(find.text('Camille Martin'), findsOneWidget);
+      await _capture(tester, capture, 'presentation-${brightness.name}');
+      await tester.scrollUntilVisible(find.text('Alex Dupont'), 160);
+      expect(find.text('Moniteurs'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await _capture(tester, capture, 'organigramme-${brightness.name}');
     });
   }
 }

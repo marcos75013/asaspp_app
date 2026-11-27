@@ -1,3 +1,4 @@
+import 'features/events/data/services/association_about_repository.dart';
 import 'core/widgets/pulse_appearance_menu.dart';
 import 'core/widgets/member_avatar.dart';
 import 'core/widgets/pulse_association_header.dart';
@@ -71,7 +72,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         create: (_) =>
             MessageCubit(messageRepository: MobileMessageApiService(apiClient))
               ..loadMessages(),
-        child: const _ClubTab(),
+        child: _ClubTab(apiClient: apiClient),
       ),
       const _ServicesTab(),
       const _ProfileTab(),
@@ -277,7 +278,8 @@ class _TabLink extends StatelessWidget {
 }
 
 class _ClubTab extends StatelessWidget {
-  const _ClubTab();
+  final ApiClient apiClient;
+  const _ClubTab({required this.apiClient});
 
   @override
   Widget build(BuildContext context) {
@@ -294,6 +296,14 @@ class _ClubTab extends StatelessWidget {
             : null,
       ),
       children: [
+        Builder(
+          builder: (context) => Text(
+            'La vie du club',
+            style: Theme.of(
+              context,
+            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
+          ),
+        ),
         if (modules.contains('CLUB_COMMUNICATION')) ...[
           const PulseSectionTitle('Actualités du club'),
           const ClubMessageCard(),
@@ -302,7 +312,10 @@ class _ClubTab extends StatelessWidget {
         _TabLink(
           Icons.groups_outlined,
           'Qui sommes-nous',
-          () => _openPage(context, const AboutUsPage()),
+          () => _openPage(
+            context,
+            AboutUsPage(repository: AssociationAboutApiService(apiClient)),
+          ),
         ),
         if (modules.contains('PHOTO_GALLERY'))
           _TabLink(

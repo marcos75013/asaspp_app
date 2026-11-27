@@ -114,7 +114,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
                       ),
                   ],
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 16),
                 if (_loading) const Center(child: CircularProgressIndicator()),
                 if (_error != null)
                   _AboutCard(
@@ -142,7 +142,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                   ],
                   if (!presentation.configured) ...[
                     _AboutCard(
@@ -151,7 +151,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
                         style: TextStyle(color: colors.onSurface),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                   ],
                   if (presentation.configured &&
                       presentation.values.isNotEmpty) ...[
@@ -195,7 +195,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                   ],
                   if (presentation.configured &&
                       presentation.activities.isNotEmpty) ...[
@@ -221,7 +221,7 @@ class _AboutUsPageState extends State<AboutUsPage> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                   ],
                   for (final section in about.displaySections)
                     Padding(

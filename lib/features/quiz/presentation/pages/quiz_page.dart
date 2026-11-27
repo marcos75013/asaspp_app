@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/network/api_client.dart';
@@ -28,112 +29,109 @@ class _QuizPageState extends State<QuizPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          /// 🌊 Background
-          Image.asset('assets/pngs/bg_mer.png', fit: BoxFit.cover),
-
-          /// 🌑 Overlay sombre
-          Container(color: Colors.black.withValues(alpha: 0.45)),
-
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  /// ⬅️ Flèche retour + titre centré
-                  Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: IconButton(
-                          icon: const Icon(
-                            Icons.arrow_back_ios,
-                            color: Colors.white,
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        extendBodyBehindAppBar: true,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    /// ⬅️ Flèche retour + titre centré
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.arrow_back_ios,
+                              color: colors.onSurface,
+                            ),
+                            onPressed: () {
+                              if (context.canPop()) {
+                                context.pop();
+                              } else {
+                                context.go('/home');
+                              }
+                            },
                           ),
-                          onPressed: () {
-                            if (context.canPop()) {
-                              context.pop();
-                            } else {
-                              context.go('/home');
-                            }
-                          },
                         ),
-                      ),
-                      const Text(
-                        "Choisis un quiz",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 60),
-
-                  Expanded(
-                    child: FutureBuilder<List<MemberQuiz>>(
-                      future: _quizzes,
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData && !snapshot.hasError) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          return Center(
-                            child: TextButton(
-                              onPressed: _reload,
-                              child: const Text(
-                                'Impossible de charger les quiz. Réessayer.',
-                              ),
-                            ),
-                          );
-                        }
-                        final quizzes = snapshot.data ?? const <MemberQuiz>[];
-                        if (quizzes.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'Aucun quiz publié pour le moment.',
-                              style: TextStyle(color: Colors.white),
-                            ),
-                          );
-                        }
-                        return RefreshIndicator(
-                          onRefresh: () async {
-                            _reload();
-                            await _quizzes;
-                          },
-                          child: ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            itemCount: quizzes.length,
-                            separatorBuilder: (_, _) =>
-                                const SizedBox(height: 24),
-                            itemBuilder: (context, index) => _animatedQuizCard(
-                              context,
-                              quizzes[index],
-                              [
-                                Colors.green,
-                                Colors.orange,
-                                Colors.redAccent,
-                              ][index % 3],
-                            ),
+                        Text(
+                          "Choisis un quiz",
+                          style: TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: colors.onSurface,
                           ),
-                        );
-                      },
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 60),
+
+                    Expanded(
+                      child: FutureBuilder<List<MemberQuiz>>(
+                        future: _quizzes,
+                        builder: (context, snapshot) {
+                          if (!snapshot.hasData && !snapshot.hasError) {
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          }
+                          if (snapshot.hasError) {
+                            return Center(
+                              child: TextButton(
+                                onPressed: _reload,
+                                child: const Text(
+                                  'Impossible de charger les quiz. Réessayer.',
+                                ),
+                              ),
+                            );
+                          }
+                          final quizzes = snapshot.data ?? const <MemberQuiz>[];
+                          if (quizzes.isEmpty) {
+                            return const Center(
+                              child: Text('Aucun quiz publié pour le moment.'),
+                            );
+                          }
+                          return RefreshIndicator(
+                            onRefresh: () async {
+                              _reload();
+                              await _quizzes;
+                            },
+                            child: ListView.separated(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              itemCount: quizzes.length,
+                              separatorBuilder: (_, _) =>
+                                  const SizedBox(height: 24),
+                              itemBuilder: (context, index) =>
+                                  _animatedQuizCard(
+                                    context,
+                                    quizzes[index],
+                                    [
+                                      Colors.green,
+                                      Colors.orange,
+                                      Colors.redAccent,
+                                    ][index % 3],
+                                  ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

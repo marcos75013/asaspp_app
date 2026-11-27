@@ -1,3 +1,4 @@
+import '../../../core/theme/pulse_theme.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -93,163 +94,147 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
       return matchesCategory && matchesSearch;
     }).toList();
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: const Text("Bibliothèque"),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-      ),
-      body: Stack(
-        children: [
-          /// 🌊 Background image
-          Image.asset(
-            "assets/pngs/mer.png",
-            fit: BoxFit.cover,
-            height: double.infinity,
-            width: double.infinity,
-          ),
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        appBar: AppBar(title: const Text("Bibliothèque"), elevation: 0),
+        body: Stack(
+          children: [
+            SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
 
-          /// Dark overlay
-          Container(color: Colors.black.withValues(alpha: 0.4)),
+                  /// 🔎 SEARCH BAR GLASS
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(30),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                        child: TextField(
+                          onChanged: (value) {
+                            setState(() => search = value);
+                          },
 
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 16),
-
-                /// 🔎 SEARCH BAR GLASS
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(30),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: TextField(
-                        onChanged: (value) {
-                          setState(() => search = value);
-                        },
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          hintText: "Rechercher un document...",
-                          hintStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(
-                            Icons.search,
-                            color: Colors.white,
+                          decoration: InputDecoration(
+                            hintText: "Rechercher un document...",
+                            hintStyle: TextStyle(
+                              color: colors.onSurfaceVariant,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.search,
+                              color: colors.onSurface,
+                            ),
+                            filled: true,
+                            fillColor: colors.surface,
+                            border: InputBorder.none,
                           ),
-                          filled: true,
-                          fillColor: Colors.white.withValues(alpha: 0.1),
-                          border: InputBorder.none,
                         ),
                       ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                /// 🏷 CATEGORIES
-                SizedBox(
-                  height: 40,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: categories.length + 1,
-                    itemBuilder: (context, index) {
-                      final category = index == 0
-                          ? null
-                          : categories[index - 1];
-                      final isSelected = category?.id == selectedCategoryId;
+                  /// 🏷 CATEGORIES
+                  SizedBox(
+                    height: 40,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: categories.length + 1,
+                      itemBuilder: (context, index) {
+                        final category = index == 0
+                            ? null
+                            : categories[index - 1];
+                        final isSelected = category?.id == selectedCategoryId;
 
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            selectedCategoryId = category?.id;
-                          });
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 10),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
+                        return GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              selectedCategoryId = category?.id;
+                            });
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 10),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? colors.primaryContainer
+                                  : colors.outlineVariant,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(category?.name ?? 'Tous'),
                           ),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? Colors.blueAccent
-                                : Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            category?.name ?? 'Tous',
-                            style: const TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   ),
-                ),
 
-                const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                /// 📄 DOCUMENTS
-                Expanded(
-                  child: loading
-                      ? const Center(child: CircularProgressIndicator())
-                      : errorMessage != null
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                errorMessage!,
-                                style: const TextStyle(color: Colors.white),
+                  /// 📄 DOCUMENTS
+                  Expanded(
+                    child: loading
+                        ? const Center(child: CircularProgressIndicator())
+                        : errorMessage != null
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(errorMessage!),
+                                TextButton(
+                                  onPressed: loadDocuments,
+                                  child: const Text('Réessayer'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : filteredDocs.isEmpty
+                        ? Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('Aucune ressource disponible.'),
+                                TextButton(
+                                  onPressed: loadDocuments,
+                                  child: const Text('Actualiser'),
+                                ),
+                              ],
+                            ),
+                          )
+                        : RefreshIndicator(
+                            onRefresh: loadDocuments,
+                            child: ListView.builder(
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
                               ),
-                              TextButton(
-                                onPressed: loadDocuments,
-                                child: const Text('Réessayer'),
-                              ),
-                            ],
-                          ),
-                        )
-                      : filteredDocs.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Text(
-                                'Aucune ressource disponible.',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                              TextButton(
-                                onPressed: loadDocuments,
-                                child: const Text('Actualiser'),
-                              ),
-                            ],
-                          ),
-                        )
-                      : RefreshIndicator(
-                          onRefresh: loadDocuments,
-                          child: ListView.builder(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: filteredDocs.length,
-                            itemBuilder: (context, index) {
-                              final doc = filteredDocs[index];
+                              itemCount: filteredDocs.length,
+                              itemBuilder: (context, index) {
+                                final doc = filteredDocs[index];
 
-                              return _buildGlassCard(doc);
-                            },
+                                return _buildDocumentCard(doc, colors);
+                              },
+                            ),
                           ),
-                        ),
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildGlassCard(AssociationDocumentModel doc) {
+  Widget _buildDocumentCard(AssociationDocumentModel doc, ColorScheme colors) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: ClipRRect(
@@ -259,9 +244,9 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
+              color: colors.surface,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              border: Border.all(color: colors.outlineVariant),
             ),
             child: Row(
               children: [
@@ -270,7 +255,7 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                   height: 36,
                   width: 36,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: colors.primaryContainer,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -279,7 +264,7 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                         : doc.isPdf
                         ? Icons.picture_as_pdf
                         : Icons.insert_drive_file_outlined,
-                    color: Colors.white,
+                    color: colors.onSurface,
                     size: 18,
                   ),
                 ),
@@ -293,8 +278,8 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                     children: [
                       Text(
                         doc.title,
-                        style: const TextStyle(
-                          color: Colors.white,
+                        style: TextStyle(
+                          color: colors.onSurface,
                           fontWeight: FontWeight.w600,
                           fontSize: 15,
                         ),
@@ -306,8 +291,8 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                                   ? '${doc.categoryName} · Lien'
                                   : '${doc.categoryName} · ${doc.originalFilename}')
                             : doc.description,
-                        style: const TextStyle(
-                          color: Colors.white70,
+                        style: TextStyle(
+                          color: colors.onSurfaceVariant,
                           fontSize: 12.5,
                         ),
                         maxLines: 2,
@@ -324,14 +309,14 @@ class _DocumentsLibraryPageState extends State<DocumentsLibraryPage> {
                   height: 32,
                   width: 32,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
+                    color: colors.primaryContainer,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: IconButton(
                     padding: EdgeInsets.zero,
-                    icon: const Icon(
+                    icon: Icon(
                       Icons.open_in_new,
-                      color: Colors.white,
+                      color: colors.onSurface,
                       size: 16,
                     ),
                     onPressed: () => openDocument(doc),

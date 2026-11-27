@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
+import '../../../../core/theme/pulse_theme.dart';
 import '../../data/member_quiz.dart';
 import '../../data/member_quiz_api_service.dart';
 
@@ -67,45 +68,32 @@ class _QuizGamePageState extends State<QuizGamePage>
     try {
       final result = await _api.submit(widget.quiz, _answers);
       if (!mounted) return;
+      final theme = PulseTheme.build(Theme.of(context).brightness);
       await showDialog<void>(
         context: context,
-        builder: (dialogContext) => Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              gradient: const LinearGradient(
-                colors: [Color(0xFF11998e), Color(0xFF38ef7d)],
+        builder: (dialogContext) => Theme(
+          data: theme,
+          child: AlertDialog(
+            icon: Icon(
+              result.passed
+                  ? Icons.emoji_events_outlined
+                  : Icons.fact_check_outlined,
+            ),
+            title: Text(result.passed ? 'Bravo !' : 'Quiz terminé'),
+            content: Text(
+              'Score : ${result.correctAnswers} / ${result.totalQuestions} (${result.score} %)',
+              textAlign: TextAlign.center,
+            ),
+            actions: [
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Retour'),
               ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  result.passed ? 'Bravo 🎉' : 'Quiz terminé',
-                  style: const TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Score : ${result.correctAnswers} / ${result.totalQuestions} (${result.score} %)',
-                  style: const TextStyle(fontSize: 20, color: Colors.white),
-                ),
-                const SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('Retour'),
-                ),
-              ],
-            ),
+            ],
           ),
         ),
       );
-      if (mounted) context.pop();
+      if (mounted) _back();
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'Résultat non enregistré. Réessayer.');
@@ -115,129 +103,81 @@ class _QuizGamePageState extends State<QuizGamePage>
     }
   }
 
+  void _back() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/quiz');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
     final questions = widget.quiz.questions;
-    if (questions.isEmpty) {
-      return Scaffold(
-        appBar: AppBar(),
-        body: const Center(child: Text('Ce quiz ne contient aucune question.')),
-      );
-    }
-    final question = questions[_currentIndex];
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF0F2027),
-                  Color(0xFF203A43),
-                  Color(0xFF2C5364),
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back_ios,
-                          color: Colors.white,
-                        ),
-                        onPressed: () => context.pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: LinearProgressIndicator(
+    final question = questions.isEmpty ? null : questions[_currentIndex];
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(widget.quiz.title),
+          leading: BackButton(onPressed: _back),
+        ),
+        body: SafeArea(
+          child: question == null
+              ? const Center(
+                  child: Text('Ce quiz ne contient aucune question.'),
+                )
+              : ListView(
+                  padding: PulseTheme.pagePadding,
+                  children: [
+                    Text(
+                      'Question ${_currentIndex + 1} sur ${questions.length}',
+                    ),
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
                       value: (_currentIndex + 1) / questions.length,
-                      minHeight: 14,
-                      backgroundColor: Colors.white.withValues(alpha: .2),
-                      valueColor: const AlwaysStoppedAnimation(
-                        Colors.greenAccent,
-                      ),
+                      borderRadius: BorderRadius.circular(8),
+                      minHeight: 8,
                     ),
-                  ),
-                  const SizedBox(height: 40),
-                  FadeTransition(
-                    opacity: _controller,
-                    child: Text(
-                      question.text,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  if (_error != null)
-                    TextButton(
-                      onPressed: _submit,
+                    const SizedBox(height: 24),
+                    FadeTransition(
+                      opacity: _controller,
                       child: Text(
-                        _error!,
-                        style: const TextStyle(color: Colors.white),
+                        question.text,
+                        style: theme.textTheme.headlineSmall,
                       ),
                     ),
-                  if (_submitting) const CircularProgressIndicator(),
-                  const SizedBox(height: 40),
-                  Expanded(
-                    child: GridView.builder(
-                      itemCount: question.choices.length,
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 16,
-                            mainAxisSpacing: 16,
-                          ),
-                      itemBuilder: (context, index) {
-                        final selected = index == _selectedIndex;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          decoration: BoxDecoration(
-                            color: selected
-                                ? Colors.blueAccent
-                                : Colors.white.withValues(alpha: .08),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(20),
-                            onTap: () => _selectAnswer(index),
-                            child: Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Text(
-                                  question.choices[index].text,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+                    const SizedBox(height: 16),
+                    for (
+                      var index = 0;
+                      index < question.choices.length;
+                      index++
+                    )
+                      Card(
+                        clipBehavior: Clip.antiAlias,
+                        color: index == _selectedIndex
+                            ? colors.primaryContainer
+                            : colors.surface,
+                        child: ListTile(
+                          selected: index == _selectedIndex,
+                          title: Text(question.choices[index].text),
+                          trailing: index == _selectedIndex
+                              ? const Icon(Icons.check_circle_outline)
+                              : null,
+                          onTap: _selectedIndex == null && !_submitting
+                              ? () => _selectAnswer(index)
+                              : null,
+                        ),
+                      ),
+                    if (_error != null)
+                      TextButton(onPressed: _submit, child: Text(_error!)),
+                    if (_submitting)
+                      const Center(child: CircularProgressIndicator()),
+                  ],
+                ),
+        ),
       ),
     );
   }

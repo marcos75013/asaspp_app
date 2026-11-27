@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -129,39 +130,33 @@ class _GalleryPageState extends State<GalleryPage> {
     });
   }
 
+  ThemeData get _pulse => PulseTheme.build(Theme.of(context).brightness);
+  ColorScheme get _colors => _pulse.colorScheme;
+
   @override
   Widget build(BuildContext context) {
     final galleries = filteredGalleries;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/pngs/logo_asaspp.png',
-              height: 40,
-              errorBuilder: (context, error, stackTrace) =>
-                  const Icon(Icons.image_not_supported),
-            ),
-            const SizedBox(width: 8),
-            const Expanded(
-              child: Text(
-                "On s'éclate à l'Asaspp",
-                overflow: TextOverflow.ellipsis,
+    return Theme(
+      data: _pulse,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Row(
+            children: [
+              Image.asset(
+                'assets/pngs/logo_asaspp.png',
+                height: 40,
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.image_not_supported),
               ),
-            ),
-          ],
-        ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF001F3F), Color(0xFF003B6F), Color(0xFF005C97)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text("Galerie", overflow: TextOverflow.ellipsis),
+              ),
+            ],
           ),
         ),
-        child: SafeArea(
+        body: SafeArea(
           child: RefreshIndicator(
             onRefresh: loadGalleries,
             child: CustomScrollView(
@@ -193,8 +188,8 @@ class _GalleryPageState extends State<GalleryPage> {
                       child: Text(
                         "${galleries.length} sortie(s)",
                         key: ValueKey(galleries.length),
-                        style: const TextStyle(
-                          color: Colors.white70,
+                        style: TextStyle(
+                          color: _colors.onSurfaceVariant,
                           fontSize: 13,
                         ),
                       ),
@@ -210,7 +205,7 @@ class _GalleryPageState extends State<GalleryPage> {
                       padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Text(
                         errorMessage!,
-                        style: const TextStyle(color: Colors.white),
+                        style: TextStyle(color: _colors.onSurface),
                       ),
                     ),
                   ),
@@ -258,24 +253,27 @@ class _GalleryPageState extends State<GalleryPage> {
       height: 46,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: _colors.surface,
         borderRadius: BorderRadius.circular(30),
         border: Border.all(
           color: searchQuery.isNotEmpty
-              ? Colors.white.withValues(alpha: 0.4)
-              : Colors.white.withValues(alpha: 0.15),
+              ? _colors.primary
+              : _colors.outlineVariant,
         ),
       ),
       child: Row(
         children: [
-          const Icon(Icons.search, color: Colors.white70, size: 18),
+          Icon(Icons.search, color: _colors.onSurfaceVariant, size: 18),
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
-              style: const TextStyle(color: Colors.white, fontSize: 14),
-              decoration: const InputDecoration(
+              style: TextStyle(color: _colors.onSurface, fontSize: 14),
+              decoration: InputDecoration(
                 hintText: 'Rechercher une sortie',
-                hintStyle: TextStyle(color: Colors.white54, fontSize: 14),
+                hintStyle: TextStyle(
+                  color: _colors.onSurfaceVariant,
+                  fontSize: 14,
+                ),
                 border: InputBorder.none,
               ),
               onChanged: (value) => setState(() => searchQuery = value),
@@ -295,7 +293,7 @@ class _GalleryPageState extends State<GalleryPage> {
         const SizedBox(width: 8),
         GestureDetector(
           onTap: resetFilters,
-          child: const Icon(Icons.refresh, color: Colors.white70, size: 18),
+          child: Icon(Icons.refresh, color: _colors.onSurfaceVariant, size: 18),
         ),
       ],
     );
@@ -306,20 +304,20 @@ class _GalleryPageState extends State<GalleryPage> {
       height: 42,
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: _colors.surface,
         borderRadius: BorderRadius.circular(25),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: selectedType,
-          dropdownColor: const Color(0xFF003B6F),
-          icon: const Icon(
+          dropdownColor: _colors.surface,
+          icon: Icon(
             Icons.keyboard_arrow_down,
-            color: Colors.white70,
+            color: _colors.onSurfaceVariant,
             size: 18,
           ),
           isExpanded: true,
-          style: const TextStyle(color: Colors.white, fontSize: 13),
+          style: TextStyle(color: _colors.onSurface, fontSize: 13),
           items: types
               .map(
                 (type) =>
@@ -340,12 +338,16 @@ class _GalleryPageState extends State<GalleryPage> {
         height: 42,
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: _colors.surface,
           borderRadius: BorderRadius.circular(25),
         ),
         child: Row(
           children: [
-            const Icon(Icons.calendar_today, size: 15, color: Colors.white70),
+            Icon(
+              Icons.calendar_today,
+              size: 15,
+              color: _colors.onSurfaceVariant,
+            ),
             const SizedBox(width: 6),
             Expanded(
               child: Text(
@@ -353,7 +355,7 @@ class _GalleryPageState extends State<GalleryPage> {
                     ? 'Période'
                     : "${DateFormat('dd/MM').format(selectedRange!.start)} - "
                           "${DateFormat('dd/MM/yyyy').format(selectedRange!.end)}",
-                style: const TextStyle(color: Colors.white, fontSize: 13),
+                style: TextStyle(color: _colors.onSurface, fontSize: 13),
                 overflow: TextOverflow.ellipsis,
               ),
             ),

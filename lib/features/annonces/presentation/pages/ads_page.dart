@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/api_client.dart';
@@ -17,200 +18,210 @@ class AdsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) =>
-          AdsCubit(repository ?? MobileAdsApiService(ApiClient(AuthStorage())))
-            ..loadAds(),
-      child: Scaffold(
-        backgroundColor: const Color(0xFF0A1E2D),
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
+    return Theme(
+      data: theme,
+      child: BlocProvider(
+        create: (_) => AdsCubit(
+          repository ?? MobileAdsApiService(ApiClient(AuthStorage())),
+        )..loadAds(),
+        child: Scaffold(
+          body: SafeArea(
+            child: Column(
+              children: [
+                const SizedBox(height: 20),
 
-        body: SafeArea(
-          child: Column(
-            children: [
-              const SizedBox(height: 20),
-
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      "Leboncourant",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Leboncourant",
+                        style: TextStyle(
+                          color: colors.onSurface,
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
-                    ),
 
-                    /// ➕ PUBLISH BUTTON
-                    Tooltip(
-                      message: "Créer une annonce",
-                      preferBelow: false,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(30),
-                          onTap: () async {
-                            final created = await Navigator.of(context)
-                                .push<bool>(
-                                  MaterialPageRoute(
-                                    builder: (_) => CreateAdPage(
-                                      repository:
-                                          repository ??
-                                          MobileAdsApiService(
-                                            ApiClient(AuthStorage()),
-                                          ),
+                      /// ➕ PUBLISH BUTTON
+                      Tooltip(
+                        message: "Créer une annonce",
+                        preferBelow: false,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(30),
+                            onTap: () async {
+                              final created = await Navigator.of(context)
+                                  .push<bool>(
+                                    MaterialPageRoute(
+                                      builder: (_) => CreateAdPage(
+                                        repository:
+                                            repository ??
+                                            MobileAdsApiService(
+                                              ApiClient(AuthStorage()),
+                                            ),
+                                      ),
+                                    ),
+                                  );
+                              if (created == true && context.mounted) {
+                                await context.read<AdsCubit>().loadAds();
+                              }
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: colors.primaryContainer,
+                                borderRadius: BorderRadius.circular(30),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: const [
+                                  Icon(
+                                    Icons.add,
+                                    color: Colors.white,
+                                    size: 18,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    "Publier",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 14,
                                     ),
                                   ),
-                                );
-                            if (created == true && context.mounted) {
-                              await context.read<AdsCubit>().loadAds();
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF00B4D8),
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.3),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: const [
-                                Icon(Icons.add, color: Colors.white, size: 18),
-                                SizedBox(width: 6),
-                                Text(
-                                  "Publier",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              /// 🔎 SEARCH FIELD
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: BlocBuilder<AdsCubit, AdsState>(
+                /// 🔎 SEARCH FIELD
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: BlocBuilder<AdsCubit, AdsState>(
+                    builder: (context, state) {
+                      return TextField(
+                        style: TextStyle(color: colors.onSurface),
+                        decoration: InputDecoration(
+                          hintText: "Rechercher une annonce...",
+                          hintStyle: TextStyle(color: colors.onSurfaceVariant),
+                          prefixIcon: Icon(
+                            Icons.search,
+                            color: colors.onSurfaceVariant,
+                          ),
+                          filled: true,
+                          fillColor: colors.surface,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        onChanged: (value) {
+                          context.read<AdsCubit>().search(value);
+                        },
+                      );
+                    },
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                /// FILTRES
+                BlocBuilder<AdsCubit, AdsState>(
                   builder: (context, state) {
-                    return TextField(
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: "Rechercher une annonce...",
-                        hintStyle: const TextStyle(color: Colors.white54),
-                        prefixIcon: const Icon(
-                          Icons.search,
-                          color: Colors.white54,
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _FilterButton(
+                          label: "Tous",
+                          selected: state.selectedFilter == null,
+                          onTap: () =>
+                              context.read<AdsCubit>().filterByType(null),
                         ),
-                        filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.08),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(30),
-                          borderSide: BorderSide.none,
+                        _FilterButton(
+                          label: "Vente",
+                          selected: state.selectedFilter == AdType.vente,
+                          onTap: () => context.read<AdsCubit>().filterByType(
+                            AdType.vente,
+                          ),
                         ),
-                      ),
-                      onChanged: (value) {
-                        context.read<AdsCubit>().search(value);
-                      },
+                        _FilterButton(
+                          label: "Don",
+                          selected: state.selectedFilter == AdType.don,
+                          onTap: () =>
+                              context.read<AdsCubit>().filterByType(AdType.don),
+                        ),
+                      ],
                     );
                   },
                 ),
-              ),
 
-              const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-              /// FILTRES
-              BlocBuilder<AdsCubit, AdsState>(
-                builder: (context, state) {
-                  return Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _FilterButton(
-                        label: "Tous",
-                        selected: state.selectedFilter == null,
-                        onTap: () =>
-                            context.read<AdsCubit>().filterByType(null),
-                      ),
-                      _FilterButton(
-                        label: "Vente",
-                        selected: state.selectedFilter == AdType.vente,
-                        onTap: () =>
-                            context.read<AdsCubit>().filterByType(AdType.vente),
-                      ),
-                      _FilterButton(
-                        label: "Don",
-                        selected: state.selectedFilter == AdType.don,
-                        onTap: () =>
-                            context.read<AdsCubit>().filterByType(AdType.don),
-                      ),
-                    ],
-                  );
-                },
-              ),
+                /// LISTE
+                Expanded(
+                  child: BlocBuilder<AdsCubit, AdsState>(
+                    builder: (context, state) {
+                      if (state.isLoading && state.ads.isEmpty) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
 
-              const SizedBox(height: 20),
+                      final filtered = context
+                          .read<AdsCubit>()
+                          .getFilteredAds();
 
-              /// LISTE
-              Expanded(
-                child: BlocBuilder<AdsCubit, AdsState>(
-                  builder: (context, state) {
-                    if (state.isLoading && state.ads.isEmpty) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                      if (filtered.isEmpty) {
+                        return Center(
+                          child: Text(
+                            "Aucune annonce trouvée",
+                            style: TextStyle(color: colors.onSurfaceVariant),
+                          ),
+                        );
+                      }
 
-                    final filtered = context.read<AdsCubit>().getFilteredAds();
-
-                    if (filtered.isEmpty) {
-                      return const Center(
-                        child: Text(
-                          "Aucune annonce trouvée",
-                          style: TextStyle(color: Colors.white70),
+                      return RefreshIndicator(
+                        onRefresh: context.read<AdsCubit>().loadAds,
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(
+                            16,
+                            0,
+                            16,
+                            140, // ⬅️ espace pour FAB + navbar
+                          ),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 20),
+                              child: AdCard(ad: filtered[index]),
+                            );
+                          },
                         ),
                       );
-                    }
-
-                    return RefreshIndicator(
-                      onRefresh: context.read<AdsCubit>().loadAds,
-                      child: ListView.builder(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(
-                          16,
-                          0,
-                          16,
-                          140, // ⬅️ espace pour FAB + navbar
-                        ),
-                        itemCount: filtered.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(bottom: 20),
-                            child: AdCard(ad: filtered[index]),
-                          );
-                        },
-                      ),
-                    );
-                  },
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -231,20 +242,23 @@ class _FilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       onTap: onTap,
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 6),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFF00B4D8)
-              : Colors.white.withValues(alpha: 0.1),
+          color: selected ? colors.primaryContainer : colors.surface,
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
           label,
-          style: TextStyle(color: selected ? Colors.white : Colors.white70),
+          style: TextStyle(
+            color: selected
+                ? colors.onPrimaryContainer
+                : colors.onSurfaceVariant,
+          ),
         ),
       ),
     );

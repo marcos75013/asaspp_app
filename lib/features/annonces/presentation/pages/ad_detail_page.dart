@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/widgets/member_avatar.dart';
@@ -106,190 +107,182 @@ class _AdDetailPageState extends State<AdDetailPage> {
   Widget build(BuildContext context) {
     final ad = _freshAd ?? widget.ad;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0A1E2D),
-      body: Stack(
-        children: [
-          /// 🔥 PARALLAX IMAGE (léger)
-          Positioned(
-            top: -scrollOffset * 0.3,
-            left: 0,
-            right: 0,
-            child: Hero(
-              tag: ad.id,
-              child: ad.image.isEmpty
-                  ? Container(
-                      height: 450,
-                      color: const Color(0xFF16384F),
-                      child: const Icon(
-                        Icons.sell_outlined,
-                        color: Colors.white54,
-                        size: 64,
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        body: Stack(
+          children: [
+            /// 🔥 PARALLAX IMAGE (léger)
+            Positioned(
+              top: -scrollOffset * 0.3,
+              left: 0,
+              right: 0,
+              child: Hero(
+                tag: ad.id,
+                child: ad.image.isEmpty
+                    ? Container(
+                        height: 450,
+                        color: const Color(0xFF16384F),
+                        child: const Icon(
+                          Icons.sell_outlined,
+                          color: Colors.white54,
+                          size: 64,
+                        ),
+                      )
+                    : Image.network(
+                        ad.image,
+                        height: 450,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.low,
                       ),
-                    )
-                  : Image.network(
-                      ad.image,
-                      height: 450,
-                      fit: BoxFit.cover,
-                      filterQuality: FilterQuality.low,
-                    ),
+              ),
             ),
-          ),
 
-          /// 🧊 CONTENT (sans blur runtime)
-          SingleChildScrollView(
-            controller: _scrollController,
-            child: Column(
-              children: [
-                const SizedBox(height: 350),
+            /// 🧊 CONTENT (sans blur runtime)
+            SingleChildScrollView(
+              controller: _scrollController,
+              child: Column(
+                children: [
+                  const SizedBox(height: 350),
 
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(30),
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(30),
-                      ),
-
-                      /// 🎨 Effet glass optimisé
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          Colors.white.withValues(alpha: 0.92),
-                          Colors.white.withValues(alpha: 0.85),
-                        ],
-                      ),
-
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.25),
-                          blurRadius: 25,
-                          offset: const Offset(0, -5),
-                        ),
-                      ],
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(30),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          ad.title,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                          ),
+                    child: Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.vertical(
+                          top: Radius.circular(30),
                         ),
 
-                        const SizedBox(height: 12),
-
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF00B4D8),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            ad.type == AdType.don
-                                ? "Gratuit"
-                                : ad.type == AdType.recherche
-                                ? "Recherche"
-                                : "${ad.price.toStringAsFixed(0)}€",
-                            style: const TextStyle(
-                              color: Colors.white,
+                        color: colors.surface,
+                        border: Border.all(color: colors.outlineVariant),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            ad.title,
+                            style: TextStyle(
+                              color: colors.onSurface,
+                              fontSize: 26,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 20),
+                          const SizedBox(height: 12),
 
-                        Text(
-                          ad.description,
-                          style: const TextStyle(
-                            color: Colors.black87,
-                            fontSize: 16,
-                          ),
-                        ),
-
-                        const SizedBox(height: 30),
-
-                        Row(
-                          children: [
-                            MemberAvatar(
-                              radius: 22,
-                              url: ad.sellerAvatar,
-                              name: ad.sellerName,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                            const SizedBox(width: 12),
-                            Text(
-                              ad.sellerName,
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 18,
+                            decoration: BoxDecoration(
+                              color: colors.primaryContainer,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              ad.type == AdType.don
+                                  ? "Gratuit"
+                                  : ad.type == AdType.recherche
+                                  ? "Recherche"
+                                  : "${ad.price.toStringAsFixed(0)}€",
+                              style: TextStyle(
+                                color: colors.onPrimaryContainer,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
 
-                        const SizedBox(height: 40),
+                          const SizedBox(height: 20),
 
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF00B4D8),
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                            ),
-                            onPressed:
-                                (ad.contactPhone?.trim().isNotEmpty == true ||
-                                    ad.sellerEmail?.trim().isNotEmpty == true)
-                                ? () => _contactSeller(ad)
-                                : null,
-                            child: const Text(
-                              "Contacter le vendeur",
-                              style: TextStyle(fontSize: 16),
+                          Text(
+                            ad.description,
+                            style: TextStyle(
+                              color: colors.onSurface,
+                              fontSize: 16,
                             ),
                           ),
-                        ),
 
-                        const SizedBox(height: 80),
-                      ],
+                          const SizedBox(height: 30),
+
+                          Row(
+                            children: [
+                              MemberAvatar(
+                                radius: 22,
+                                url: ad.sellerAvatar,
+                                name: ad.sellerName,
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                ad.sellerName,
+                                style: TextStyle(
+                                  color: colors.onSurface,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 40),
+
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: colors.primary,
+                                foregroundColor: colors.onPrimary,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              onPressed:
+                                  (ad.contactPhone?.trim().isNotEmpty == true ||
+                                      ad.sellerEmail?.trim().isNotEmpty == true)
+                                  ? () => _contactSeller(ad)
+                                  : null,
+                              child: const Text(
+                                "Contacter le vendeur",
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ),
+
+                          const SizedBox(height: 80),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.only(left: 12, top: 8),
-                child: IconButton(
-                  tooltip: 'Retour aux annonces',
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black.withValues(alpha: 0.4),
-                    foregroundColor: Colors.white,
+            Positioned(
+              top: 0,
+              left: 0,
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 12, top: 8),
+                  child: IconButton(
+                    tooltip: 'Retour aux annonces',
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.black.withValues(alpha: 0.4),
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.arrow_back),
                   ),
-                  icon: const Icon(Icons.arrow_back),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
@@ -206,99 +207,97 @@ class _GalleryDetailPageState extends State<GalleryDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        title: Text(widget.gallery.title),
-        backgroundColor: Colors.black,
-      ),
-      body: widget.gallery.photos.isEmpty
-          ? const Center(
-              child: Text(
-                'Aucune photo dans cet album.',
-                style: TextStyle(color: Colors.white70),
-              ),
-            )
-          : Stack(
-              children: [
-                PhotoViewGallery.builder(
-                  itemCount: widget.gallery.photos.length,
-                  builder: (context, index) {
-                    return PhotoViewGalleryPageOptions(
-                      imageProvider: NetworkImage(widget.gallery.photos[index]),
-                      heroAttributes: PhotoViewHeroAttributes(
-                        tag: widget.gallery.id,
-                      ),
-                    );
-                  },
-                  onPageChanged: (index) {
-                    setState(() => currentIndex = index);
-                    _loadDiscussion();
-                  },
-                ),
-                Positioned(
-                  bottom: 30,
-                  left: 0,
-                  right: 0,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_interactionError != null)
-                        TextButton(
-                          onPressed: _loadDiscussion,
-                          child: Text(
-                            _interactionError!,
-                            style: const TextStyle(color: Colors.white70),
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        appBar: AppBar(title: Text(widget.gallery.title)),
+        body: widget.gallery.photos.isEmpty
+            ? const Center(child: Text('Aucune photo dans cet album.'))
+            : Column(
+                children: [
+                  Expanded(
+                    child: PhotoViewGallery.builder(
+                      itemCount: widget.gallery.photos.length,
+                      builder: (context, index) {
+                        return PhotoViewGalleryPageOptions(
+                          imageProvider: NetworkImage(
+                            widget.gallery.photos[index],
+                          ),
+                          heroAttributes: PhotoViewHeroAttributes(
+                            tag: widget.gallery.id,
+                          ),
+                        );
+                      },
+                      onPageChanged: (index) {
+                        setState(() => currentIndex = index);
+                        _loadDiscussion();
+                      },
+                    ),
+                  ),
+                  SafeArea(
+                    top: false,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_interactionError != null)
+                          TextButton(
+                            onPressed: _loadDiscussion,
+                            child: Text(
+                              _interactionError!,
+                              style: TextStyle(color: colors.onSurfaceVariant),
+                            ),
+                          ),
+                        if (_photoId != null)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                onPressed: _discussion == null
+                                    ? null
+                                    : _toggleLike,
+                                icon: Icon(
+                                  _discussion?.liked == true
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: _discussion?.liked == true
+                                      ? Colors.redAccent
+                                      : colors.onSurface,
+                                ),
+                              ),
+                              Text(
+                                '${_discussion?.likes ?? 0}',
+                                style: TextStyle(color: colors.onSurface),
+                              ),
+                              IconButton(
+                                onPressed: _discussion == null
+                                    ? null
+                                    : _showComments,
+                                icon: Icon(
+                                  Icons.comment_outlined,
+                                  color: colors.onSurface,
+                                ),
+                              ),
+                              Text(
+                                '${_discussion?.comments.length ?? 0}',
+                                style: TextStyle(color: colors.onSurface),
+                              ),
+                            ],
+                          ),
+                        Text(
+                          '${currentIndex + 1} / ${widget.gallery.photos.length}',
+                          style: TextStyle(
+                            color: colors.onSurfaceVariant,
+                            fontSize: 16,
                           ),
                         ),
-                      if (_photoId != null)
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              onPressed: _discussion == null
-                                  ? null
-                                  : _toggleLike,
-                              icon: Icon(
-                                _discussion?.liked == true
-                                    ? Icons.favorite
-                                    : Icons.favorite_border,
-                                color: _discussion?.liked == true
-                                    ? Colors.redAccent
-                                    : Colors.white,
-                              ),
-                            ),
-                            Text(
-                              '${_discussion?.likes ?? 0}',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                            IconButton(
-                              onPressed: _discussion == null
-                                  ? null
-                                  : _showComments,
-                              icon: const Icon(
-                                Icons.comment_outlined,
-                                color: Colors.white,
-                              ),
-                            ),
-                            Text(
-                              '${_discussion?.comments.length ?? 0}',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ],
-                        ),
-                      Text(
-                        '${currentIndex + 1} / ${widget.gallery.photos.length}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
-            ),
+                ],
+              ),
+      ),
     );
   }
 }

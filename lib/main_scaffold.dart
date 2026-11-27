@@ -1,3 +1,4 @@
+import 'core/widgets/pulse_appearance_menu.dart';
 import 'core/widgets/member_avatar.dart';
 import 'core/widgets/pulse_association_header.dart';
 import 'core/widgets/pulse_section_title.dart';
@@ -478,6 +479,8 @@ class _ProfileTab extends StatelessWidget {
               'Changer d’association',
               () => context.go('/association-selection', extra: profile),
             ),
+          const PulseSectionTitle('Préférences'),
+          const Card(child: PulseAppearanceMenu(tile: true)),
           if (association?.role == AssociationRole.admin) ...[
             const PulseSectionTitle('Administration'),
             _TabLink(

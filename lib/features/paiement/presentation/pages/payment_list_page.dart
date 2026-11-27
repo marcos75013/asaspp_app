@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
-import '../../../../core/theme/pulse_appearance.dart';
+import '../../../../core/widgets/pulse_appearance_menu.dart';
 import '../../../../core/theme/pulse_theme.dart';
 import '../../data/payment_links.dart';
 
@@ -17,19 +17,10 @@ class _PaymentListPageState extends State<PaymentListPage> {
   late final PaymentLinksRepository repository =
       widget.repository ?? PaymentLinksApi(ApiClient(AuthStorage()));
   late Future<List<PaymentLink>> payments;
-  final appearance = PulseAppearance();
-
-  @override
-  void dispose() {
-    appearance.dispose();
-    super.dispose();
-  }
-
   @override
   void initState() {
     super.initState();
     payments = repository.list();
-    appearance.restore(() => mounted);
   }
 
   void reload() => setState(() => payments = repository.list());
@@ -54,35 +45,16 @@ class _PaymentListPageState extends State<PaymentListPage> {
   }
 
   @override
-  Widget build(BuildContext context) => ValueListenableBuilder<ThemeMode>(
-    valueListenable: appearance,
-    builder: (context, mode, _) {
-      final brightness = switch (mode) {
-        ThemeMode.system => MediaQuery.platformBrightnessOf(context),
-        ThemeMode.light => Brightness.light,
-        ThemeMode.dark => Brightness.dark,
-      };
-      return Theme(data: PulseTheme.build(brightness), child: _buildPage(mode));
-    },
+  Widget build(BuildContext context) => Theme(
+    data: PulseTheme.build(Theme.of(context).brightness),
+    child: _buildPage(),
   );
 
-  Widget _buildPage(ThemeMode mode) => Scaffold(
+  Widget _buildPage() => Scaffold(
     appBar: AppBar(
       title: const Text('Paiements'),
       centerTitle: true,
-      actions: [
-        PopupMenuButton<ThemeMode>(
-          tooltip: 'Apparence',
-          icon: const Icon(Icons.brightness_6_outlined),
-          initialValue: mode,
-          onSelected: (mode) => appearance.select(mode, () => mounted),
-          itemBuilder: (_) => const [
-            PopupMenuItem(value: ThemeMode.system, child: Text('Système')),
-            PopupMenuItem(value: ThemeMode.light, child: Text('Clair')),
-            PopupMenuItem(value: ThemeMode.dark, child: Text('Sombre')),
-          ],
-        ),
-      ],
+      actions: const [PulseAppearanceMenu()],
     ),
     body: FutureBuilder<List<PaymentLink>>(
       future: payments,

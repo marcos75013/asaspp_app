@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../widget/bubbles_layer.dart';
+import '../../../../core/theme/pulse_theme.dart';
 import '../../../../core/storage/auth_storage.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -31,15 +31,17 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = PulseTheme.build(Theme.of(context).brightness);
     return Scaffold(
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/pngs/bg_mer.png', fit: BoxFit.cover),
-          const BubblesLayer(),
-          Container(color: Colors.black.withOpacity(0.25)),
-          Center(child: Image.asset('assets/pngs/logo_asaspp.png', width: 350)),
-        ],
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: Center(
+        child: Card(
+          color: Colors.white,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Image.asset('assets/pngs/logo_multiasso.png', width: 180),
+          ),
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/network/api_client.dart';
@@ -12,28 +13,39 @@ class LoginScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) {
-        final authStorage = AuthStorage();
-        final apiClient = ApiClient(authStorage);
-        final authApiService = MobileAuthApiService(apiClient);
-        final contextApiService = MobileContextApiService(apiClient);
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    return Theme(
+      data: theme,
+      child: BlocProvider(
+        create: (_) {
+          final authStorage = AuthStorage();
+          final apiClient = ApiClient(authStorage);
+          final authApiService = MobileAuthApiService(apiClient);
+          final contextApiService = MobileContextApiService(apiClient);
 
-        return AuthCubit(
-          authApiService: authApiService,
-          contextApiService: contextApiService,
-          authStorage: authStorage,
-        );
-      },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 440),
-                child: LoginForm(),
+          return AuthCubit(
+            authApiService: authApiService,
+            contextApiService: contextApiService,
+            authStorage: authStorage,
+          );
+        },
+        child: Scaffold(
+          body: SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: 440),
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: LoginForm(),
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

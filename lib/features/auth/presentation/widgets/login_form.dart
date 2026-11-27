@@ -37,7 +37,7 @@ class _LoginFormState extends State<LoginForm> {
         } else if (state.status == AuthStatus.error) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              backgroundColor: Colors.redAccent,
+              backgroundColor: Theme.of(context).colorScheme.error,
               content: Text(state.errorMessage ?? 'Erreur'),
             ),
           );
@@ -48,8 +48,26 @@ class _LoginFormState extends State<LoginForm> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.asset('assets/pngs/logo_multiasso.png', width: 300),
-            const SizedBox(height: 56),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Image.asset(
+                  'assets/pngs/logo_multiasso.png',
+                  width: 190,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Connexion',
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
             _field(
               controller: _emailController,
               hint: 'Adresse e-mail',
@@ -79,51 +97,33 @@ class _LoginFormState extends State<LoginForm> {
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              height: 56,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1263F6), Color(0xFF7135F5)],
-                  ),
-                  borderRadius: BorderRadius.circular(18),
+              child: FilledButton(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(52),
                 ),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                    disabledBackgroundColor: Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                    ),
-                  ),
-                  onPressed: state.status == AuthStatus.loading
-                      ? null
-                      : () {
-                          if (_formKey.currentState!.validate()) {
-                            context.read<AuthCubit>().login(
-                              email: _emailController.text.trim(),
-                              password: _passwordController.text,
-                            );
-                          }
-                        },
-                  child: state.status == AuthStatus.loading
-                      ? const SizedBox(
-                          height: 22,
-                          width: 22,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          'Se connecter',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                          ),
+                onPressed: state.status == AuthStatus.loading
+                    ? null
+                    : () {
+                        if (_formKey.currentState!.validate()) {
+                          context.read<AuthCubit>().login(
+                            email: _emailController.text.trim(),
+                            password: _passwordController.text,
+                          );
+                        }
+                      },
+                child: state.status == AuthStatus.loading
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2.5),
+                      )
+                    : const Text(
+                        'Se connecter',
+                        style: TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
                         ),
-                ),
+                      ),
               ),
             ),
           ],
@@ -149,18 +149,11 @@ class _LoginFormState extends State<LoginForm> {
       validator: (value) =>
           value == null || value.trim().isEmpty ? 'Champ requis' : null,
       decoration: InputDecoration(
-        hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF68808C)),
+        labelText: hint,
+        prefixIcon: Icon(icon),
         suffixIcon: suffixIcon,
         contentPadding: const EdgeInsets.symmetric(vertical: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFDDE4EF)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFDDE4EF)),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
       ),
     );
   }

@@ -5,7 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/member_avatar.dart';
-import '../../../../core/config/api_config.dart';
+import '../../../../core/widgets/pulse_association_header.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_drawer.dart';
 import '../../../context/cubit/context_cubit.dart';
 import '../../../context/cubit/context_state.dart';
@@ -54,7 +55,7 @@ class HomePage extends StatelessWidget {
 
         final theme = PulseTheme.build(Theme.of(context).brightness);
         final name = user?.firstName.trim() ?? '';
-        final logo = association?.logoUrl;
+        final mobileContext = contextState.context;
         final shortcuts = PulseService.values.where(
           (service) => service.isAvailable(modules),
         );
@@ -64,26 +65,17 @@ class HomePage extends StatelessWidget {
           child: Scaffold(
             drawer: const AppDrawer(),
             appBar: AppBar(
-              title: Row(
-                children: [
-                  if (logo != null && logo.isNotEmpty) ...[
-                    Image.network(
-                      const ApiConfig().resolveUrl(logo),
-                      height: 32,
-                      width: 32,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, _, _) =>
-                          const Icon(Icons.groups_outlined),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  Flexible(
-                    child: Text(
-                      association?.associationName ?? 'MultiAsso',
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
+              title: PulseAssociationHeader(
+                name: association?.associationName ?? 'MultiAsso',
+                logoUrl: association?.logoUrl,
+                onSwitch:
+                    mobileContext != null &&
+                        mobileContext.associations.length > 1
+                    ? () => context.go(
+                        '/association-selection',
+                        extra: mobileContext,
+                      )
+                    : null,
               ),
               actions: [
                 IconButton(

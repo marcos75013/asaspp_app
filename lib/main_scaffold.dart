@@ -1,3 +1,5 @@
+import 'core/widgets/pulse_section_title.dart';
+import 'core/widgets/pulse_service_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:circle_nav_bar/circle_nav_bar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -308,19 +310,15 @@ class _ServicesTab extends StatelessWidget {
     return _TabSection(
       title: 'Services',
       children: [
-        if (modules.contains('QUIZ'))
-          _TabLink(Icons.quiz_outlined, 'Quiz', () => context.push('/quiz')),
-        if (modules.contains('DOCUMENT_LIBRARY'))
-          _TabLink(
-            Icons.folder_outlined,
-            'Bibliothèque',
-            () => context.push('/documents'),
-          ),
-        _TabLink(
-          Icons.payments_outlined,
-          'Paiements',
-          () => context.push('/payments'),
-        ),
+        if (modules.contains('QUIZ') ||
+            modules.contains('DOCUMENT_LIBRARY')) ...[
+          const PulseSectionTitle('Apprendre et progresser'),
+          for (final service in [PulseService.quiz, PulseService.library])
+            if (service.isAvailable(modules))
+              PulseServiceTile(service: service),
+        ],
+        const PulseSectionTitle('Vie pratique'),
+        const PulseServiceTile(service: PulseService.payments),
       ],
     );
   }

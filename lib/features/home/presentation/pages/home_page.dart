@@ -1,4 +1,5 @@
-import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/pulse_section_title.dart';
+import '../../../../core/widgets/pulse_service_tile.dart';
 import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -54,12 +55,9 @@ class HomePage extends StatelessWidget {
         final theme = PulseTheme.build(Theme.of(context).brightness);
         final name = user?.firstName.trim() ?? '';
         final logo = association?.logoUrl;
-        final shortcuts = [
-          if (modules.contains('QUIZ')) (Icons.quiz_outlined, 'Quiz', '/quiz'),
-          if (modules.contains('DOCUMENT_LIBRARY'))
-            (Icons.folder_outlined, 'Bibliothèque', '/documents'),
-          (Icons.payment_outlined, 'Paiements', '/payments'),
-        ];
+        final shortcuts = PulseService.values.where(
+          (service) => service.isAvailable(modules),
+        );
 
         return Theme(
           data: theme,
@@ -122,10 +120,10 @@ class HomePage extends StatelessWidget {
                       ),
                     ),
                     if (modules.contains('EVENTS')) ...[
-                      const _HomeSectionTitle('Prochain rendez-vous'),
+                      const PulseSectionTitle('Prochain rendez-vous'),
                       const NextEventsCarousel(),
                     ],
-                    const _HomeSectionTitle('Accès rapides'),
+                    const PulseSectionTitle('Accès rapides'),
                     LayoutBuilder(
                       builder: (context, constraints) {
                         final columns =
@@ -141,34 +139,12 @@ class HomePage extends StatelessWidget {
                           spacing: gap,
                           runSpacing: gap,
                           children: [
-                            for (final (icon, label, route) in shortcuts)
+                            for (final service in shortcuts)
                               SizedBox(
                                 width: width,
-                                child: Card(
-                                  margin: EdgeInsets.zero,
-                                  clipBehavior: Clip.antiAlias,
-                                  child: InkWell(
-                                    onTap: () => context.push(route),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                        horizontal: 4,
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Icon(
-                                            icon,
-                                            color: theme.colorScheme.primary,
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            label,
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
+                                child: PulseServiceTile(
+                                  service: service,
+                                  compact: true,
                                 ),
                               ),
                           ],
@@ -176,7 +152,7 @@ class HomePage extends StatelessWidget {
                       },
                     ),
                     if (modules.contains('CLUB_COMMUNICATION')) ...[
-                      const _HomeSectionTitle('La vie du club'),
+                      const PulseSectionTitle('La vie du club'),
                       const ClubMessageCard(),
                     ],
                   ],
@@ -188,20 +164,4 @@ class HomePage extends StatelessWidget {
       },
     );
   }
-}
-
-class _HomeSectionTitle extends StatelessWidget {
-  final String label;
-  const _HomeSectionTitle(this.label);
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 24, bottom: 10),
-    child: Text(
-      label,
-      style: Theme.of(
-        context,
-      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-    ),
-  );
 }

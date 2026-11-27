@@ -1,3 +1,6 @@
+import 'package:dio/dio.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 
@@ -30,7 +33,13 @@ class _DemoContext extends ContextCubit {
             {
               'id': 1,
               'name': 'Club Pulse',
-              'modules': ['QUIZ', 'DOCUMENT_LIBRARY'],
+              'modules': [
+                'QUIZ',
+                'DOCUMENT_LIBRARY',
+                'EVENTS',
+                'CLUB_COMMUNICATION',
+                'CARPOOLING',
+              ],
             },
           ],
         }),
@@ -47,6 +56,43 @@ void main() {
       await tester.binding.setSurfaceSize(const Size(390, 844));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.runAsync(_loadCaptureFonts);
+      SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
+      final api = ApiClient(AuthStorage());
+      api.dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (request, handler) {
+            final Object? data = switch (request.path) {
+              '/api/mobile/events' => {
+                'content': [
+                  {
+                    'id': 42,
+                    'title': 'Sortie en mer',
+                    'location': 'Port du club',
+                    'category': 'Mer',
+                    'startDate': '2099-06-08T09:00:00',
+                    'goingCount': 8,
+                  },
+                ],
+              },
+              '/api/mobile/messages' => [
+                {
+                  'id': 7,
+                  'title': 'Préparer la sortie',
+                  'content': 'Rendez-vous au port avec votre matériel.',
+                  'signature': 'Le bureau',
+                },
+              ],
+              _ => null,
+            };
+            if (data == null) {
+              handler.reject(DioException(requestOptions: request));
+            } else {
+              handler.resolve(Response(requestOptions: request, data: data));
+            }
+          },
+        ),
+      );
       final cubit = _DemoContext();
       addTearDown(cubit.close);
       final capture = GlobalKey();
@@ -58,7 +104,7 @@ void main() {
             debugShowCheckedModeBanner: false,
             home: BlocProvider<ContextCubit>.value(
               value: cubit,
-              child: const MainScaffold(),
+              child: MainScaffold(apiClient: api),
             ),
           ),
         ),
@@ -67,7 +113,21 @@ void main() {
       expect(find.text('Salut, Camille !'), findsOneWidget);
       expect(find.text('Club Pulse'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      expect(find.text('Sortie en mer'), findsOneWidget);
       await _capture(tester, capture, 'accueil-${brightness.name}');
+      await tester.scrollUntilVisible(
+        find.text('Préparer la sortie'),
+        160,
+        scrollable: find
+            .byWidgetPredicate(
+              (widget) =>
+                  widget is Scrollable &&
+                  widget.axisDirection == AxisDirection.down,
+            )
+            .first,
+      );
+      expect(find.text('Préparer la sortie'), findsOneWidget);
+      await _capture(tester, capture, 'accueil-actualites-${brightness.name}');
       await tester.tap(find.text('Services'));
       await tester.pumpAndSettle();
       expect(find.text('Apprendre et progresser'), findsOneWidget);

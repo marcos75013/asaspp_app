@@ -64,7 +64,6 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
             SizedBox(
               height:
                   320 +
@@ -131,7 +130,7 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
                             '/covoiturage/join',
                             extra: currentEvent,
                           ),
-                          label: const Text("je m'y infiltre"),
+                          label: const Text('Voir les trajets'),
                           style: _carpoolButtonStyle(),
                         ),
                       ),
@@ -140,22 +139,23 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
                 ),
               ),
             const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(events.length, (index) {
-                final isActive = index == currentIndex;
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: isActive ? 14 : 6,
-                  height: 6,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                );
-              }),
-            ),
+            if (events.length > 1)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(events.length, (index) {
+                  final isActive = index == currentIndex;
+                  return AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                    width: isActive ? 14 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  );
+                }),
+              ),
             const SizedBox(height: 12),
           ],
         );

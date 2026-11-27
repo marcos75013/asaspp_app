@@ -28,7 +28,9 @@ import 'features/home/presentation/pages/club_message_card.dart';
 import 'features/user/presentation/pages/user_profile_sheet.dart';
 
 class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
+  final ApiClient? apiClient;
+
+  const MainScaffold({super.key, this.apiClient});
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -44,7 +46,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     super.initState();
 
     final authStorage = AuthStorage();
-    final apiClient = ApiClient(authStorage);
+    final apiClient = widget.apiClient ?? ApiClient(authStorage);
 
     _pages = [
       MultiBlocProvider(

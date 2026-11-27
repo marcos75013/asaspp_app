@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/config/api_config.dart';
@@ -282,15 +283,16 @@ class _PositionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatar = member?.avatarUrl;
+    final colors = PulseTheme.build(Theme.of(context).brightness).colorScheme;
     return Padding(
       padding: EdgeInsets.only(
-        left: (position.depth * 18).toDouble(),
+        left: (position.depth.clamp(0, 3) * 18).toDouble(),
         bottom: 10,
       ),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: .9),
+          color: colors.surface,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -312,9 +314,16 @@ class _PositionTile extends StatelessWidget {
                 children: [
                   Text(
                     position.title,
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: colors.onSurface,
+                    ),
                   ),
-                  if (member != null) Text(member!.name),
+                  if (member != null)
+                    Text(
+                      member!.name,
+                      style: TextStyle(color: colors.onSurfaceVariant),
+                    ),
                 ],
               ),
             ),

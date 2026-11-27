@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../../home/data/models/next_event_model.dart';
@@ -124,69 +125,30 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-        title: const Text(
-          'Créer un covoiturage',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-      ),
-
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          /// 🌊 FOND
-          Image.asset(
-            'assets/pngs/bg_mer.png',
-            fit: BoxFit.cover,
-            filterQuality: FilterQuality.low, // ⚡ optimisation GPU
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        appBar: AppBar(
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: () => Navigator.of(context).pop(),
           ),
+          title: const Text(
+            'Créer un covoiturage',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
 
-          /// 🌑 VOILE
-          Container(color: Colors.black.withValues(alpha: 0.25)),
-
-          /// 📄 CONTENU
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
+        body: SafeArea(
+          child: ListView(
+            padding: PulseTheme.pagePadding,
+            children: [
+              Card(
+                child: Padding(
                   padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-
-                    /// 🎨 Effet glass optimisé (sans blur)
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.95),
-                        Colors.white.withValues(alpha: 0.88),
-                      ],
-                    ),
-
-                    border: Border.all(
-                      color: const Color(0xFFD4AF37).withValues(alpha: 0.6),
-                      width: 1.5,
-                    ),
-
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -204,17 +166,14 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
                       const SizedBox(height: 16),
 
                       ListTile(
-                        leading: const Icon(
-                          Icons.access_time,
-                          color: Color(0xFF34445A),
-                        ),
+                        leading: Icon(Icons.access_time, color: colors.primary),
                         title: Text(
                           _departureTime == null
                               ? 'Date et heure de départ'
                               : '${_departureTime!.day}/${_departureTime!.month}/${_departureTime!.year} '
                                     '${_departureTime!.hour.toString().padLeft(2, '0')}:'
                                     '${_departureTime!.minute.toString().padLeft(2, '0')}',
-                          style: const TextStyle(color: Color(0xFF34445A)),
+                          style: TextStyle(color: colors.onSurfaceVariant),
                         ),
                         onTap: _pickDeparture,
                       ),
@@ -226,7 +185,7 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
                         '${widget.event.startDate.year} à '
                         '${widget.event.startDate.hour.toString().padLeft(2, '0')}h'
                         '${widget.event.startDate.minute.toString().padLeft(2, '0')}.',
-                        style: const TextStyle(color: Color(0xFF34445A)),
+                        style: TextStyle(color: colors.onSurfaceVariant),
                       ),
 
                       const SizedBox(height: 16),
@@ -252,27 +211,21 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
                       const SizedBox(height: 28),
 
                       if (_error != null)
-                        Text(
-                          _error!,
-                          style: const TextStyle(color: Colors.red),
-                        ),
+                        Text(_error!, style: TextStyle(color: colors.error)),
 
-                      ElevatedButton(
+                      FilledButton(
                         onPressed: _saving ? null : _save,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFD4AF37),
+                        style: FilledButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 14),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          elevation: 4,
                         ),
                         child: Text(
                           _saving ? 'Création…' : 'Créer le covoiturage',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFF172334),
                           ),
                         ),
                       ),
@@ -280,9 +233,9 @@ class _CreateCarpoolScreenState extends State<CreateCarpoolScreen> {
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -310,25 +263,17 @@ class _FormField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF172334),
-          ),
-        ),
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 6),
         TextField(
           controller: controller,
-          style: const TextStyle(color: Color(0xFF172334)),
           maxLines: maxLines,
           keyboardType: keyboardType,
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: Color(0xFF65758A)),
-            prefixIcon: Icon(icon, color: const Color(0xFF65758A)),
+            prefixIcon: Icon(icon),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
               borderSide: BorderSide.none,

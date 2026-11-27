@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'training_detail_page.dart';
 import '../../../../core/network/api_client.dart';
@@ -95,43 +96,48 @@ class _TrainingCalendarPageState extends State<TrainingCalendarPage> {
           ..sort((a, b) => a.startDate.compareTo(b.startDate));
     final past = _trainings.where((e) => e.startDate.isBefore(now)).toList()
       ..sort((a, b) => b.startDate.compareTo(a.startDate));
-    return Scaffold(
-      appBar: AppBar(title: const Text('Calendrier')),
-      body: RefreshIndicator(
-        onRefresh: _load,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
-          children: [
-            if (_loading)
-              const Center(child: CircularProgressIndicator())
-            else ...[
-              if (_error != null)
-                ListTile(
-                  title: Text(_error!),
-                  trailing: IconButton(
-                    onPressed: _load,
-                    icon: const Icon(Icons.refresh),
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Agenda')),
+        body: RefreshIndicator(
+          onRefresh: _load,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+            children: [
+              if (_loading)
+                const Center(child: CircularProgressIndicator())
+              else ...[
+                if (_error != null)
+                  ListTile(
+                    title: Text(_error!),
+                    trailing: IconButton(
+                      onPressed: _load,
+                      icon: const Icon(Icons.refresh),
+                    ),
                   ),
-                ),
-              if (_trainings.isEmpty && _error == null)
-                const Text('Aucun entraînement pour le moment.'),
-              if (upcoming.isNotEmpty) ...[
-                const Text(
-                  'À venir',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                ...upcoming.map((e) => _card(e, true)),
-              ],
-              if (past.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                const Text(
-                  'Terminés',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                ...past.map((e) => _card(e, false)),
+                if (_trainings.isEmpty && _error == null)
+                  const Text('Aucun entraînement pour le moment.'),
+                if (upcoming.isNotEmpty) ...[
+                  const Text(
+                    'À venir',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  ...upcoming.map((e) => _card(e, true)),
+                ],
+                if (past.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Terminés',
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                  ...past.map((e) => _card(e, false)),
+                ],
               ],
             ],
-          ],
+          ),
         ),
       ),
     );

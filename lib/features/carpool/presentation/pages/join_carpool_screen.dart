@@ -1,4 +1,4 @@
-import 'dart:ui';
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '../../../../core/widgets/member_avatar.dart';
@@ -138,108 +138,88 @@ class _JoinCarpoolScreenState extends State<JoinCarpoolScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-
-      /// ⬅️ APPBAR
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new),
-          onPressed: () => Navigator.of(context).pop(),
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
+    return Theme(
+      data: theme,
+      child: Scaffold(
+        /// ⬅️ APPBAR
+        appBar: AppBar(
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: const Text('Je m’y incruste'),
         ),
-        title: const Text('Je m’y incruste'),
-      ),
 
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Image.asset('assets/pngs/bg_mer.png', fit: BoxFit.cover),
-          Container(color: Colors.black.withValues(alpha: 0.2)),
-
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.85),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: const Color(0xFFD4AF37).withValues(alpha: 0.6),
+        body: SafeArea(
+          child: ListView(
+            padding: PulseTheme.pagePadding,
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Événement',
+                        style: TextStyle(fontWeight: FontWeight.w600),
                       ),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Événement',
-                          style: TextStyle(fontWeight: FontWeight.w600),
-                        ),
+                      const SizedBox(height: 8),
+                      Text(widget.event.title),
+
+                      const SizedBox(height: 24),
+
+                      /// 📋 LISTE DES COVOITURAGES
+                      if (_error != null && !_loading) ...[
+                        Text(_error!, style: TextStyle(color: colors.error)),
                         const SizedBox(height: 8),
-                        Text(widget.event.title),
-
-                        const SizedBox(height: 24),
-
-                        /// 📋 LISTE DES COVOITURAGES
-                        if (_error != null && !_loading) ...[
-                          Text(
-                            _error!,
-                            style: const TextStyle(color: Colors.red),
-                          ),
-                          const SizedBox(height: 8),
-                        ],
-                        if (_carpools.any(
-                          (post) => post.ownedByCurrentUser,
-                        )) ...[
-                          const Text(
-                            'Tu proposes déjà un trajet pour cet événement : tu ne peux pas réserver une place dans un autre covoiturage.',
-                          ),
-                          const SizedBox(height: 12),
-                        ],
-                        if (_loading)
-                          const Center(child: CircularProgressIndicator())
-                        else if (_error != null && _carpools.isEmpty)
-                          TextButton(
-                            onPressed: _load,
-                            child: const Text('Réessayer'),
-                          )
-                        else if (_carpools.isEmpty)
-                          const Text('Aucun covoiturage disponible')
-                        else
-                          ..._carpools.map(
-                            (carpool) => CarpoolCard(
-                              creatorName: carpool.creatorName,
-                              remainingSeats: carpool.remainingSeats,
-                              avatarUrl: carpool.authorAvatarUrl,
-                              booked: carpool.bookedByCurrentUser,
-                              owned: carpool.ownedByCurrentUser,
-                              onShowPassengers: carpool.ownedByCurrentUser
-                                  ? () => _showPassengers(carpool)
-                                  : null,
-                              enabled:
-                                  !carpool.ownedByCurrentUser &&
-                                  (!_carpools.any(
-                                        (post) => post.ownedByCurrentUser,
-                                      ) ||
-                                      carpool.bookedByCurrentUser) &&
-                                  _busyPostId == null,
-                              onReserve: () => _toggleBooking(carpool),
-                            ),
-                          ),
                       ],
-                    ),
+                      if (_carpools.any((post) => post.ownedByCurrentUser)) ...[
+                        const Text(
+                          'Tu proposes déjà un trajet pour cet événement : tu ne peux pas réserver une place dans un autre covoiturage.',
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      if (_loading)
+                        const Center(child: CircularProgressIndicator())
+                      else if (_error != null && _carpools.isEmpty)
+                        TextButton(
+                          onPressed: _load,
+                          child: const Text('Réessayer'),
+                        )
+                      else if (_carpools.isEmpty)
+                        const Text('Aucun covoiturage disponible')
+                      else
+                        ..._carpools.map(
+                          (carpool) => CarpoolCard(
+                            creatorName: carpool.creatorName,
+                            remainingSeats: carpool.remainingSeats,
+                            avatarUrl: carpool.authorAvatarUrl,
+                            booked: carpool.bookedByCurrentUser,
+                            owned: carpool.ownedByCurrentUser,
+                            onShowPassengers: carpool.ownedByCurrentUser
+                                ? () => _showPassengers(carpool)
+                                : null,
+                            enabled:
+                                !carpool.ownedByCurrentUser &&
+                                (!_carpools.any(
+                                      (post) => post.ownedByCurrentUser,
+                                    ) ||
+                                    carpool.bookedByCurrentUser) &&
+                                _busyPostId == null,
+                            onReserve: () => _toggleBooking(carpool),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

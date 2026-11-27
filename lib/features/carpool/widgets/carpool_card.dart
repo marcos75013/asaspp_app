@@ -25,20 +25,16 @@ class CarpoolCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     final isFull = remainingSeats <= 0;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.9),
+        color: colors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isFull
-              ? Colors.grey
-              : const Color(0xFFD4AF37).withValues(alpha: 0.7),
-          width: 1.3,
-        ),
+        border: Border.all(color: colors.outlineVariant, width: 1.3),
       ),
       child: Row(
         children: [
@@ -61,7 +57,7 @@ class CarpoolCard extends StatelessWidget {
                 Text(
                   isFull ? 'Complet' : '$remainingSeats place(s) restante(s)',
                   style: TextStyle(
-                    color: isFull ? Colors.redAccent : Colors.green,
+                    color: isFull ? colors.error : colors.primary,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -79,7 +75,8 @@ class CarpoolCard extends StatelessWidget {
           ElevatedButton(
             onPressed: (!enabled || (isFull && !booked)) ? null : onReserve,
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD4AF37),
+              backgroundColor: colors.primary,
+              foregroundColor: colors.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),

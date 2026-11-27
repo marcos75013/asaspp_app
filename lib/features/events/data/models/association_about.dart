@@ -4,6 +4,7 @@ class AssociationAbout {
   final String? logoUrl;
   final AboutPresentation presentation;
   final List<OrganizationPosition> positions;
+  final List<OrganizationSection> sections;
   final Map<int, OrganizationMember> members;
 
   const AssociationAbout({
@@ -12,6 +13,7 @@ class AssociationAbout {
     this.logoUrl,
     required this.presentation,
     required this.positions,
+    this.sections = const [],
     required this.members,
   });
 
@@ -35,29 +37,67 @@ class AssociationAbout {
             ),
           )
           .toList(),
+      sections: (org['sections'] as List? ?? const [])
+          .map(
+            (item) => OrganizationSection.fromJson(
+              Map<String, dynamic>.from(item as Map),
+            ),
+          )
+          .toList(),
       members: {for (final member in members) member.id: member},
     );
   }
 
-  List<OrganizationPosition> get orderedPositions {
-    final result = <OrganizationPosition>[];
-    final visited = <String>{};
-    void visit(String? parent, int depth) {
-      for (final position in positions.where(
-        (item) => item.parentId == parent,
-      )) {
-        if (!visited.add(position.id)) continue;
-        result.add(position.withDepth(depth));
-        visit(position.id, depth + 1);
-      }
-    }
+  List<OrganizationSection> get displaySections => sections.isEmpty
+      ? [
+          if (positions.isNotEmpty)
+            OrganizationSection('Organigramme', positions),
+        ]
+      : sections.where((section) => section.positions.isNotEmpty).toList();
 
-    visit(null, 0);
-    for (final position in positions) {
-      if (visited.add(position.id)) result.add(position);
+  List<OrganizationPosition> get orderedPositions => orderPositions(positions);
+}
+
+class OrganizationSection {
+  final String title;
+  final List<OrganizationPosition> positions;
+
+  const OrganizationSection(this.title, this.positions);
+
+  factory OrganizationSection.fromJson(Map<String, dynamic> json) =>
+      OrganizationSection(
+        json['title'] as String? ??
+            (json['id'] == 'BUREAU' ? 'Bureau' : 'Encadrement'),
+        (json['positions'] as List? ?? const [])
+            .map(
+              (item) => OrganizationPosition.fromJson(
+                Map<String, dynamic>.from(item as Map),
+              ),
+            )
+            .toList(),
+      );
+
+  List<OrganizationPosition> get orderedPositions => orderPositions(positions);
+}
+
+List<OrganizationPosition> orderPositions(
+  List<OrganizationPosition> positions,
+) {
+  final result = <OrganizationPosition>[];
+  final visited = <String>{};
+  void visit(String? parent, int depth) {
+    for (final position in positions.where((item) => item.parentId == parent)) {
+      if (!visited.add(position.id)) continue;
+      result.add(position.withDepth(depth));
+      visit(position.id, depth + 1);
     }
-    return result;
   }
+
+  visit(null, 0);
+  for (final position in positions) {
+    if (visited.add(position.id)) result.add(position);
+  }
+  return result;
 }
 
 class AboutPresentation {

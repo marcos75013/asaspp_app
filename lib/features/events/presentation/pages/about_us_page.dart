@@ -239,24 +239,27 @@ class _AboutUsPageState extends State<AboutUsPage> {
                       ),
                       const SizedBox(height: 24),
                     ],
-                    if (about.positions.isNotEmpty)
-                      _GlassCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Organigramme',
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: Colors.lightBlueAccent,
+                    for (final section in about.displaySections)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16),
+                        child: _GlassCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                section.title,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  color: Colors.lightBlueAccent,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 16),
-                            for (final position in about.orderedPositions)
-                              _PositionTile(
-                                position: position,
-                                member: about.members[position.membershipId],
-                              ),
-                          ],
+                              const SizedBox(height: 16),
+                              for (final position in section.orderedPositions)
+                                _PositionTile(
+                                  position: position,
+                                  member: about.members[position.membershipId],
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                   ],

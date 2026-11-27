@@ -2,6 +2,45 @@ import 'package:asaspp_app/features/events/data/models/association_about.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('keeps bureau and monitors separate even when position ids match', () {
+    final about = AssociationAbout.fromJson({
+      'associationId': 12,
+      'organization': {
+        'sections': [
+          {
+            'id': 'BUREAU',
+            'title': 'Bureau',
+            'positions': [
+              {'id': 'root', 'title': 'Présidence', 'membershipId': 21},
+            ],
+          },
+          {
+            'id': 'ENCADREMENT',
+            'title': 'Moniteurs',
+            'positions': [
+              {'id': 'root', 'title': 'Moniteur', 'membershipId': 22},
+            ],
+          },
+        ],
+        'members': [
+          {'id': 21, 'name': 'Camille'},
+          {'id': 22, 'name': 'Alex'},
+        ],
+      },
+    });
+    expect(about.displaySections.map((section) => section.title), [
+      'Bureau',
+      'Moniteurs',
+    ]);
+    expect(
+      about.displaySections.map(
+        (section) =>
+            about.members[section.orderedPositions.single.membershipId]?.name,
+      ),
+      ['Camille', 'Alex'],
+    );
+  });
+
   test('uses membership ids and preserves hierarchy', () {
     final about = AssociationAbout.fromJson({
       'associationId': 12,

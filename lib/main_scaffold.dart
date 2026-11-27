@@ -1,3 +1,4 @@
+import 'core/widgets/member_avatar.dart';
 import 'core/widgets/pulse_association_header.dart';
 import 'core/widgets/pulse_section_title.dart';
 import 'core/widgets/pulse_service_tile.dart';
@@ -406,13 +407,58 @@ class _ProfileTab extends StatelessWidget {
     final cubit = context.watch<ContextCubit>();
     final profile = cubit.state.context;
     final association = profile?.currentAssociation;
+    final user = profile?.user;
+    final name = [user?.firstName ?? '', user?.lastName ?? ''].join(' ').trim();
     return _TabSection(
       title: 'Profil',
+      header: PulseAssociationHeader(
+        name: association?.associationName ?? 'MultiAsso',
+        logoUrl: association?.logoUrl,
+      ),
       children: [
         if (profile == null)
           _TabLink(Icons.refresh, 'Actualiser le profil', cubit.loadContext)
         else ...[
-          _TabLink(Icons.person_outline, 'Mon profil', () {
+          Builder(
+            builder: (context) {
+              final theme = Theme.of(context);
+              return Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Column(
+                  children: [
+                    MemberAvatar(radius: 34, url: user?.avatarUrl, name: name),
+                    const SizedBox(height: 10),
+                    Text(
+                      name.isEmpty ? 'Mon profil' : name,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    if (association != null) ...[
+                      Text(
+                        association.associationName,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Chip(
+                        label: Text(
+                          association.role == AssociationRole.admin
+                              ? 'Administrateur'
+                              : 'Membre',
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
+          const PulseSectionTitle('Mon compte'),
+          _TabLink(Icons.person_outline, 'Mes informations', () {
             showModalBottomSheet<void>(
               context: context,
               isScrollControlled: true,
@@ -432,12 +478,53 @@ class _ProfileTab extends StatelessWidget {
               'Changer d’association',
               () => context.go('/association-selection', extra: profile),
             ),
-          if (association?.role == AssociationRole.admin)
+          if (association?.role == AssociationRole.admin) ...[
+            const PulseSectionTitle('Administration'),
             _TabLink(
               Icons.admin_panel_settings_outlined,
               'Espace admin',
               () => context.go('/admin-home'),
             ),
+          ],
+          const SizedBox(height: 16),
+          Center(
+            child: TextButton(
+              onPressed: () async {
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Se déconnecter ?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context, false),
+                        child: const Text('Annuler'),
+                      ),
+                      FilledButton(
+                        onPressed: () => Navigator.pop(context, true),
+                        child: const Text('Se déconnecter'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true && context.mounted) {
+                  try {
+                    await ApiClient(AuthStorage()).logout();
+                  } catch (_) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Impossible de fermer la session. Réessaie.',
+                          ),
+                        ),
+                      );
+                    }
+                  }
+                }
+              },
+              child: const Text('Se déconnecter'),
+            ),
+          ),
         ],
       ],
     );

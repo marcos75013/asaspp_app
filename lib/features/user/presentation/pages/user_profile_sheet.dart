@@ -1,3 +1,4 @@
+import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
@@ -28,188 +29,125 @@ class UserProfileSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = PulseTheme.build(Theme.of(context).brightness);
+    final colors = theme.colorScheme;
     return BlocBuilder<ContextCubit, ContextState>(
       builder: (context, state) {
         final user = state.context?.user ?? this.user;
-        return DraggableScrollableSheet(
-          initialChildSize: 0.9,
-          minChildSize: 0.7,
-          maxChildSize: 0.95,
-          builder: (_, controller) {
-            return ClipRRect(
+        return Theme(
+          data: theme,
+          child: DraggableScrollableSheet(
+            initialChildSize: 0.9,
+            minChildSize: 0.7,
+            maxChildSize: 0.95,
+            builder: (sheetContext, controller) => Material(
+              color: theme.scaffoldBackgroundColor,
               borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(30),
+                top: Radius.circular(24),
               ),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(30),
-                  ),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withOpacity(0.96),
-                      Colors.white.withOpacity(0.88),
-                    ],
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.25),
-                      blurRadius: 30,
-                      offset: const Offset(0, -10),
-                    ),
-                  ],
-                ),
+              clipBehavior: Clip.antiAlias,
+              child: SafeArea(
+                top: false,
                 child: ListView(
                   controller: controller,
-                  padding: const EdgeInsets.all(24),
+                  padding: PulseTheme.pagePadding,
                   children: [
-                    _dragHandle(),
-                    const SizedBox(height: 30),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Mes informations',
+                            style: theme.textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: 'Fermer',
+                          onPressed: () =>
+                              Navigator.of(sheetContext).maybePop(),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
                     _ProfileAvatarControls(
                       user: user,
                       profileService: profileService,
                     ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${user.firstName} ${user.lastName}'.trim(),
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.headlineSmall,
+                    ),
                     const SizedBox(height: 20),
-                    Center(
-                      child: Text(
-                        "${user.firstName} ${user.lastName}",
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Center(
-                      child: Text(
-                        _roleLabel(association?.role),
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    _profileTile(Icons.email, "Email", user.email),
                     _profileTile(
-                      Icons.phone,
-                      "Téléphone",
-                      user.phone ?? "Non renseigné",
+                      Icons.email_outlined,
+                      'Email',
+                      user.email,
+                      colors,
                     ),
                     _profileTile(
-                      Icons.diversity_3,
-                      "Association active",
-                      association?.associationName ?? "Non renseignée",
+                      Icons.phone_outlined,
+                      'Téléphone',
+                      user.phone ?? 'Non renseigné',
+                      colors,
                     ),
                     _profileTile(
-                      Icons.verified_user,
-                      "Rôle",
+                      Icons.groups_outlined,
+                      'Association active',
+                      association?.associationName ?? 'Non renseignée',
+                      colors,
+                    ),
+                    _profileTile(
+                      Icons.verified_user_outlined,
+                      'Rôle',
                       _roleLabel(association?.role),
+                      colors,
                     ),
-                    const SizedBox(height: 20),
-                    _actionButton(
-                      "Modifier mon profil",
-                      Colors.blueAccent.withOpacity(0.9),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      icon: const Icon(Icons.edit_outlined),
+                      label: const Text('Modifier mon profil'),
                       onPressed: () => showDialog<void>(
-                        context: context,
-                        builder: (_) => BlocProvider.value(
-                          value: context.read<ContextCubit>(),
-                          child: _EditProfileDialog(
-                            user: user,
-                            profileService: profileService,
+                        context: sheetContext,
+                        builder: (_) => Theme(
+                          data: theme,
+                          child: BlocProvider.value(
+                            value: context.read<ContextCubit>(),
+                            child: _EditProfileDialog(
+                              user: user,
+                              profileService: profileService,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    _actionButton(
-                      "Se déconnecter",
-                      Colors.red.withOpacity(0.85),
-                    ),
-                    const SizedBox(height: 40),
                   ],
                 ),
               ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
   }
 
-  Widget _dragHandle() {
-    return Center(
-      child: Container(
-        width: 60,
-        height: 6,
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(10),
-        ),
+  Widget _profileTile(
+    IconData icon,
+    String title,
+    String value,
+    ColorScheme colors,
+  ) => Card(
+    margin: const EdgeInsets.only(bottom: 8),
+    child: ListTile(
+      leading: Icon(icon, color: colors.primary),
+      title: Text(title, style: TextStyle(color: colors.onSurfaceVariant)),
+      subtitle: Text(
+        value,
+        style: TextStyle(color: colors.onSurface, fontWeight: FontWeight.w600),
       ),
-    );
-  }
-
-  Widget _profileTile(IconData icon, String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: Colors.blueGrey),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(color: Colors.black54, fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    value,
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _actionButton(String text, Color color, {VoidCallback? onPressed}) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        elevation: 4,
-      ),
-      onPressed: onPressed ?? () {},
-      child: Text(text, style: const TextStyle(color: Colors.white)),
-    );
-  }
+    ),
+  );
 
   String _roleLabel(AssociationRole? role) {
     switch (role) {
@@ -251,8 +189,9 @@ class _ProfileAvatarControlsState extends State<_ProfileAvatarControls> {
       final user = await _profile.getProfile();
       if (mounted) context.read<ContextCubit>().updateUser(user);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = 'Impossible de charger la photo du profil.');
+      }
     }
   }
 
@@ -267,12 +206,13 @@ class _ProfileAvatarControlsState extends State<_ProfileAvatarControls> {
       final preview = await AvatarPreparer().prepare(image);
       if (mounted) setState(() => _preview = preview);
     } catch (error) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _error = error is AvatarPreparationException
               ? error.message
               : 'Cette image ne peut pas être convertie.',
         );
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -292,8 +232,9 @@ class _ProfileAvatarControlsState extends State<_ProfileAvatarControls> {
       notifyProfileUpdated();
       setState(() => _preview = null);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = 'Impossible d’enregistrer cette photo.');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -311,8 +252,9 @@ class _ProfileAvatarControlsState extends State<_ProfileAvatarControls> {
       notifyProfileUpdated();
       setState(() => _preview = null);
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() => _error = 'Impossible de supprimer cette photo.');
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -325,33 +267,24 @@ class _ProfileAvatarControlsState extends State<_ProfileAvatarControls> {
         final user = state.context?.user ?? widget.user;
         return Column(
           children: [
-            Center(
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.cyanAccent.withValues(alpha: .4),
-                      blurRadius: 12,
-                    ),
-                  ],
-                ),
-                child: _preview == null
-                    ? MemberAvatar(
-                        url: user.avatarUrl,
-                        name: '${user.firstName} ${user.lastName}',
-                        radius: 55,
-                      )
-                    : CircleAvatar(
-                        radius: 55,
-                        backgroundImage: MemoryImage(_preview!.bytes),
-                      ),
+            if (_preview == null)
+              MemberAvatar(
+                url: user.avatarUrl,
+                name: '${user.firstName} ${user.lastName}',
+                radius: 42,
+              )
+            else
+              CircleAvatar(
+                radius: 42,
+                backgroundImage: MemoryImage(_preview!.bytes),
               ),
-            ),
             const SizedBox(height: 12),
             if (_busy) const CircularProgressIndicator(),
             if (_error != null)
-              Text(_error!, style: const TextStyle(color: Colors.red)),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             Wrap(
               alignment: WrapAlignment.center,
               spacing: 8,
@@ -426,13 +359,14 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
       notifyProfileUpdated();
       Navigator.of(context).pop();
     } on DioException catch (e) {
-      if (mounted)
+      if (mounted) {
         setState(
           () => _error = e.response?.data is Map
               ? (e.response?.data['message'] as String? ??
                     'Impossible de modifier le profil.')
               : 'Impossible de modifier le profil.',
         );
+      }
     } catch (_) {
       if (mounted) setState(() => _error = 'Impossible de modifier le profil.');
     } finally {
@@ -452,7 +386,10 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
             TextFormField(
               controller: _email,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'E-mail'),
+              decoration: const InputDecoration(
+                labelText: 'E-mail',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (_) => setState(() {}),
               validator: (value) =>
                   RegExp(
@@ -461,11 +398,15 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                   ? null
                   : 'Saisis une adresse e-mail valide.',
             ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _phone,
               keyboardType: TextInputType.phone,
               maxLength: 40,
-              decoration: const InputDecoration(labelText: 'Téléphone'),
+              decoration: const InputDecoration(
+                labelText: 'Téléphone',
+                border: OutlineInputBorder(),
+              ),
             ),
             if (_emailChanged)
               TextFormField(
@@ -473,6 +414,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                 obscureText: true,
                 decoration: const InputDecoration(
                   labelText: 'Mot de passe actuel',
+                  border: OutlineInputBorder(),
                   helperText: 'Requis pour modifier ton e-mail de connexion.',
                 ),
                 validator: (value) => (value == null || value.isEmpty)
@@ -480,7 +422,10 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
                     : null,
               ),
             if (_error != null)
-              Text(_error!, style: const TextStyle(color: Colors.red)),
+              Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
           ],
         ),
       ),
@@ -490,7 +435,7 @@ class _EditProfileDialogState extends State<_EditProfileDialog> {
         onPressed: _busy ? null : () => Navigator.pop(context),
         child: const Text('Annuler'),
       ),
-      ElevatedButton(
+      FilledButton(
         onPressed: _busy ? null : _save,
         child: Text(_busy ? 'Enregistrement…' : 'Enregistrer'),
       ),

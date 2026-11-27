@@ -79,7 +79,10 @@ class _MainScaffoldState extends State<MainScaffold> {
     required String label,
     required bool active,
   }) {
-    final color = AppColors.primaryBlue;
+    final theme = Theme.of(context);
+    final color = theme.brightness == Brightness.dark
+        ? PulseTheme.build(Brightness.dark).colorScheme.onSurfaceVariant
+        : AppColors.primaryBlue;
 
     return Column(
       mainAxisSize: MainAxisSize.min,

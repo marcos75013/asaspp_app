@@ -24,7 +24,7 @@ void main() {
           body: Center(
             child: SizedBox(
               width: 390,
-              height: 230,
+              height: 340,
               child: NextDiveCard(event: event),
             ),
           ),

@@ -7,7 +7,6 @@ import '../../../../core/storage/auth_storage.dart';
 import '../../../events/presentation/pages/training_detail_page.dart';
 import '../../data/models/next_event_model.dart';
 import '../cubit/home_cubit.dart';
-import '../widgets/triangle_clipper.dart';
 
 class NextDiveCard extends StatefulWidget {
   final NextEventModel event;
@@ -69,7 +68,6 @@ class _NextDiveCardState extends State<NextDiveCard>
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
-                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
 
@@ -80,175 +78,112 @@ class _NextDiveCardState extends State<NextDiveCard>
                         : colors.outlineVariant,
                   ),
                 ),
-                child: Stack(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    /// ───── CONTENU ─────
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          event.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        if (event.site.trim().isNotEmpty) ...[
-                          const SizedBox(height: 2),
+                    _banner(event),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            event.site,
+                            event.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w600,
                             ),
+                          ),
+                          if (event.site.trim().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              event.site,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                          const SizedBox(height: 8),
+                          _InfoLine(
+                            icon: Icons.calendar_today,
+                            text: event.date,
+                          ),
+                          const SizedBox(height: 4),
+                          _InfoLine(icon: Icons.access_time, text: event.time),
+                          TextButton.icon(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute<void>(
+                                builder: (_) => TrainingDetailPage(
+                                  training: event,
+                                  apiClient: ApiClient(AuthStorage()),
+                                  isEvent: true,
+                                ),
+                              ),
+                            ),
+                            icon: const Icon(Icons.group_outlined, size: 18),
+                            label: Text('${event.goingCount} participant(s)'),
+                          ),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _MiniActionButton(
+                                  label: 'Je viens',
+                                  icon: Icons.check,
+                                  color: Colors.green,
+                                  selected:
+                                      event.participation ==
+                                      ParticipationStatus.going,
+                                  onTap: () => context
+                                      .read<HomeCubit>()
+                                      .setParticipation(
+                                        event.id,
+                                        ParticipationStatus.going,
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _MiniActionButton(
+                                  label: 'Peut-être',
+                                  icon: Icons.help_outline,
+                                  color: Colors.orange,
+                                  selected:
+                                      event.participation ==
+                                      ParticipationStatus.maybe,
+                                  onTap: () => context
+                                      .read<HomeCubit>()
+                                      .setParticipation(
+                                        event.id,
+                                        ParticipationStatus.maybe,
+                                      ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: _MiniActionButton(
+                                  label: 'Non',
+                                  icon: Icons.close,
+                                  color: Colors.red,
+                                  selected:
+                                      event.participation ==
+                                      ParticipationStatus.notGoing,
+                                  onTap: () => context
+                                      .read<HomeCubit>()
+                                      .setParticipation(
+                                        event.id,
+                                        ParticipationStatus.notGoing,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
-                        const SizedBox(height: 8),
-                        _InfoLine(icon: Icons.calendar_today, text: event.date),
-                        const SizedBox(height: 4),
-                        _InfoLine(icon: Icons.access_time, text: event.time),
-                        TextButton.icon(
-                          onPressed: () => Navigator.of(context).push(
-                            MaterialPageRoute<void>(
-                              builder: (_) => TrainingDetailPage(
-                                training: event,
-                                apiClient: ApiClient(AuthStorage()),
-                                isEvent: true,
-                              ),
-                            ),
-                          ),
-                          icon: const Icon(Icons.group_outlined, size: 18),
-                          label: Text('${event.goingCount} participant(s)'),
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: _MiniActionButton(
-                                label: 'Je viens',
-                                icon: Icons.check,
-                                color: Colors.green,
-                                selected:
-                                    event.participation ==
-                                    ParticipationStatus.going,
-                                onTap: () =>
-                                    context.read<HomeCubit>().setParticipation(
-                                      event.id,
-                                      ParticipationStatus.going,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _MiniActionButton(
-                                label: 'Peut-être',
-                                icon: Icons.help_outline,
-                                color: Colors.orange,
-                                selected:
-                                    event.participation ==
-                                    ParticipationStatus.maybe,
-                                onTap: () =>
-                                    context.read<HomeCubit>().setParticipation(
-                                      event.id,
-                                      ParticipationStatus.maybe,
-                                    ),
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: _MiniActionButton(
-                                label: 'Non',
-                                icon: Icons.close,
-                                color: Colors.red,
-                                selected:
-                                    event.participation ==
-                                    ParticipationStatus.notGoing,
-                                onTap: () =>
-                                    context.read<HomeCubit>().setParticipation(
-                                      event.id,
-                                      ParticipationStatus.notGoing,
-                                    ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-
-                    /// ───── IMAGE TRIANGLE ─────
-                    Positioned(
-                      top: 0,
-                      right: 0,
-                      child: ClipPath(
-                        clipper: TopRightTriangleClipper(),
-                        child: Stack(
-                          children: [
-                            if (event.categoryImageUrl?.trim().isNotEmpty ==
-                                true)
-                              Image.network(
-                                const ApiConfig().resolveUrl(
-                                  event.categoryImageUrl!,
-                                ),
-                                width: 96,
-                                height: 96,
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, _, _) =>
-                                    _fallbackImage(event.diveType),
-                              )
-                            else
-                              _fallbackImage(event.diveType),
-                            Container(
-                              width: 96,
-                              height: 96,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topRight,
-                                  end: Alignment.bottomLeft,
-                                  colors: [
-                                    Colors.black.withValues(alpha: 0.5),
-                                    Colors.transparent,
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              top: 8,
-                              right: 8,
-                              child: SizedBox(
-                                width: 80,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                      (event.category.isNotEmpty
-                                              ? event.category
-                                              : 'Événement')
-                                          .toUpperCase(),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.6,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Icon(
-                                      _iconForDiveType(event.diveType),
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ],
@@ -261,16 +196,73 @@ class _NextDiveCardState extends State<NextDiveCard>
     );
   }
 
+  Widget _banner(NextEventModel event) {
+    final url = event.categoryImageUrl?.trim();
+    return SizedBox(
+      height: 106,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (url != null && url.isNotEmpty)
+            Image.network(
+              const ApiConfig().resolveUrl(url),
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => _fallbackImage(event.diveType),
+            )
+          else
+            _fallbackImage(event.diveType),
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Colors.black87],
+              ),
+            ),
+          ),
+          Positioned(
+            left: 16,
+            right: 16,
+            bottom: 12,
+            child: Row(
+              children: [
+                Icon(
+                  _iconForDiveType(event.diveType),
+                  color: Colors.white,
+                  size: 18,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    (event.category.isEmpty ? 'Événement' : event.category)
+                        .toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _fallbackImage(DiveType type) {
     if (type == DiveType.autre) {
-      return Container(width: 96, height: 96, color: const Color(0xFF34527A));
+      return const DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF1267FF), Color(0xFF413088)],
+          ),
+        ),
+      );
     }
-    return Image.asset(
-      _imageForDiveType(type),
-      width: 96,
-      height: 96,
-      fit: BoxFit.cover,
-    );
+    return Image.asset(_imageForDiveType(type), fit: BoxFit.cover);
   }
 
   String _imageForDiveType(DiveType type) {

@@ -1,3 +1,4 @@
+import 'core/widgets/pulse_association_header.dart';
 import 'core/widgets/pulse_section_title.dart';
 import 'core/widgets/pulse_service_tile.dart';
 import 'package:flutter/material.dart';
@@ -219,13 +220,17 @@ void _openPage(BuildContext context, Widget page, {String? title}) {
 class _TabSection extends StatelessWidget {
   final String title;
   final List<Widget> children;
-  const _TabSection({required this.title, required this.children});
+  final Widget? header;
+  const _TabSection({required this.title, required this.children, this.header});
 
   @override
   Widget build(BuildContext context) => Theme(
     data: PulseTheme.build(Theme.of(context).brightness),
     child: Scaffold(
-      appBar: AppBar(title: Text(title), automaticallyImplyLeading: false),
+      appBar: AppBar(
+        title: header ?? Text(title),
+        automaticallyImplyLeading: false,
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 96),
         children: children,
@@ -299,16 +304,18 @@ class _ServicesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final modules =
-        context
-            .watch<ContextCubit>()
-            .state
-            .context
-            ?.currentAssociation
-            ?.modules ??
-        const <String>[];
+    final mobileContext = context.watch<ContextCubit>().state.context;
+    final association = mobileContext?.currentAssociation;
+    final modules = association?.modules ?? const <String>[];
     return _TabSection(
       title: 'Services',
+      header: PulseAssociationHeader(
+        name: association?.associationName ?? 'MultiAsso',
+        logoUrl: association?.logoUrl,
+        onSwitch: mobileContext != null && mobileContext.associations.length > 1
+            ? () => context.go('/association-selection', extra: mobileContext)
+            : null,
+      ),
       children: [
         const _ServicesIntro(),
         if (modules.contains('QUIZ') ||

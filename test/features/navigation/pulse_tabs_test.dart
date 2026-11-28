@@ -339,8 +339,8 @@ void main() {
         center + const Offset(25, 0),
         pointer: 2,
       );
-      await left.moveBy(const Offset(-50, 0));
-      await right.moveBy(const Offset(50, 0));
+      await left.moveBy(const Offset(-90, 0));
+      await right.moveBy(const Offset(90, 0));
       await left.up();
       await right.up();
       await tester.pumpAndSettle();
@@ -348,10 +348,37 @@ void main() {
         viewer.transformationController!.value.getMaxScaleOnAxis(),
         greaterThan(1),
       );
+      Future<void> dragFullScreenPhoto(Offset distance) async {
+        await tester.drag(find.byType(InteractiveViewer), distance);
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text('2 / 2'), findsOneWidget);
+      final beforePan = viewer.transformationController!.value
+          .getTranslation()
+          .x;
+      await dragFullScreenPhoto(const Offset(150, 0));
+      expect(find.text('2 / 2'), findsOneWidget);
+      expect(
+        viewer.transformationController!.value.getTranslation().x,
+        isNot(beforePan),
+      );
+
+      await tester.tap(find.byTooltip('Réinitialiser le zoom'));
+      await tester.pumpAndSettle();
+      await dragFullScreenPhoto(const Offset(150, 0));
+      expect(find.text('1 / 2'), findsOneWidget);
+      expect(viewer.transformationController!.value.getMaxScaleOnAxis(), 1);
+      await dragFullScreenPhoto(const Offset(150, 0));
+      expect(find.text('1 / 2'), findsOneWidget);
+      await dragFullScreenPhoto(const Offset(-90, 150));
+      expect(find.text('1 / 2'), findsOneWidget);
+      await dragFullScreenPhoto(const Offset(-150, 0));
+      expect(find.text('2 / 2'), findsOneWidget);
+
       await tester.tap(find.byTooltip('Photo précédente en plein écran'));
       await tester.pumpAndSettle();
       expect(find.text('1 / 2'), findsOneWidget);
-      expect(viewer.transformationController!.value.getMaxScaleOnAxis(), 1);
       await tester.tap(find.byTooltip('Photo suivante en plein écran'));
       await tester.pumpAndSettle();
       expect(find.text('2 / 2'), findsOneWidget);

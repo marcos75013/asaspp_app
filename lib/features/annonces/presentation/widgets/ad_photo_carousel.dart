@@ -1,3 +1,4 @@
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/pulse_theme.dart';
@@ -118,11 +119,45 @@ class _FullScreenPhoto extends StatefulWidget {
 
 class _FullScreenPhotoState extends State<_FullScreenPhoto> {
   final _zoom = TransformationController();
+  final _touchPointers = <int>{};
   late int _index = widget.initialIndex;
+  Offset? _swipeStart;
 
   void _move(int delta) {
+    final next = _index + delta;
+    if (next < 0 || next >= widget.images.length) return;
+    _swipeStart = null;
     _zoom.value = Matrix4.identity();
-    setState(() => _index += delta);
+    setState(() => _index = next);
+  }
+
+  // Observe touches without taking pinch or pan gestures from InteractiveViewer.
+  void _onPointerDown(PointerDownEvent event) {
+    if (event.kind != PointerDeviceKind.touch || widget.images.length < 2) {
+      return;
+    }
+    _touchPointers.add(event.pointer);
+    _swipeStart =
+        _touchPointers.length == 1 && _zoom.value.getMaxScaleOnAxis() <= 1.01
+        ? event.position
+        : null;
+  }
+
+  void _onPointerCancel(PointerCancelEvent event) {
+    if (_touchPointers.remove(event.pointer)) _swipeStart = null;
+  }
+
+  void _onPointerUp(PointerUpEvent event) {
+    if (!_touchPointers.remove(event.pointer)) return;
+    final start = _swipeStart;
+    _swipeStart = null;
+    if (start == null) return;
+
+    final distance = event.position - start;
+    if (distance.dx.abs() >= 64 &&
+        distance.dx.abs() > distance.dy.abs() * 1.25) {
+      _move(distance.dx < 0 ? 1 : -1);
+    }
   }
 
   @override
@@ -185,18 +220,27 @@ class _FullScreenPhotoState extends State<_FullScreenPhoto> {
             )
           : null,
       body: SafeArea(
-        child: SizedBox.expand(
-          child: InteractiveViewer(
-            transformationController: _zoom,
-            maxScale: 5,
-            child: Image.network(
-              widget.images[_index],
-              fit: BoxFit.contain,
-              semanticLabel: 'Photo ${_index + 1} sur ${widget.images.length}',
-              errorBuilder: (_, _, _) => const Center(
-                child: Text(
-                  'Impossible d’afficher cette photo.',
-                  style: TextStyle(color: Colors.white),
+        child: Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: _onPointerDown,
+          onPointerCancel: _onPointerCancel,
+          onPointerUp: _onPointerUp,
+          child: SizedBox.expand(
+            child: InteractiveViewer(
+              key: ValueKey(_index),
+              transformationController: _zoom,
+              minScale: 1,
+              maxScale: 5,
+              child: Image.network(
+                widget.images[_index],
+                fit: BoxFit.contain,
+                semanticLabel:
+                    'Photo ${_index + 1} sur ${widget.images.length}',
+                errorBuilder: (_, _, _) => const Center(
+                  child: Text(
+                    'Impossible d’afficher cette photo.',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ),
             ),

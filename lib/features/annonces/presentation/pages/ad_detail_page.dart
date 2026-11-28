@@ -26,7 +26,7 @@ class _AdDetailPageState extends State<AdDetailPage> {
   late final _repository =
       widget.repository ?? MobileAdsApiService(ApiClient(AuthStorage()));
   AdModel? _freshAd;
-  bool _updatingStatus = false;
+  bool _managingAd = false;
   int _requestVersion = 0;
 
   @override
@@ -37,7 +37,7 @@ class _AdDetailPageState extends State<AdDetailPage> {
   }
 
   Future<void> _reloadAd() async {
-    if (_updatingStatus) return;
+    if (_managingAd) return;
     final version = ++_requestVersion;
     try {
       final ad = await _repository.getAd(widget.ad.id);
@@ -50,9 +50,9 @@ class _AdDetailPageState extends State<AdDetailPage> {
   }
 
   Future<void> _setStatus(AdModel ad, AdStatus status) async {
-    if (!ad.isOwner || !ad.isActive || _updatingStatus) return;
+    if (!ad.isOwner || !ad.isActive || _managingAd) return;
     _requestVersion++;
-    setState(() => _updatingStatus = true);
+    setState(() => _managingAd = true);
     try {
       final updated = await _repository.setStatus(ad.id, status);
       if (!mounted) return;
@@ -63,7 +63,52 @@ class _AdDetailPageState extends State<AdDetailPage> {
         const SnackBar(content: Text('Impossible de modifier le statut.')),
       );
     } finally {
-      if (mounted) setState(() => _updatingStatus = false);
+      if (mounted) setState(() => _managingAd = false);
+    }
+  }
+
+  Future<void> _deleteSoldAd(BuildContext themedContext, AdModel ad) async {
+    if (!ad.isOwner || _managingAd) return;
+    final confirmed = await showDialog<bool>(
+      context: themedContext,
+      builder: (dialogContext) {
+        final colors = Theme.of(dialogContext).colorScheme;
+        return AlertDialog(
+          title: const Text('Supprimer l’annonce vendue ?'),
+          content: const Text(
+            'L’annonce et ses photos seront supprimées définitivement.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.error,
+                foregroundColor: colors.onError,
+              ),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
+    );
+    if (!mounted || confirmed != true) return;
+
+    _requestVersion++;
+    setState(() => _managingAd = true);
+    try {
+      await _repository.deleteAd(ad.id);
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _managingAd = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible de supprimer l’annonce.')),
+      );
     }
   }
 
@@ -127,15 +172,13 @@ class _AdDetailPageState extends State<AdDetailPage> {
     return Theme(
       data: theme,
       child: PopScope(
-        canPop: !_updatingStatus,
+        canPop: !_managingAd,
         child: Scaffold(
           appBar: AppBar(
             title: const Text('Annonce'),
             leading: IconButton(
               tooltip: 'Retour aux annonces',
-              onPressed: _updatingStatus
-                  ? null
-                  : () => Navigator.of(context).pop(),
+              onPressed: _managingAd ? null : () => Navigator.of(context).pop(),
               icon: const Icon(Icons.arrow_back),
             ),
           ),
@@ -209,35 +252,57 @@ class _AdDetailPageState extends State<AdDetailPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(ad.visibilityLabel),
-                    if (ad.isActive)
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: [
-                          OutlinedButton(
-                            onPressed: _updatingStatus
-                                ? null
-                                : () => _setStatus(
-                                    ad,
-                                    ad.status == AdStatus.active
-                                        ? AdStatus.closed
-                                        : AdStatus.active,
-                                  ),
-                            child: Text(
-                              ad.status == AdStatus.active
-                                  ? 'Mettre en pause'
-                                  : 'Remettre en ligne',
-                            ),
+                    const SizedBox(height: 12),
+                    if (ad.isActive) ...[
+                      FilledButton.icon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: accent,
+                          foregroundColor: theme.brightness == Brightness.dark
+                              ? Colors.black
+                              : Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
-                          if (ad.status != AdStatus.sold &&
-                              ad.type == AdType.vente)
-                            OutlinedButton(
-                              onPressed: _updatingStatus
-                                  ? null
-                                  : () => _setStatus(ad, AdStatus.sold),
-                              child: const Text('Marquer comme vendue'),
-                            ),
-                        ],
+                        ),
+                        onPressed: _managingAd
+                            ? null
+                            : () => _setStatus(
+                                ad,
+                                ad.status == AdStatus.active
+                                    ? AdStatus.closed
+                                    : AdStatus.active,
+                              ),
+                        icon: Icon(
+                          ad.status == AdStatus.active
+                              ? Icons.pause_circle_outline
+                              : Icons.play_circle_outline,
+                        ),
+                        label: Text(
+                          ad.status == AdStatus.active
+                              ? 'Mettre en pause'
+                              : 'Remettre en ligne',
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                    if (ad.type == AdType.vente)
+                      FilledButton.tonalIcon(
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colors.errorContainer,
+                          foregroundColor: colors.onErrorContainer,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: _managingAd
+                            ? null
+                            : () => _deleteSoldAd(context, ad),
+                        icon: const Icon(Icons.delete_outline),
+                        label: Text(
+                          ad.status == AdStatus.sold
+                              ? 'Supprimer l’annonce vendue'
+                              : 'Marquer comme vendue',
+                        ),
                       ),
                     const SizedBox(height: 20),
                   ],

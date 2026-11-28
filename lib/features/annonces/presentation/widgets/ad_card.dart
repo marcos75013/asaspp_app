@@ -23,13 +23,17 @@ class AdCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute<void>(
+          final cubit = context.read<AdsCubit>();
+          final deleted = await Navigator.of(context).push<bool>(
+            MaterialPageRoute<bool>(
               builder: (_) => AdDetailPage(ad: ad, repository: repository),
             ),
           );
-          if (context.mounted && ad.isOwner) {
-            await context.read<AdsCubit>().loadAds();
+          if (cubit.isClosed) return;
+          if (deleted == true) {
+            cubit.removeDeletedAd(ad.id);
+          } else if (ad.isOwner) {
+            await cubit.loadAds();
           }
         },
         child: Column(

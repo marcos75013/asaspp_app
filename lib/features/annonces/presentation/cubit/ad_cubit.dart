@@ -64,6 +64,10 @@ class AdsCubit extends Cubit<AdsState> {
     }
   }
 
+  void removeDeletedAd(String id) {
+    emit(state.copyWith(ads: state.ads.where((ad) => ad.id != id).toList()));
+  }
+
   Future<void> toggleFavorite(String id) async {
     try {
       final updatedAd = await _repository.toggleFavorite(id);

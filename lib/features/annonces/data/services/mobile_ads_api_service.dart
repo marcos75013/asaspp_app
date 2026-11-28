@@ -53,6 +53,11 @@ class MobileAdsApiService implements AdsRepository {
   }
 
   @override
+  Future<void> deleteAd(String id) async {
+    await _apiClient.dio.delete<void>('/api/marketplace/$id');
+  }
+
+  @override
   Future<AdModel> toggleFavorite(String id) async {
     final response = await _apiClient.dio.post<Map<String, dynamic>>(
       '/api/marketplace/$id/favorite',
@@ -105,7 +110,7 @@ class MobileAdsApiService implements AdsRepository {
         );
         created = uploadResponse.data ?? created;
       } catch (_) {
-        await _apiClient.dio.delete<void>('/api/marketplace/${created['id']}');
+        await deleteAd('${created['id']}');
         rethrow;
       }
     }

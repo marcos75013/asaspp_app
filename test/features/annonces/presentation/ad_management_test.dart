@@ -34,9 +34,18 @@ void main() {
         'owner': false,
       };
       final statusChanges = <String>[];
+      var deleted = false;
       api.dio.interceptors.add(
         InterceptorsWrapper(
           onRequest: (request, handler) {
+            if (request.method == 'DELETE') {
+              expect(request.path, '/api/marketplace/1');
+              deleted = true;
+              handler.resolve(
+                Response(requestOptions: request, statusCode: 204),
+              );
+              return;
+            }
             if (request.method == 'PATCH') {
               expect(request.path, '/api/marketplace/1/status');
               final status = request.queryParameters['status'] as String;
@@ -44,7 +53,7 @@ void main() {
               own['status'] = status;
             }
             final data = switch (request.path) {
-              '/api/marketplace' => [Map.of(own), other],
+              '/api/marketplace' => [if (!deleted) Map.of(own), other],
               '/api/marketplace/1' ||
               '/api/marketplace/1/status' => Map.of(own),
               '/api/marketplace/2' => other,
@@ -83,10 +92,16 @@ void main() {
       await tap(find.text('Remettre en ligne'));
       expect(find.text('En ligne'), findsOneWidget);
       await tap(find.text('Marquer comme vendue'));
-      expect(find.text('Vendue'), findsOneWidget);
-      await tap(find.byTooltip('Retour aux annonces'));
-      expect(find.text('Vendue'), findsOneWidget);
-      expect(statusChanges, ['CLOSED', 'ACTIVE', 'SOLD']);
+      expect(find.text('Supprimer l’annonce vendue ?'), findsOneWidget);
+      await tap(find.text('Annuler'));
+      expect(deleted, isFalse);
+      expect(find.text('En ligne'), findsOneWidget);
+      await tap(find.text('Marquer comme vendue'));
+      await tap(find.text('Supprimer'));
+      expect(deleted, isTrue);
+      expect(find.text('Mon détendeur'), findsNothing);
+      expect(find.text('Les palmes de Camille'), findsOneWidget);
+      expect(statusChanges, ['CLOSED', 'ACTIVE']);
       expect(tester.takeException(), isNull);
     });
   }

@@ -301,8 +301,17 @@ class _CreateAdPageState extends State<CreateAdPage> {
     );
   }
 
+  void _movePhoto(int from, int to) {
+    if (_saving || from == to || to < 0 || to >= _images.length) return;
+    setState(() {
+      final image = _images.removeAt(from);
+      _images.insert(to, image);
+    });
+  }
+
   Widget _photoSection(Color accent, ColorScheme colors) {
     final canAdd = !_saving && !_picking && _images.length < _maxPhotos;
+    final canReorder = _images.length > 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -330,67 +339,94 @@ class _CreateAdPageState extends State<CreateAdPage> {
         if (_images.isNotEmpty) ...[
           const SizedBox(height: 10),
           SizedBox(
-            height: 102,
+            height: canReorder ? 150 : 102,
             child: ReorderableListView.builder(
               scrollDirection: Axis.horizontal,
               buildDefaultDragHandles: false,
               itemCount: _images.length,
-              onReorder: (from, to) {
-                if (_saving) return;
-                setState(() {
-                  final image = _images.removeAt(from);
-                  _images.insert(to > from ? to - 1 : to, image);
-                });
-              },
+              onReorder: (from, to) =>
+                  _movePhoto(from, to > from ? to - 1 : to),
               itemBuilder: (context, index) {
                 final image = _images[index];
                 return Padding(
                   key: ObjectKey(image),
                   padding: const EdgeInsets.only(right: 10),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: ReorderableDelayedDragStartListener(
-                      index: index,
-                      enabled: !_saving,
-                      child: Stack(
-                        children: [
-                          Image.memory(
-                            Uint8List.fromList(image.bytes),
-                            width: 102,
-                            height: 102,
-                            fit: BoxFit.cover,
-                            semanticLabel: 'Photo ${index + 1}',
-                            errorBuilder: (_, _, _) => const SizedBox(
-                              width: 102,
-                              height: 102,
-                              child: Icon(Icons.broken_image_outlined),
+                  child: SizedBox(
+                    width: 102,
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: ReorderableDelayedDragStartListener(
+                            index: index,
+                            enabled: canReorder && !_saving,
+                            child: Stack(
+                              children: [
+                                Image.memory(
+                                  Uint8List.fromList(image.bytes),
+                                  width: 102,
+                                  height: 102,
+                                  fit: BoxFit.cover,
+                                  semanticLabel: 'Photo ${index + 1}',
+                                  errorBuilder: (_, _, _) => const SizedBox(
+                                    width: 102,
+                                    height: 102,
+                                    child: Icon(Icons.broken_image_outlined),
+                                  ),
+                                ),
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: IconButton(
+                                    tooltip: 'Retirer la photo ${index + 1}',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: colors.surface,
+                                    ),
+                                    onPressed: _saving
+                                        ? null
+                                        : () => setState(
+                                            () => _images.remove(image),
+                                          ),
+                                    icon: const Icon(Icons.close, size: 18),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: IconButton(
-                              tooltip: 'Retirer la photo ${index + 1}',
-                              style: IconButton.styleFrom(
-                                backgroundColor: colors.surface,
+                        ),
+                        if (canReorder)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              IconButton(
+                                tooltip:
+                                    'Déplacer la photo ${index + 1} vers la gauche',
+                                onPressed: _saving || index == 0
+                                    ? null
+                                    : () => _movePhoto(index, index - 1),
+                                icon: const Icon(Icons.arrow_back),
                               ),
-                              onPressed: _saving
-                                  ? null
-                                  : () => setState(() => _images.remove(image)),
-                              icon: const Icon(Icons.close, size: 18),
-                            ),
+                              IconButton(
+                                tooltip:
+                                    'Déplacer la photo ${index + 1} vers la droite',
+                                onPressed:
+                                    _saving || index == _images.length - 1
+                                    ? null
+                                    : () => _movePhoto(index, index + 1),
+                                icon: const Icon(Icons.arrow_forward),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
                 );
               },
             ),
           ),
-          if (_images.length > 1)
+          if (canReorder)
             Text(
-              'Maintiens une photo pour la déplacer.',
+              'Utilise les flèches sous les photos pour changer leur ordre.',
               style: TextStyle(color: colors.onSurfaceVariant),
             ),
         ],

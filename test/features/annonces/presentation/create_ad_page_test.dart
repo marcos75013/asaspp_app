@@ -67,7 +67,7 @@ class _AdsRepository implements AdsRepository {
 void main() {
   for (final brightness in Brightness.values) {
     testWidgets(
-      'validates, attaches a photo and returns in ${brightness.name}',
+      'validates, reorders photos and returns in ${brightness.name}',
       (tester) async {
         await tester.binding.setSurfaceSize(const Size(390, 760));
         addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -113,10 +113,12 @@ void main() {
         final addPhoto = find.text('Ajouter des photos');
         await tapVisible(addPhoto);
         await tapVisible(addPhoto);
+        await tapVisible(addPhoto);
+        expect(find.text('3/5 photos'), findsOneWidget);
+        await tapVisible(find.byTooltip('Déplacer la photo 2 vers la gauche'));
+        await tapVisible(find.byTooltip('Déplacer la photo 2 vers la droite'));
+        await tapVisible(find.byTooltip('Retirer la photo 2'));
         expect(find.text('2/5 photos'), findsOneWidget);
-        await tester.tap(find.byTooltip('Retirer la photo 1'));
-        await tester.pumpAndSettle();
-        expect(find.text('1/5 photos'), findsOneWidget);
         expect(find.bySemanticsLabel('Photo 1'), findsOneWidget);
 
         final fields = find.byType(TextFormField);
@@ -131,8 +133,14 @@ void main() {
         await tapVisible(submit);
         expect(repository.input?.title, 'Masque de plongée');
         expect(repository.input?.price, 25.50);
-        expect(repository.uploaded.single.filename, 'photo-2.png');
-        expect(repository.uploaded.single.bytes, isNotEmpty);
+        expect(repository.uploaded.map((photo) => photo.filename), [
+          'photo-2.png',
+          'photo-1.png',
+        ]);
+        expect(
+          repository.uploaded.every((photo) => photo.bytes.isNotEmpty),
+          isTrue,
+        );
         expect(published, isTrue);
         expect(find.text('Liste des annonces'), findsOneWidget);
         expect(tester.takeException(), isNull);

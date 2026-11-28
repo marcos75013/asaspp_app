@@ -3,6 +3,7 @@ import 'package:asaspp_app/core/storage/auth_storage.dart';
 import 'package:asaspp_app/core/theme/pulse_theme.dart';
 import 'package:asaspp_app/features/annonces/data/services/mobile_ads_api_service.dart';
 import 'package:asaspp_app/features/annonces/presentation/pages/ads_page.dart';
+import 'package:asaspp_app/features/annonces/presentation/widgets/ad_image.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -19,15 +20,18 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       FlutterSecureStorage.setMockInitialValues({});
       final api = ApiClient(AuthStorage());
+      const newCover = 'https://example.test/cover.jpg';
+      final photos = <Map<String, dynamic>>[
+        {'id': 4, 'url': 'https://example.test/annonce.jpg', 'position': 0},
+        {'id': 5, 'url': newCover, 'position': 1},
+      ];
       final own = <String, dynamic>{
         'id': 1,
         'title': 'Mon détendeur',
         'type': 'SALE',
         'price': 10,
         'description': 'À récupérer au club.',
-        'images': [
-          {'id': 4, 'url': 'https://example.test/annonce.jpg', 'position': 0},
-        ],
+        'images': photos,
         'status': 'ACTIVE',
         'active': true,
         'owner': true,
@@ -44,6 +48,19 @@ void main() {
       api.dio.interceptors.add(
         InterceptorsWrapper(
           onRequest: (request, handler) {
+            if (request.path == '/api/marketplace/1/images/order') {
+              expect(request.method, 'PUT');
+              final order = request.data['imageIds'] as List<int>;
+              expect(order, [5, 4]);
+              for (final (position, id) in order.indexed) {
+                photos.firstWhere((photo) => photo['id'] == id)['position'] =
+                    position;
+              }
+              handler.resolve(
+                Response(requestOptions: request, data: Map.of(own)),
+              );
+              return;
+            }
             if (request.method == 'PUT') {
               expect(request.path, '/api/marketplace/1');
               own.addAll(request.data as Map<String, dynamic>);
@@ -51,7 +68,7 @@ void main() {
             if (request.method == 'DELETE') {
               if (request.path == '/api/marketplace/1/images/4') {
                 removedPhoto = true;
-                own['images'] = [];
+                photos.removeWhere((photo) => photo['id'] == 4);
                 handler.resolve(
                   Response(requestOptions: request, statusCode: 204),
                 );
@@ -108,18 +125,29 @@ void main() {
       await tap(find.text('Modifier mon annonce'));
       final fields = find.byType(TextFormField);
       expect(find.text('Mon détendeur'), findsOneWidget);
-      expect(find.text('1/5 photos'), findsOneWidget);
-      await tap(find.byTooltip('Retirer la photo publiée 1'));
+      expect(find.text('2/5 photos'), findsOneWidget);
+      await tap(find.byTooltip('Déplacer la photo publiée 2 vers la gauche'));
       await tester.enterText(fields.at(0), 'Détendeur révisé');
       await tester.enterText(fields.at(1), '15,50');
       await tester.enterText(fields.at(2), 'Description actualisée');
       await tap(find.text('Enregistrer les modifications'));
-      expect(removedPhoto, isTrue);
+      expect(
+        photos.firstWhere((photo) => photo['position'] == 0)['url'],
+        newCover,
+      );
       expect(own['price'], 15.50);
       expect(find.text('Description actualisée'), findsOneWidget);
       await tap(find.byTooltip('Retour aux annonces'));
       expect(find.text('Détendeur révisé'), findsOneWidget);
       expect(find.text('Les palmes de Camille'), findsNothing);
+      expect(tester.widget<AdImage>(find.byType(AdImage)).url, newCover);
+      await tap(find.text('Gérer'));
+      await tap(find.text('Modifier mon annonce'));
+      await tap(find.byTooltip('Retirer la photo publiée 2'));
+      await tap(find.text('Enregistrer les modifications'));
+      expect(removedPhoto, isTrue);
+      await tap(find.byTooltip('Retour aux annonces'));
+      expect(tester.widget<AdImage>(find.byType(AdImage)).url, newCover);
       await tap(find.text('Tous'));
       await tap(find.text('Détendeur révisé'));
       await tap(find.text('Mettre en pause'));

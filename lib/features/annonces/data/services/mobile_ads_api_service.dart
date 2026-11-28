@@ -133,6 +133,14 @@ class MobileAdsApiService implements AdsRepository {
     await _apiClient.dio.delete<void>('/api/marketplace/$id/images/$photoId');
   }
 
+  @override
+  Future<void> reorderAdImages(String id, List<int> imageIds) async {
+    await _apiClient.dio.put<Map<String, dynamic>>(
+      '/api/marketplace/$id/images/order',
+      data: {'imageIds': imageIds},
+    );
+  }
+
   Map<String, dynamic> _payload(CreateAdInput input) => {
     'type': switch (input.type) {
       AdType.vente => 'SALE',

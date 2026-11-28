@@ -46,6 +46,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
   late AdType _type = widget.ad?.type ?? AdType.vente;
   late final _existingPhotos = [...?widget.ad?.photos];
   final _removedPhotoIds = <int>[];
+  bool _photoOrderChanged = false;
   bool get _editing => widget.ad != null;
   int get _photoCount => _existingPhotos.length + _images.length;
   bool _saving = false;
@@ -157,17 +158,26 @@ class _CreateAdPageState extends State<CreateAdPage> {
 
     if (_images.isNotEmpty) {
       final updated = await widget.repository.addAdImages(id, List.of(_images));
-      _existingPhotos
-        ..clear()
-        ..addAll(
-          updated.photos.where((photo) => !_removedPhotoIds.contains(photo.id)),
-        );
+      final knownIds = {
+        for (final photo in _existingPhotos) photo.id,
+        ..._removedPhotoIds,
+      };
+      _existingPhotos.addAll(
+        updated.photos.where((photo) => !knownIds.contains(photo.id)),
+      );
       _images.clear();
     }
 
     while (_removedPhotoIds.isNotEmpty) {
       await widget.repository.deleteAdImage(id, _removedPhotoIds.first);
       _removedPhotoIds.removeAt(0);
+    }
+
+    if (_photoOrderChanged && _existingPhotos.length > 1) {
+      await widget.repository.reorderAdImages(id, [
+        for (final photo in _existingPhotos) photo.id!,
+      ]);
+      _photoOrderChanged = false;
     }
   }
 
@@ -373,9 +383,45 @@ class _CreateAdPageState extends State<CreateAdPage> {
     });
   }
 
+  void _moveExistingPhoto(int from, int to) {
+    if (_saving || to < 0 || to >= _existingPhotos.length) return;
+    setState(() {
+      _existingPhotos.insert(to, _existingPhotos.removeAt(from));
+      _photoOrderChanged = true;
+    });
+  }
+
+  Widget _photoArrows({
+    required String label,
+    required int index,
+    required int count,
+    required ValueChanged<int> moveTo,
+  }) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        IconButton(
+          tooltip: 'Déplacer la photo $label vers la gauche',
+          onPressed: _saving || index == 0 ? null : () => moveTo(index - 1),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        IconButton(
+          tooltip: 'Déplacer la photo $label vers la droite',
+          onPressed: _saving || index == count - 1
+              ? null
+              : () => moveTo(index + 1),
+          icon: const Icon(Icons.arrow_forward),
+        ),
+      ],
+    );
+  }
+
   Widget _photoSection(Color accent, ColorScheme colors) {
     final canAdd = !_saving && !_picking && _photoCount < _maxPhotos;
     final canReorder = _images.length > 1;
+    final canReorderPublished =
+        _existingPhotos.length > 1 &&
+        _existingPhotos.every((photo) => photo.id != null);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -407,39 +453,83 @@ class _CreateAdPageState extends State<CreateAdPage> {
             runSpacing: 8,
             children: [
               for (final (index, photo) in _existingPhotos.indexed)
-                SizedBox.square(
-                  dimension: 102,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        AdImage(url: photo.url),
-                        if (photo.id case final id?)
-                          Positioned(
-                            top: 0,
-                            right: 0,
-                            child: IconButton(
-                              tooltip: 'Retirer la photo publiée ${index + 1}',
-                              style: IconButton.styleFrom(
-                                backgroundColor: colors.surface,
-                              ),
-                              onPressed: _saving
-                                  ? null
-                                  : () => setState(() {
-                                      _existingPhotos.remove(photo);
-                                      _removedPhotoIds.add(id);
-                                    }),
-                              icon: const Icon(Icons.close, size: 18),
-                            ),
+                SizedBox(
+                  width: 102,
+                  child: Column(
+                    children: [
+                      SizedBox.square(
+                        dimension: 102,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              AdImage(url: photo.url),
+                              if (index == 0)
+                                Positioned(
+                                  bottom: 4,
+                                  left: 4,
+                                  right: 4,
+                                  child: DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      color: colors.surface,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 3,
+                                      ),
+                                      child: Text(
+                                        'Couverture',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: colors.onSurface,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              if (photo.id case final id?)
+                                Positioned(
+                                  top: 0,
+                                  right: 0,
+                                  child: IconButton(
+                                    tooltip:
+                                        'Retirer la photo publiée ${index + 1}',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: colors.surface,
+                                    ),
+                                    onPressed: _saving
+                                        ? null
+                                        : () => setState(() {
+                                            _existingPhotos.remove(photo);
+                                            _removedPhotoIds.add(id);
+                                          }),
+                                    icon: const Icon(Icons.close, size: 18),
+                                  ),
+                                ),
+                            ],
                           ),
-                      ],
-                    ),
+                        ),
+                      ),
+                      if (canReorderPublished)
+                        _photoArrows(
+                          label: 'publiée ${index + 1}',
+                          index: index,
+                          count: _existingPhotos.length,
+                          moveTo: (to) => _moveExistingPhoto(index, to),
+                        ),
+                    ],
                   ),
                 ),
             ],
           ),
         ],
+        if (canReorderPublished)
+          Text(
+            'La première photo sert de couverture.',
+            style: TextStyle(color: colors.onSurfaceVariant),
+          ),
         if (_images.isNotEmpty) ...[
           const SizedBox(height: 10),
           SizedBox(
@@ -499,27 +589,11 @@ class _CreateAdPageState extends State<CreateAdPage> {
                           ),
                         ),
                         if (canReorder)
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                            children: [
-                              IconButton(
-                                tooltip:
-                                    'Déplacer la photo ${index + 1} vers la gauche',
-                                onPressed: _saving || index == 0
-                                    ? null
-                                    : () => _movePhoto(index, index - 1),
-                                icon: const Icon(Icons.arrow_back),
-                              ),
-                              IconButton(
-                                tooltip:
-                                    'Déplacer la photo ${index + 1} vers la droite',
-                                onPressed:
-                                    _saving || index == _images.length - 1
-                                    ? null
-                                    : () => _movePhoto(index, index + 1),
-                                icon: const Icon(Icons.arrow_forward),
-                              ),
-                            ],
+                          _photoArrows(
+                            label: '${index + 1}',
+                            index: index,
+                            count: _images.length,
+                            moveTo: (to) => _movePhoto(index, to),
                           ),
                       ],
                     ),

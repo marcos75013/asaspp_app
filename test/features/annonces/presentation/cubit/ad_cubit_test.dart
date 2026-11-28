@@ -17,6 +17,10 @@ class _FakeAdsRepository implements AdsRepository {
       throw UnimplementedError();
 
   @override
+  Future<void> reorderAdImages(String id, List<int> imageIds) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> deleteAdImage(String id, int photoId) =>
       throw UnimplementedError();
 

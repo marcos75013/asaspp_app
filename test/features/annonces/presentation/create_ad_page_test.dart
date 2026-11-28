@@ -71,6 +71,10 @@ class _AdsRepository implements AdsRepository {
   }
 
   @override
+  Future<void> reorderAdImages(String id, List<int> imageIds) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> deleteAdImage(String id, int photoId) async {
     edits.add('remove $id/$photoId');
   }

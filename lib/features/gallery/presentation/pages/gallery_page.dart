@@ -1,14 +1,13 @@
 import '../../../../core/theme/pulse_theme.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 import 'package:intl/intl.dart';
-import 'package:shimmer/shimmer.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
 import '../../data/models/gallery_model.dart';
 import '../../data/services/gallery_repository.dart';
 import '../../data/services/mobile_gallery_api_service.dart';
+import '../widgets/album_cover.dart';
 import 'gallery_detail_page.dart';
 
 class GalleryPage extends StatefulWidget {
@@ -21,6 +20,7 @@ class GalleryPage extends StatefulWidget {
 }
 
 class _GalleryPageState extends State<GalleryPage> {
+  final _search = TextEditingController();
   String searchQuery = '';
   DateTimeRange? selectedRange;
   String selectedType = 'Tous';
@@ -86,8 +86,10 @@ class _GalleryPageState extends State<GalleryPage> {
     }).toList()..sort((a, b) => b.date.compareTo(a.date));
   }
 
-  bool isNew(GalleryModel gallery) {
-    return DateTime.now().difference(gallery.date).inDays <= 30;
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
   }
 
   Future<void> pickDateRange() async {
@@ -96,33 +98,16 @@ class _GalleryPageState extends State<GalleryPage> {
       firstDate: DateTime(2020),
       lastDate: DateTime(2030),
       initialDateRange: selectedRange,
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.dark().copyWith(
-            colorScheme: const ColorScheme.dark(
-              primary: Color(0xFF005C97), // bleu sélection
-              onPrimary: Colors.white,
-              surface: Color(0xFF002B4F), // fond calendrier
-              onSurface: Colors.white,
-            ),
-            dialogTheme: const DialogThemeData(
-              backgroundColor: Color(0xFF001F3F),
-            ),
-            textButtonTheme: TextButtonThemeData(
-              style: TextButton.styleFrom(foregroundColor: Colors.white),
-            ),
-          ),
-          child: child!,
-        );
-      },
+      builder: (context, child) => Theme(data: _pulse, child: child!),
     );
 
-    if (range != null) {
+    if (mounted && range != null) {
       setState(() => selectedRange = range);
     }
   }
 
   void resetFilters() {
+    _search.clear();
     setState(() {
       searchQuery = '';
       selectedRange = null;
@@ -140,105 +125,106 @@ class _GalleryPageState extends State<GalleryPage> {
     return Theme(
       data: _pulse,
       child: Scaffold(
-        appBar: AppBar(
-          title: Row(
-            children: [
-              Image.asset(
-                'assets/pngs/logo_asaspp.png',
-                height: 40,
-                errorBuilder: (context, error, stackTrace) =>
-                    const Icon(Icons.image_not_supported),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
-                child: Text("Galerie", overflow: TextOverflow.ellipsis),
-              ),
-            ],
-          ),
-        ),
+        appBar: AppBar(title: const Text('Galerie')),
         body: SafeArea(
           child: RefreshIndicator(
             onRefresh: loadGalleries,
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                /// FILTER BAR
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
+                    padding: PulseTheme.pagePadding,
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        buildSearchField(),
+                        Text(
+                          'Nos souvenirs',
+                          style: _pulse.textTheme.headlineMedium?.copyWith(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                         const SizedBox(height: 12),
+                        buildSearchField(),
+                        const SizedBox(height: 10),
                         buildFiltersRow(),
                       ],
                     ),
                   ),
                 ),
-
-                /// RESULT COUNT
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: Text(
-                        "${galleries.length} sortie(s)",
-                        key: ValueKey(galleries.length),
-                        style: TextStyle(
-                          color: _colors.onSurfaceVariant,
-                          fontSize: 13,
-                        ),
+                if (isLoading)
+                  const SliverToBoxAdapter(
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (errorMessage case final error?)
+                  SliverToBoxAdapter(
+                    child: ListTile(
+                      title: Text(error),
+                      trailing: TextButton(
+                        onPressed: loadGalleries,
+                        child: const Text('Réessayer'),
                       ),
                     ),
-                  ),
-                ),
-
-                const SliverToBoxAdapter(child: SizedBox(height: 12)),
-
-                if (errorMessage != null)
+                  )
+                else ...[
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text(
-                        errorMessage!,
-                        style: TextStyle(color: _colors.onSurface),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'Les albums',
+                              style: _pulse.textTheme.titleLarge?.copyWith(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            '${galleries.length} album${galleries.length == 1 ? '' : 's'}',
+                            style: TextStyle(color: _colors.primary),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-
-                /// GRID
-                isLoading
-                    ? SliverFillRemaining(child: buildShimmer())
-                    : SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        sliver: SliverMasonryGrid.count(
-                          crossAxisCount: 2,
-                          mainAxisSpacing: 16,
-                          crossAxisSpacing: 16,
-                          childCount: galleries.length,
-                          itemBuilder: (context, index) {
-                            final gallery = galleries[index];
-
-                            return TweenAnimationBuilder(
-                              duration: Duration(
-                                milliseconds: 350 + index * 80,
-                              ),
-                              tween: Tween(begin: 0.8, end: 1.0),
-                              builder: (context, value, child) {
-                                return Transform.scale(
-                                  scale: value,
-                                  child: Opacity(opacity: value, child: child),
-                                );
-                              },
-                              child: buildGalleryCard(gallery),
-                            );
-                          },
+                  if (galleries.isEmpty)
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: PulseTheme.pagePadding,
+                        child: Text(
+                          this.galleries.isEmpty
+                              ? 'Aucun album publié.'
+                              : 'Aucun album ne correspond aux filtres.',
                         ),
                       ),
+                    )
+                  else ...[
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                      sliver: SliverToBoxAdapter(
+                        child: buildGalleryCard(galleries.first, 2),
+                      ),
+                    ),
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      sliver: SliverGrid.builder(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              crossAxisSpacing: 10,
+                              mainAxisSpacing: 10,
+                              childAspectRatio: 1.35,
+                            ),
+                        itemCount: galleries.length - 1,
+                        itemBuilder: (context, index) =>
+                            buildGalleryCard(galleries[index + 1], 1.35),
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
@@ -254,7 +240,7 @@ class _GalleryPageState extends State<GalleryPage> {
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: _colors.surface,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: searchQuery.isNotEmpty
               ? _colors.primary
@@ -267,6 +253,7 @@ class _GalleryPageState extends State<GalleryPage> {
           const SizedBox(width: 8),
           Expanded(
             child: TextField(
+              controller: _search,
               style: TextStyle(color: _colors.onSurface, fontSize: 14),
               decoration: InputDecoration(
                 hintText: 'Rechercher une sortie',
@@ -291,9 +278,10 @@ class _GalleryPageState extends State<GalleryPage> {
         const SizedBox(width: 10),
         Expanded(flex: 3, child: buildDateButton()),
         const SizedBox(width: 8),
-        GestureDetector(
-          onTap: resetFilters,
-          child: Icon(Icons.refresh, color: _colors.onSurfaceVariant, size: 18),
+        IconButton(
+          onPressed: resetFilters,
+          tooltip: 'Réinitialiser les filtres',
+          icon: const Icon(Icons.refresh),
         ),
       ],
     );
@@ -317,11 +305,16 @@ class _GalleryPageState extends State<GalleryPage> {
             size: 18,
           ),
           isExpanded: true,
-          style: TextStyle(color: _colors.onSurface, fontSize: 13),
+          style: _pulse.textTheme.labelLarge?.copyWith(
+            color: _colors.onSurface,
+            fontSize: 13,
+          ),
           items: types
               .map(
-                (type) =>
-                    DropdownMenuItem<String>(value: type, child: Text(type)),
+                (type) => DropdownMenuItem<String>(
+                  value: type,
+                  child: Text(type, overflow: TextOverflow.ellipsis),
+                ),
               )
               .toList(),
           onChanged: (value) => setState(() => selectedType = value!),
@@ -365,112 +358,15 @@ class _GalleryPageState extends State<GalleryPage> {
     );
   }
 
-  Widget buildGalleryCard(GalleryModel gallery) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
+  Widget buildGalleryCard(GalleryModel gallery, double aspectRatio) =>
+      AlbumCover(
+        album: gallery,
+        aspectRatio: aspectRatio,
+        showPhotoCount: true,
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
             builder: (_) => GalleryDetailPage(gallery: gallery),
           ),
-        );
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
-          children: [
-            if (gallery.coverImage.isNotEmpty)
-              Image.network(
-                gallery.coverImage,
-                fit: BoxFit.cover,
-                height: 220,
-                width: double.infinity,
-                errorBuilder: (context, error, stackTrace) => buildEmptyCover(),
-              )
-            else
-              buildEmptyCover(),
-            Container(
-              height: 220,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [Colors.black87, Colors.transparent],
-                ),
-              ),
-            ),
-            Positioned(
-              top: 14,
-              left: 14,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  DateFormat('dd MMM yyyy').format(gallery.date),
-                  style: const TextStyle(color: Colors.white, fontSize: 11),
-                ),
-              ),
-            ),
-
-            if (isNew(gallery))
-              Positioned(
-                top: 14,
-                right: 14,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    "Nouveau",
-                    style: TextStyle(color: Colors.white, fontSize: 11),
-                  ),
-                ),
-              ),
-            Positioned(
-              bottom: 16,
-              left: 16,
-              child: Text(
-                gallery.title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
         ),
-      ),
-    );
-  }
-
-  Widget buildEmptyCover() {
-    return Container(
-      height: 220,
-      width: double.infinity,
-      color: const Color(0xFF003B6F),
-      child: const Icon(
-        Icons.photo_library_outlined,
-        color: Colors.white54,
-        size: 48,
-      ),
-    );
-  }
-
-  Widget buildShimmer() {
-    return Center(
-      child: Shimmer.fromColors(
-        baseColor: Colors.white12,
-        highlightColor: Colors.white24,
-        child: Container(height: 200, width: 200, color: Colors.white),
-      ),
-    );
-  }
+      );
 }

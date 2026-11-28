@@ -68,7 +68,23 @@ void main() {
         InterceptorsWrapper(
           onRequest: (request, handler) {
             final Object? data = switch (request.path) {
-              '/api/gallery' || '/api/marketplace' => <dynamic>[],
+              '/api/marketplace' => <dynamic>[],
+              '/api/gallery' => [
+                {
+                  'id': 19,
+                  'title': 'Sortie en fosse',
+                  'outingDate': '2026-11-26',
+                  'photos': [
+                    {'url': 'https://example.test/photo-1.jpg', 'position': 0},
+                    {'url': 'https://example.test/photo-2.jpg', 'position': 1},
+                  ],
+                },
+                {
+                  'id': 18,
+                  'title': 'Album du club',
+                  'outingDate': '2026-11-14',
+                },
+              ],
               '/api/mobile/trainings' => {
                 'last': true,
                 'content': [
@@ -229,8 +245,36 @@ void main() {
       await tester.tap(find.text('Galerie'));
       await tester.pumpAndSettle();
       expect(find.text('Galerie'), findsOneWidget);
-      expect(find.text('Impossible de charger les albums.'), findsNothing);
+      expect(find.text('2 albums'), findsOneWidget);
+      await _capture(tester, capture, 'galerie-${brightness.name}');
+      await tester.enterText(find.byType(TextField), 'introuvable');
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Aucun album ne correspond aux filtres.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byTooltip('Réinitialiser les filtres'));
+      await tester.pumpAndSettle();
+      expect(find.text('Sortie en fosse'), findsOneWidget);
+      await tester.tap(find.text('Sortie en fosse'));
+      await tester.pumpAndSettle();
+      expect(find.text('Les meilleurs moments'), findsOneWidget);
+      expect(find.text('2 photos'), findsOneWidget);
+      await _capture(tester, capture, 'album-${brightness.name}');
+      await tester.tap(find.bySemanticsLabel('Ouvrir la photo 2'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 / 2'), findsOneWidget);
       expect(tester.takeException(), isNull);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Les meilleurs moments'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Album du club'));
+      await tester.pumpAndSettle();
+      expect(find.text('Aucune photo dans cet album.'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
       await tester.pageBack();
       await tester.pumpAndSettle();
       await tester.tap(find.text('Annonces'));

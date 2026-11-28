@@ -348,6 +348,13 @@ void main() {
         viewer.transformationController!.value.getMaxScaleOnAxis(),
         greaterThan(1),
       );
+      await tester.tap(find.byTooltip('Photo précédente en plein écran'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 / 2'), findsOneWidget);
+      expect(viewer.transformationController!.value.getMaxScaleOnAxis(), 1);
+      await tester.tap(find.byTooltip('Photo suivante en plein écran'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 / 2'), findsOneWidget);
       await tester.tap(find.byTooltip('Fermer le plein écran'));
       await tester.pumpAndSettle();
       expect(find.text('2 / 2'), findsOneWidget);

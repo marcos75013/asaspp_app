@@ -31,7 +31,8 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
     );
   }
 
-  Widget _photo(String url, {String? heroTag}) {
+  Widget _photo(int index, {String? heroTag}) {
+    final url = widget.images.elementAtOrNull(index) ?? '';
     final preview = AdImage(url: url, fit: BoxFit.contain);
     final image = heroTag == null
         ? preview
@@ -43,7 +44,8 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
             fullscreenDialog: true,
-            builder: (_) => _FullScreenPhoto(url: url),
+            builder: (_) =>
+                _FullScreenPhoto(images: widget.images, initialIndex: index),
           ),
         ),
         child: image,
@@ -63,7 +65,7 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
           child: AspectRatio(
             aspectRatio: 1.65,
             child: images.length <= 1
-                ? _photo(images.firstOrNull ?? '', heroTag: widget.adId)
+                ? _photo(0, heroTag: widget.adId)
                 : PageView.builder(
                     controller: _controller,
                     itemCount: images.length,
@@ -71,7 +73,7 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
                     itemBuilder: (context, index) => Semantics(
                       image: true,
                       label: 'Photo ${index + 1} sur ${images.length}',
-                      child: _photo(images[index]),
+                      child: _photo(index),
                     ),
                   ),
           ),
@@ -105,9 +107,10 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
 }
 
 class _FullScreenPhoto extends StatefulWidget {
-  const _FullScreenPhoto({required this.url});
+  const _FullScreenPhoto({required this.images, required this.initialIndex});
 
-  final String url;
+  final List<String> images;
+  final int initialIndex;
 
   @override
   State<_FullScreenPhoto> createState() => _FullScreenPhotoState();
@@ -115,6 +118,12 @@ class _FullScreenPhoto extends StatefulWidget {
 
 class _FullScreenPhotoState extends State<_FullScreenPhoto> {
   final _zoom = TransformationController();
+  late int _index = widget.initialIndex;
+
+  void _move(int delta) {
+    _zoom.value = Matrix4.identity();
+    setState(() => _index += delta);
+  }
 
   @override
   void dispose() {
@@ -142,15 +151,48 @@ class _FullScreenPhotoState extends State<_FullScreenPhoto> {
           ),
         ],
       ),
+      bottomNavigationBar: widget.images.length > 1
+          ? SafeArea(
+              top: false,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  IconButton(
+                    tooltip: 'Photo précédente en plein écran',
+                    color: Colors.white,
+                    disabledColor: Colors.white38,
+                    onPressed: _index == 0 ? null : () => _move(-1),
+                    icon: const Icon(Icons.chevron_left),
+                  ),
+                  Semantics(
+                    liveRegion: true,
+                    child: Text(
+                      '${_index + 1} / ${widget.images.length}',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Photo suivante en plein écran',
+                    color: Colors.white,
+                    disabledColor: Colors.white38,
+                    onPressed: _index == widget.images.length - 1
+                        ? null
+                        : () => _move(1),
+                    icon: const Icon(Icons.chevron_right),
+                  ),
+                ],
+              ),
+            )
+          : null,
       body: SafeArea(
         child: SizedBox.expand(
           child: InteractiveViewer(
             transformationController: _zoom,
             maxScale: 5,
             child: Image.network(
-              widget.url,
+              widget.images[_index],
               fit: BoxFit.contain,
-              semanticLabel: 'Photo de l’annonce en plein écran',
+              semanticLabel: 'Photo ${_index + 1} sur ${widget.images.length}',
               errorBuilder: (_, _, _) => const Center(
                 child: Text(
                   'Impossible d’afficher cette photo.',

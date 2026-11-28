@@ -64,11 +64,25 @@ void main() {
       SharedPreferences.setMockInitialValues({});
       FlutterSecureStorage.setMockInitialValues({});
       final api = ApiClient(AuthStorage());
+      Map<String, dynamic>? publishedAd;
       api.dio.interceptors.add(
         InterceptorsWrapper(
           onRequest: (request, handler) {
+            if (request.method == 'POST' &&
+                request.path == '/api/marketplace') {
+              publishedAd = {
+                ...request.data as Map<String, dynamic>,
+                'id': 22,
+                'createdAt': '2026-11-28T12:00:00Z',
+              };
+              handler.resolve(
+                Response(requestOptions: request, data: publishedAd),
+              );
+              return;
+            }
             final Object? data = switch (request.path) {
               '/api/marketplace' => [
+                if (publishedAd != null) publishedAd!,
                 {
                   'id': 20,
                   'type': 'SALE',
@@ -316,6 +330,26 @@ void main() {
       await tester.tap(find.text('Tous'));
       await tester.pumpAndSettle();
       expect(find.text('Palmes à donner'), findsOneWidget);
+      await tester.tap(find.text('Publier une annonce'));
+      await tester.pumpAndSettle();
+      expect(find.text('Nouvelle annonce'), findsOneWidget);
+      await _capture(tester, capture, 'publication-${brightness.name}');
+      await tester.tap(find.widgetWithText(ChoiceChip, 'Don'));
+      await tester.pumpAndSettle();
+      expect(find.text('Prix (€)'), findsNothing);
+      await tester.enterText(
+        find.byType(TextFormField).at(0),
+        'Nouvelle annonce test',
+      );
+      await tester.enterText(
+        find.byType(TextFormField).at(1),
+        'Description de test',
+      );
+      await tester.ensureVisible(find.text('Publier mon annonce'));
+      await tester.tap(find.text('Publier mon annonce'));
+      await tester.pumpAndSettle();
+      expect(publishedAd?['price'], 0);
+      expect(find.text('Nouvelle annonce test'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pageBack();
       await tester.pumpAndSettle();

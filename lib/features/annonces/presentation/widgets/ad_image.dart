@@ -6,9 +6,10 @@ Color marketplaceAccent(BuildContext context) =>
     : const Color(0xFF00786B);
 
 class AdImage extends StatelessWidget {
-  const AdImage({super.key, required this.url});
+  const AdImage({super.key, required this.url, this.fit = BoxFit.cover});
 
   final String url;
+  final BoxFit fit;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +27,7 @@ class AdImage extends StatelessWidget {
           ? fallback
           : Image.network(
               url,
-              fit: BoxFit.cover,
+              fit: fit,
               excludeFromSemantics: true,
               errorBuilder: (_, _, _) => fallback,
             ),

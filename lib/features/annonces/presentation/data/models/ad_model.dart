@@ -4,7 +4,8 @@ class AdModel {
   final String id;
   final String title;
   final String description;
-  final String image;
+  final String _coverImage;
+  final List<String> _images;
   final double price;
   final String sellerName;
   final String sellerAvatar;
@@ -19,7 +20,8 @@ class AdModel {
     required this.id,
     required this.title,
     required this.description,
-    required this.image,
+    String image = '',
+    List<String> images = const [],
     required this.price,
     required this.sellerName,
     required this.sellerAvatar,
@@ -29,7 +31,16 @@ class AdModel {
     required this.createdAt,
     required this.type,
     this.isFavorite = false,
-  });
+  }) : _coverImage = image,
+       _images = images;
+
+  String get image => _images.firstOrNull ?? _coverImage;
+
+  List<String> get images => _images.isNotEmpty
+      ? _images
+      : _coverImage.isNotEmpty
+      ? [_coverImage]
+      : const [];
 
   String get priceLabel => switch (type) {
     AdType.don => 'Gratuit',
@@ -49,7 +60,8 @@ class AdModel {
       id: id,
       title: title,
       description: description,
-      image: image,
+      image: _coverImage,
+      images: _images,
       price: price,
       sellerName: sellerName,
       sellerAvatar: sellerAvatar,
@@ -83,9 +95,15 @@ class AdModel {
       id: '${json['id'] ?? ''}',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      image: images.isEmpty
-          ? ''
-          : resolveUrl(images.first['url'] as String? ?? ''),
+      images: List.unmodifiable(
+        images
+            .map((image) => image['url'])
+            .whereType<String>()
+            .map((url) => url.trim())
+            .where((url) => url.isNotEmpty)
+            .map(resolveUrl)
+            .where((url) => url.isNotEmpty),
+      ),
       price: (json['price'] as num?)?.toDouble() ?? 0,
       sellerName: sellerName.isEmpty
           ? (json['authorEmail'] as String? ?? '')

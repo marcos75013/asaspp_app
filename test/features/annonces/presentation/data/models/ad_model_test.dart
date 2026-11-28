@@ -18,6 +18,7 @@ void main() {
       'images': [
         {'id': 2, 'url': '/uploads/marketplace/1/second.jpg', 'position': 1},
         {'id': 1, 'url': '/uploads/marketplace/1/first.jpg', 'position': 0},
+        {'id': 3, 'url': '', 'position': -1},
       ],
     }, resolveUrl: (url) => 'http://localhost:8080$url');
 
@@ -29,6 +30,11 @@ void main() {
     expect(ad.price, 120.50);
     expect(ad.isFavorite, isTrue);
     expect(ad.image, 'http://localhost:8080/uploads/marketplace/1/first.jpg');
+    expect(ad.images, [
+      'http://localhost:8080/uploads/marketplace/1/first.jpg',
+      'http://localhost:8080/uploads/marketplace/1/second.jpg',
+    ]);
+    expect(ad.copyWith(isFavorite: false).images, ad.images);
   });
 
   test('maps wanted and gift listing types', () {

@@ -91,6 +91,10 @@ void main() {
                   'price': 25.50,
                   'authorFirstName': 'Camille',
                   'authorEmail': 'membre@example.test',
+                  'images': [
+                    {'url': 'https://example.test/verso.jpg', 'position': 1},
+                    {'url': 'https://example.test/recto.jpg', 'position': 0},
+                  ],
                   'favorite': true,
                 },
                 {'id': 21, 'type': 'GIFT', 'title': 'Palmes à donner'},
@@ -317,6 +321,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('25,50 €'), findsOneWidget);
       expect(find.text('Le vendeur'), findsOneWidget);
+      expect(find.text('1 / 2'), findsOneWidget);
+      await tester.tap(find.byTooltip('Photo suivante'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 / 2'), findsOneWidget);
+      await tester.drag(
+        find.bySemanticsLabel('Photo 2 sur 2'),
+        const Offset(300, 0),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('1 / 2'), findsOneWidget);
       await _capture(tester, capture, 'annonce-${brightness.name}');
       await tester.ensureVisible(find.text('Contacter le vendeur'));
       await tester.tap(find.text('Contacter le vendeur'));

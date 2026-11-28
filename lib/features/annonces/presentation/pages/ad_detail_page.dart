@@ -8,6 +8,7 @@ import '../../../user/data/profile_updates.dart';
 import '../../data/services/mobile_ads_api_service.dart';
 import '../data/models/ad_model.dart';
 import '../widgets/ad_image.dart';
+import '../widgets/ad_photo_carousel.dart';
 
 class AdDetailPage extends StatefulWidget {
   final AdModel ad;
@@ -116,15 +117,10 @@ class _AdDetailPageState extends State<AdDetailPage> {
             return ListView(
               padding: PulseTheme.pagePadding,
               children: [
-                ClipRRect(
-                  borderRadius: PulseTheme.cardRadius,
-                  child: AspectRatio(
-                    aspectRatio: 1.65,
-                    child: Hero(
-                      tag: ad.id,
-                      child: AdImage(url: ad.image),
-                    ),
-                  ),
+                AdPhotoCarousel(
+                  key: ValueKey(ad.images.join('\n')),
+                  adId: ad.id,
+                  images: ad.images,
                 ),
                 const SizedBox(height: 12),
                 Align(

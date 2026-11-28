@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:asaspp_app/core/config/api_config.dart';
 import 'package:asaspp_app/core/network/api_client.dart';
 import 'package:asaspp_app/core/storage/auth_storage.dart';
+import 'package:asaspp_app/core/theme/pulse_theme.dart';
 import 'package:asaspp_app/features/events/presentation/pages/training_calendar_page.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
@@ -74,33 +75,48 @@ class Adapter implements HttpClientAdapter {
 }
 
 void main() {
-  testWidgets('shows upcoming and past trainings', (tester) async {
-    SharedPreferences.setMockInitialValues({});
-    FlutterSecureStorage.setMockInitialValues({});
-    final client = ApiClient(
-      AuthStorage(),
-      apiConfig: const ApiConfig(baseUrl: 'https://example.test'),
-    );
-    client.dio.httpClientAdapter = Adapter();
-    await tester.pumpWidget(
-      MaterialApp(home: TrainingCalendarPage(apiClient: client)),
-    );
-    await tester.pumpAndSettle();
-    expect(find.text('À venir'), findsOneWidget);
-    expect(find.text('Terminés'), findsOneWidget);
-    expect(find.text('Séance future'), findsOneWidget);
-    expect(find.text('Séance passée'), findsOneWidget);
-    expect(find.text('Présent'), findsOneWidget);
-    await tester.tap(find.text('Présent'));
-    await tester.pumpAndSettle();
-    expect(find.text('2 présent(s) · Voir les participants'), findsOneWidget);
-    await tester.tap(find.text('2 présent(s) · Voir les participants'));
-    await tester.pumpAndSettle();
-    expect(find.text('Présents (1)'), findsOneWidget);
-    expect(find.text('Alice Martin'), findsOneWidget);
-    expect(find.text('Sans réponse (1)'), findsOneWidget);
-    expect(find.text('Benoît Durand'), findsOneWidget);
-  });
+  for (final brightness in Brightness.values) {
+    testWidgets('opens the training detail and returns in ${brightness.name}', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      FlutterSecureStorage.setMockInitialValues({});
+      final client = ApiClient(
+        AuthStorage(),
+        apiConfig: const ApiConfig(baseUrl: 'https://example.test'),
+      );
+      client.dio.httpClientAdapter = Adapter();
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: PulseTheme.build(brightness),
+          home: TrainingCalendarPage(apiClient: client),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('À venir'), findsOneWidget);
+      expect(find.text('Terminés'), findsOneWidget);
+      expect(find.text('Séance future'), findsOneWidget);
+      expect(find.text('Séance passée'), findsOneWidget);
+      expect(find.text('Présent'), findsOneWidget);
+      await tester.tap(find.text('Présent'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 présent(s) · Voir les participants'), findsOneWidget);
+      await tester.tap(find.text('2 présent(s) · Voir les participants'));
+      await tester.pumpAndSettle();
+      expect(find.text('Présents (1)'), findsOneWidget);
+      expect(find.text('Alice Martin'), findsOneWidget);
+      expect(find.text('Sans réponse (1)'), findsOneWidget);
+      expect(find.text('Benoît Durand'), findsOneWidget);
+      expect(find.text('Absents'), findsOneWidget);
+      expect(find.byTooltip('Discussion'), findsOneWidget);
+      final title = tester.widget<Text>(find.text('Séance future'));
+      expect(title.style?.color, Colors.white);
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      expect(find.text('À venir'), findsOneWidget);
+      expect(find.text('Séance future'), findsOneWidget);
+    });
+  }
   testWidgets('shows a retry when loading fails', (tester) async {
     SharedPreferences.setMockInitialValues({});
     FlutterSecureStorage.setMockInitialValues({});

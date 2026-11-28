@@ -6,9 +6,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:asaspp_app/core/config/api_config.dart';
 import 'package:asaspp_app/core/network/api_client.dart';
 import 'package:asaspp_app/core/storage/auth_storage.dart';
 import 'package:asaspp_app/core/theme/pulse_theme.dart';
+import 'package:asaspp_app/core/widgets/pulse_gradient_heading.dart';
+import 'package:asaspp_app/core/widgets/pulse_page_header.dart';
 import 'package:asaspp_app/features/context/cubit/context_cubit.dart';
 import 'package:asaspp_app/features/context/cubit/context_state.dart';
 import 'package:asaspp_app/features/context/data/models/mobile_context_model.dart';
@@ -35,6 +38,7 @@ class _DemoContext extends ContextCubit {
             {
               'id': 1,
               'name': 'Club Pulse',
+              'logoUrl': '/association-test/logo.png',
               'role': 'ADMIN',
               'modules': [
                 'QUIZ',
@@ -309,7 +313,30 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Annonces'));
       await tester.pumpAndSettle();
-      expect(find.text('Leboncourant'), findsOneWidget);
+      void expectClubHeader() {
+        final header = find.byType(PulsePageHeader);
+        expect(
+          find.descendant(of: header, matching: find.text('Club Pulse')),
+          findsOneWidget,
+        );
+        final logo = tester.widget<Image>(
+          find.descendant(of: header, matching: find.byType(Image)),
+        );
+        expect(
+          (logo.image as NetworkImage).url,
+          const ApiConfig().resolveUrl('/association-test/logo.png'),
+        );
+      }
+
+      expectClubHeader();
+      expect(find.bySemanticsLabel('Lebon courant'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(PulseGradientHeading),
+          matching: find.byType(ShaderMask),
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Dernières annonces'), findsOneWidget);
       expect(find.text('Palmes à donner'), findsOneWidget);
       expect(find.text('Publier une annonce'), findsOneWidget);
@@ -321,6 +348,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('25,50 €'), findsOneWidget);
       expect(find.text('Le vendeur'), findsOneWidget);
+      expectClubHeader();
       expect(find.text('1 / 2'), findsOneWidget);
       await tester.tap(find.byTooltip('Photo suivante'));
       await tester.pumpAndSettle();
@@ -403,7 +431,8 @@ void main() {
       expect(find.text('Palmes à donner'), findsOneWidget);
       await tester.tap(find.text('Publier une annonce'));
       await tester.pumpAndSettle();
-      expect(find.text('Nouvelle annonce'), findsOneWidget);
+      expect(find.bySemanticsLabel('Nouvelle annonce'), findsOneWidget);
+      expectClubHeader();
       await _capture(tester, capture, 'publication-${brightness.name}');
       await tester.tap(find.widgetWithText(ChoiceChip, 'Don'));
       await tester.pumpAndSettle();
@@ -422,7 +451,7 @@ void main() {
       expect(publishedAd?['price'], 0);
       expect(find.text('Nouvelle annonce test'), findsOneWidget);
       expect(tester.takeException(), isNull);
-      await tester.pageBack();
+      await tester.tap(find.byTooltip('Retour au club'));
       await tester.pumpAndSettle();
       expect(find.text('À la une'), findsOneWidget);
       await _capture(tester, capture, 'club-${brightness.name}');

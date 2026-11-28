@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/member_avatar.dart';
+import '../../../context/data/models/mobile_association_model.dart';
 import '../../data/services/ads_repository.dart';
 import '../cubit/ad_cubit.dart';
 import '../data/models/ad_model.dart';
@@ -9,10 +10,16 @@ import '../pages/ad_detail_page.dart';
 import 'ad_image.dart';
 
 class AdCard extends StatelessWidget {
-  const AdCard({super.key, required this.ad, this.repository});
+  const AdCard({
+    super.key,
+    required this.ad,
+    this.repository,
+    this.association,
+  });
 
   final AdModel ad;
   final AdsRepository? repository;
+  final MobileAssociationModel? association;
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +33,7 @@ class AdCard extends StatelessWidget {
             ad: ad,
             repository: repository,
             initiallyManage: manage,
+            association: association,
           ),
         ),
       );

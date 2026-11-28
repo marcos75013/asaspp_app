@@ -7,6 +7,15 @@ abstract final class PulseTheme {
   static const pagePadding = EdgeInsets.all(16);
   static const cardRadius = BorderRadius.all(Radius.circular(20));
 
+  static LinearGradient headingGradient(Brightness brightness) =>
+      brightness == Brightness.dark
+      ? const LinearGradient(
+          colors: [Color(0xFF5FE1CA), Color(0xFFA9C5FF), Color(0xFFC69BFF)],
+        )
+      : const LinearGradient(
+          colors: [Color(0xFF00786B), Color(0xFF0053D6), Color(0xFF6934B6)],
+        );
+
   static ThemeData build(Brightness brightness) {
     final dark = brightness == Brightness.dark;
     final scheme = ColorScheme.fromSeed(seedColor: blue, brightness: brightness)

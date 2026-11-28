@@ -5,6 +5,8 @@ import '../../../../core/widgets/member_avatar.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
 import '../../../user/data/profile_updates.dart';
+import '../../../../core/widgets/pulse_page_header.dart';
+import '../../../context/data/models/mobile_association_model.dart';
 import '../../data/services/ads_repository.dart';
 import '../../data/services/mobile_ads_api_service.dart';
 import '../data/models/ad_model.dart';
@@ -18,12 +20,14 @@ class AdDetailPage extends StatefulWidget {
   final AdsRepository? repository;
 
   final bool initiallyManage;
+  final MobileAssociationModel? association;
 
   const AdDetailPage({
     super.key,
     required this.ad,
     this.repository,
     this.initiallyManage = false,
+    this.association,
   });
 
   @override
@@ -86,7 +90,11 @@ class _AdDetailPageState extends State<AdDetailPage> {
     if (!ad.isOwner || _managingAd) return;
     await Navigator.of(context).push<bool>(
       MaterialPageRoute<bool>(
-        builder: (_) => CreateAdPage(repository: _repository, ad: ad),
+        builder: (_) => CreateAdPage(
+          repository: _repository,
+          ad: ad,
+          association: widget.association,
+        ),
       ),
     );
     if (mounted) await _reloadAd();
@@ -203,13 +211,12 @@ class _AdDetailPageState extends State<AdDetailPage> {
       child: PopScope(
         canPop: !_managingAd,
         child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Annonce'),
-            leading: IconButton(
-              tooltip: 'Retour aux annonces',
-              onPressed: _managingAd ? null : () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back),
-            ),
+          appBar: PulsePageHeader(
+            title: 'Annonce',
+            associationName: widget.association?.associationName,
+            logoUrl: widget.association?.logoUrl,
+            backLabel: 'Retour aux annonces',
+            backEnabled: !_managingAd,
           ),
           body: Builder(
             builder: (context) {

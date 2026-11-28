@@ -6,6 +6,7 @@ class PulseAssociationHeader extends StatelessWidget {
   final String name;
   final String? logoUrl;
   final String caption;
+  final bool centered;
   final VoidCallback? onSwitch;
 
   const PulseAssociationHeader({
@@ -13,6 +14,7 @@ class PulseAssociationHeader extends StatelessWidget {
     required this.name,
     this.logoUrl,
     this.caption = 'ASSOCIATION ACTIVE',
+    this.centered = false,
     this.onSwitch,
   });
 
@@ -23,6 +25,7 @@ class PulseAssociationHeader extends StatelessWidget {
     const fallback = Icon(Icons.groups_outlined, size: 22);
     final logo = logoUrl?.trim();
     final content = Row(
+      mainAxisSize: centered ? MainAxisSize.min : MainAxisSize.max,
       children: [
         ExcludeSemantics(
           child: SizedBox.square(
@@ -46,12 +49,23 @@ class PulseAssociationHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(width: 10),
-        Expanded(
+        Flexible(
+          fit: centered ? FlexFit.loose : FlexFit.tight,
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(caption, style: theme.textTheme.labelSmall),
+              Text(
+                caption,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: centered
+                    ? theme.textTheme.labelSmall?.copyWith(
+                        color: colors.onSurfaceVariant,
+                        letterSpacing: 1,
+                      )
+                    : theme.textTheme.labelSmall,
+              ),
               Text(
                 name,
                 maxLines: 1,

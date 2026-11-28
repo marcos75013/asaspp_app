@@ -227,17 +227,8 @@ class AssociationNavigationIcon extends StatelessWidget {
   }
 }
 
-void _openPage(BuildContext context, Widget page, {String? title}) {
-  Navigator.of(context).push(
-    MaterialPageRoute<void>(
-      builder: (_) => title == null
-          ? page
-          : Scaffold(
-              appBar: AppBar(title: Text(title)),
-              body: page,
-            ),
-    ),
-  );
+void _openPage(BuildContext context, Widget page) {
+  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
 }
 
 class _TabSection extends StatelessWidget {
@@ -390,8 +381,10 @@ class _ClubTab extends StatelessWidget {
                     'Annonces',
                     () => _openPage(
                       context,
-                      AdsPage(repository: MobileAdsApiService(apiClient)),
-                      title: 'Annonces',
+                      AdsPage(
+                        repository: MobileAdsApiService(apiClient),
+                        association: association,
+                      ),
                     ),
                     description: 'Vends, donne et partage',
                     accent: teal,

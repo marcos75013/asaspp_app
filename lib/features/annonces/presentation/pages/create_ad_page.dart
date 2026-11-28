@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/theme/pulse_theme.dart';
+import '../../../../core/widgets/pulse_gradient_heading.dart';
+import '../../../../core/widgets/pulse_page_header.dart';
+import '../../../context/data/models/mobile_association_model.dart';
 import '../../data/services/ads_repository.dart';
 import '../data/models/ad_model.dart';
 import '../widgets/ad_image.dart';
@@ -14,11 +17,13 @@ class CreateAdPage extends StatefulWidget {
     required this.repository,
     this.imagePicker,
     this.ad,
+    this.association,
   });
 
   final AdsRepository repository;
   final ImagePicker? imagePicker;
   final AdModel? ad;
+  final MobileAssociationModel? association;
 
   @override
   State<CreateAdPage> createState() => _CreateAdPageState();
@@ -189,7 +194,12 @@ class _CreateAdPageState extends State<CreateAdPage> {
       child: PopScope(
         canPop: !_saving,
         child: Scaffold(
-          appBar: AppBar(title: const Text('Leboncourant')),
+          appBar: PulsePageHeader(
+            title: 'Leboncourant',
+            associationName: widget.association?.associationName,
+            logoUrl: widget.association?.logoUrl,
+            backEnabled: !_saving,
+          ),
           body: SafeArea(
             child: Builder(
               builder: (context) {
@@ -206,14 +216,18 @@ class _CreateAdPageState extends State<CreateAdPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Text(
-                          _editing
-                              ? 'Modifier mon annonce'
-                              : 'Nouvelle annonce',
-                          style: theme.textTheme.headlineMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
+                        if (_editing)
+                          Text(
+                            'Modifier mon annonce',
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          )
+                        else
+                          const PulseGradientHeading(
+                            prefix: 'Nouvelle',
+                            accent: 'annonce',
                           ),
-                        ),
                         const SizedBox(height: 16),
                         _photoSection(accent, colors),
                         const SizedBox(height: 16),

@@ -9,6 +9,13 @@ class _FakeAdsRepository implements AdsRepository {
   _FakeAdsRepository(this.ads);
 
   @override
+  Future<AdModel> getAd(String id) => throw UnimplementedError();
+
+  @override
+  Future<AdModel> setStatus(String id, AdStatus status) =>
+      throw UnimplementedError();
+
+  @override
   Future<List<AdModel>> getAds() async => [...ads];
 
   @override

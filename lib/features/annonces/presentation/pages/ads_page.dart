@@ -149,7 +149,10 @@ class AdsPage extends StatelessWidget {
                                           4,
                                 ),
                             itemCount: ads.length,
-                            itemBuilder: (_, index) => AdCard(ad: ads[index]),
+                            itemBuilder: (_, index) => AdCard(
+                              ad: ads[index],
+                              repository: adsRepository,
+                            ),
                           ),
                         ),
                     ],

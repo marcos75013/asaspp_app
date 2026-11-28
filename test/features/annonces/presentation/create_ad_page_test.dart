@@ -58,6 +58,13 @@ class _AdsRepository implements AdsRepository {
   }
 
   @override
+  Future<AdModel> getAd(String id) => throw UnimplementedError();
+
+  @override
+  Future<AdModel> setStatus(String id, AdStatus status) =>
+      throw UnimplementedError();
+
+  @override
   Future<List<AdModel>> getAds() async => [];
 
   @override

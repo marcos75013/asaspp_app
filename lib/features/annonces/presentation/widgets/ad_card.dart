@@ -2,15 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/widgets/member_avatar.dart';
+import '../../data/services/ads_repository.dart';
 import '../cubit/ad_cubit.dart';
 import '../data/models/ad_model.dart';
 import '../pages/ad_detail_page.dart';
 import 'ad_image.dart';
 
 class AdCard extends StatelessWidget {
-  const AdCard({super.key, required this.ad});
+  const AdCard({super.key, required this.ad, this.repository});
 
   final AdModel ad;
+  final AdsRepository? repository;
 
   @override
   Widget build(BuildContext context) {
@@ -20,9 +22,16 @@ class AdCard extends StatelessWidget {
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => Navigator.of(
-          context,
-        ).push(MaterialPageRoute<void>(builder: (_) => AdDetailPage(ad: ad))),
+        onTap: () async {
+          await Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => AdDetailPage(ad: ad, repository: repository),
+            ),
+          );
+          if (context.mounted && ad.isOwner) {
+            await context.read<AdsCubit>().loadAds();
+          }
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -34,6 +43,32 @@ class AdCard extends StatelessWidget {
                     tag: ad.id,
                     child: AdImage(url: ad.image),
                   ),
+                  if (ad.isOwner &&
+                      (!ad.isActive || ad.status != AdStatus.active))
+                    Positioned(
+                      left: 6,
+                      top: 6,
+                      right: 48,
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.surface,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            child: Text(
+                              ad.visibilityLabel,
+                              style: theme.textTheme.labelSmall,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   Positioned(
                     top: 4,
                     right: 4,

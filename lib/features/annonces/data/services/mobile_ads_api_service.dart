@@ -29,9 +29,22 @@ class MobileAdsApiService implements AdsRepository {
         .toList();
   }
 
+  @override
   Future<AdModel> getAd(String id) async {
     final response = await _apiClient.dio.get<Map<String, dynamic>>(
       '/api/marketplace/$id',
+    );
+    return AdModel.fromJson(
+      response.data ?? const {},
+      resolveUrl: _apiConfig.resolveUrl,
+    );
+  }
+
+  @override
+  Future<AdModel> setStatus(String id, AdStatus status) async {
+    final response = await _apiClient.dio.patch<Map<String, dynamic>>(
+      '/api/marketplace/$id/status',
+      queryParameters: {'status': status.apiValue},
     );
     return AdModel.fromJson(
       response.data ?? const {},

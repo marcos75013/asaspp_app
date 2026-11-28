@@ -1,5 +1,16 @@
 enum AdType { vente, recherche, don }
 
+enum AdStatus {
+  active('ACTIVE', 'En ligne'),
+  closed('CLOSED', 'En pause'),
+  sold('SOLD', 'Vendue');
+
+  const AdStatus(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+}
+
 class AdModel {
   final String id;
   final String title;
@@ -15,6 +26,9 @@ class AdModel {
   final DateTime createdAt;
   final AdType type;
   final bool isFavorite;
+  final bool isOwner;
+  final bool isActive;
+  final AdStatus status;
 
   const AdModel({
     required this.id,
@@ -31,6 +45,9 @@ class AdModel {
     required this.createdAt,
     required this.type,
     this.isFavorite = false,
+    this.isOwner = false,
+    this.isActive = true,
+    this.status = AdStatus.active,
   }) : _coverImage = image,
        _images = images;
 
@@ -41,6 +58,8 @@ class AdModel {
       : _coverImage.isNotEmpty
       ? [_coverImage]
       : const [];
+
+  String get visibilityLabel => isActive ? status.label : 'Masquée par le club';
 
   String get priceLabel => switch (type) {
     AdType.don => 'Gratuit',
@@ -71,6 +90,9 @@ class AdModel {
       createdAt: createdAt,
       type: type,
       isFavorite: isFavorite ?? this.isFavorite,
+      isOwner: isOwner,
+      isActive: isActive,
+      status: status,
     );
   }
 
@@ -121,6 +143,13 @@ class AdModel {
         _ => AdType.vente,
       },
       isFavorite: json['favorite'] as bool? ?? false,
+      isOwner: json['owner'] == true,
+      isActive: json['active'] != false,
+      status: switch (json['status']) {
+        'CLOSED' => AdStatus.closed,
+        'SOLD' => AdStatus.sold,
+        _ => AdStatus.active,
+      },
     );
   }
 }

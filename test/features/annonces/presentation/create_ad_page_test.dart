@@ -36,6 +36,7 @@ class _PhotoPicker extends ImagePicker {
 class _AdsRepository implements AdsRepository {
   CreateAdInput? input;
   List<AdImageUpload> uploaded = const [];
+  final edits = <String>[];
 
   @override
   Future<AdModel> createAd(
@@ -58,6 +59,23 @@ class _AdsRepository implements AdsRepository {
   }
 
   @override
+  Future<AdModel> updateAd(String id, CreateAdInput input) async {
+    edits.add('update $id');
+    return createAd(input, []);
+  }
+
+  @override
+  Future<AdModel> addAdImages(String id, List<AdImageUpload> images) async {
+    edits.add('upload $id');
+    return createAd(input!, images);
+  }
+
+  @override
+  Future<void> deleteAdImage(String id, int photoId) async {
+    edits.add('remove $id/$photoId');
+  }
+
+  @override
   Future<void> deleteAd(String id) => throw UnimplementedError();
 
   @override
@@ -75,6 +93,59 @@ class _AdsRepository implements AdsRepository {
 }
 
 void main() {
+  testWidgets('replaces an existing photo without deleting it before upload', (
+    tester,
+  ) async {
+    final repository = _AdsRepository();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => CreateAdPage(
+                    repository: repository,
+                    imagePicker: _PhotoPicker(),
+                    ad: AdModel(
+                      id: '24',
+                      title: 'Détendeur',
+                      description: 'Révisé',
+                      price: 42,
+                      sellerName: 'Camille',
+                      sellerAvatar: '',
+                      createdAt: DateTime(2026),
+                      type: AdType.vente,
+                      isOwner: true,
+                      photos: const [
+                        AdPhoto(id: 7, url: 'https://example.test/photo.jpg'),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              child: const Text('Ouvrir'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.text('Ouvrir'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Retirer la photo publiée 1'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ajouter des photos'));
+    await tester.pumpAndSettle();
+    expect(find.text('1/5 photos'), findsOneWidget);
+    final save = find.text('Enregistrer les modifications');
+    await tester.ensureVisible(save);
+    await tester.tap(save);
+    await tester.pumpAndSettle();
+    expect(repository.edits, ['update 24', 'upload 24', 'remove 24/7']);
+    expect(repository.uploaded.single.filename, 'photo-1.png');
+    expect(find.text('Ouvrir'), findsOneWidget);
+  });
+
   for (final brightness in Brightness.values) {
     testWidgets(
       'validates, reorders photos and returns in ${brightness.name}',

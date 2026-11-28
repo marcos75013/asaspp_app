@@ -11,12 +11,20 @@ enum AdStatus {
   final String label;
 }
 
+class AdPhoto {
+  const AdPhoto({required this.url, this.id});
+
+  final String url;
+  final int? id;
+}
+
 class AdModel {
   final String id;
   final String title;
   final String description;
   final String _coverImage;
   final List<String> _images;
+  final List<AdPhoto> photos;
   final double price;
   final String sellerName;
   final String sellerAvatar;
@@ -36,6 +44,7 @@ class AdModel {
     required this.description,
     String image = '',
     List<String> images = const [],
+    this.photos = const [],
     required this.price,
     required this.sellerName,
     required this.sellerAvatar,
@@ -51,9 +60,12 @@ class AdModel {
   }) : _coverImage = image,
        _images = images;
 
-  String get image => _images.firstOrNull ?? _coverImage;
+  String get image =>
+      photos.firstOrNull?.url ?? _images.firstOrNull ?? _coverImage;
 
-  List<String> get images => _images.isNotEmpty
+  List<String> get images => photos.isNotEmpty
+      ? photos.map((photo) => photo.url).toList(growable: false)
+      : _images.isNotEmpty
       ? _images
       : _coverImage.isNotEmpty
       ? [_coverImage]
@@ -81,6 +93,7 @@ class AdModel {
       description: description,
       image: _coverImage,
       images: _images,
+      photos: photos,
       price: price,
       sellerName: sellerName,
       sellerAvatar: sellerAvatar,
@@ -117,14 +130,16 @@ class AdModel {
       id: '${json['id'] ?? ''}',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
-      images: List.unmodifiable(
+      photos: List.unmodifiable(
         images
-            .map((image) => image['url'])
-            .whereType<String>()
-            .map((url) => url.trim())
-            .where((url) => url.isNotEmpty)
-            .map(resolveUrl)
-            .where((url) => url.isNotEmpty),
+            .map((image) {
+              final rawUrl = image['url'];
+              final url = rawUrl is String && rawUrl.trim().isNotEmpty
+                  ? resolveUrl(rawUrl.trim())
+                  : '';
+              return AdPhoto(url: url, id: (image['id'] as num?)?.toInt());
+            })
+            .where((photo) => photo.url.isNotEmpty),
       ),
       price: (json['price'] as num?)?.toDouble() ?? 0,
       sellerName: sellerName.isEmpty

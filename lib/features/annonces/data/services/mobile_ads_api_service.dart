@@ -75,48 +75,75 @@ class MobileAdsApiService implements AdsRepository {
   ) async {
     final createResponse = await _apiClient.dio.post<Map<String, dynamic>>(
       '/api/marketplace',
-      data: {
-        'type': switch (input.type) {
-          AdType.vente => 'SALE',
-          AdType.recherche => 'WANTED',
-          AdType.don => 'GIFT',
-        },
-        'title': input.title,
-        'description': input.description,
-        'price': input.type == AdType.don ? 0 : input.price,
-        'contactPhone': input.contactPhone,
-      },
+      data: _payload(input),
     );
-    var created = createResponse.data ?? const <String, dynamic>{};
-
-    if (images.isNotEmpty) {
-      try {
-        final formData = FormData();
-        for (final image in images) {
-          formData.files.add(
-            MapEntry(
-              'files',
-              MultipartFile.fromBytes(
-                image.bytes,
-                filename: image.filename,
-                contentType: _imageContentType(image.filename),
-              ),
-            ),
-          );
-        }
-        final uploadResponse = await _apiClient.dio.post<Map<String, dynamic>>(
-          '/api/marketplace/${created['id']}/images',
-          data: formData,
-        );
-        created = uploadResponse.data ?? created;
-      } catch (_) {
-        await deleteAd('${created['id']}');
-        rethrow;
-      }
+    final created = createResponse.data ?? const <String, dynamic>{};
+    if (images.isEmpty) {
+      return AdModel.fromJson(created, resolveUrl: _apiConfig.resolveUrl);
     }
 
-    return AdModel.fromJson(created, resolveUrl: _apiConfig.resolveUrl);
+    final id = '${created['id']}';
+    try {
+      return await addAdImages(id, images);
+    } catch (_) {
+      await deleteAd(id);
+      rethrow;
+    }
   }
+
+  @override
+  Future<AdModel> updateAd(String id, CreateAdInput input) async {
+    final response = await _apiClient.dio.put<Map<String, dynamic>>(
+      '/api/marketplace/$id',
+      data: _payload(input),
+    );
+    return AdModel.fromJson(
+      response.data ?? const {},
+      resolveUrl: _apiConfig.resolveUrl,
+    );
+  }
+
+  @override
+  Future<AdModel> addAdImages(String id, List<AdImageUpload> images) async {
+    final formData = FormData();
+    for (final image in images) {
+      formData.files.add(
+        MapEntry(
+          'files',
+          MultipartFile.fromBytes(
+            image.bytes,
+            filename: image.filename,
+            contentType: _imageContentType(image.filename),
+          ),
+        ),
+      );
+    }
+    final response = await _apiClient.dio.post<Map<String, dynamic>>(
+      '/api/marketplace/$id/images',
+      data: formData,
+    );
+    return AdModel.fromJson(
+      response.data ?? const {},
+      resolveUrl: _apiConfig.resolveUrl,
+    );
+  }
+
+  @override
+  Future<void> deleteAdImage(String id, int photoId) async {
+    await _apiClient.dio.delete<void>('/api/marketplace/$id/images/$photoId');
+  }
+
+  Map<String, dynamic> _payload(CreateAdInput input) => {
+    'type': switch (input.type) {
+      AdType.vente => 'SALE',
+      AdType.recherche => 'WANTED',
+      AdType.don => 'GIFT',
+    },
+    'title': input.title,
+    'description': input.description,
+    'price': input.type == AdType.don ? 0 : input.price,
+    'contactPhone': input.contactPhone,
+  };
 
   DioMediaType _imageContentType(String filename) {
     final extension = filename.toLowerCase().split('.').last;

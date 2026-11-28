@@ -31,8 +31,11 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
     );
   }
 
-  Widget _photo(String url) {
-    final image = AdImage(url: url, fit: BoxFit.contain);
+  Widget _photo(String url, {String? heroTag}) {
+    final preview = AdImage(url: url, fit: BoxFit.contain);
+    final image = heroTag == null
+        ? preview
+        : Hero(tag: heroTag, child: preview);
     if (url.isEmpty) return image;
     return Tooltip(
       message: 'Agrandir la photo',
@@ -60,10 +63,7 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
           child: AspectRatio(
             aspectRatio: 1.65,
             child: images.length <= 1
-                ? Hero(
-                    tag: widget.adId,
-                    child: _photo(images.firstOrNull ?? ''),
-                  )
+                ? _photo(images.firstOrNull ?? '', heroTag: widget.adId)
                 : PageView.builder(
                     controller: _controller,
                     itemCount: images.length,

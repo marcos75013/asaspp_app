@@ -5,6 +5,9 @@ abstract interface class AdsRepository {
   Future<AdModel> getAd(String id);
   Future<AdModel> setStatus(String id, AdStatus status);
   Future<void> deleteAd(String id);
+  Future<AdModel> updateAd(String id, CreateAdInput input);
+  Future<AdModel> addAdImages(String id, List<AdImageUpload> images);
+  Future<void> deleteAdImage(String id, int photoId);
   Future<AdModel> toggleFavorite(String id);
   Future<AdModel> createAd(CreateAdInput input, List<AdImageUpload> images);
 }

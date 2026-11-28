@@ -9,10 +9,16 @@ import '../data/models/ad_model.dart';
 import '../widgets/ad_image.dart';
 
 class CreateAdPage extends StatefulWidget {
-  const CreateAdPage({super.key, required this.repository, this.imagePicker});
+  const CreateAdPage({
+    super.key,
+    required this.repository,
+    this.imagePicker,
+    this.ad,
+  });
 
   final AdsRepository repository;
   final ImagePicker? imagePicker;
+  final AdModel? ad;
 
   @override
   State<CreateAdPage> createState() => _CreateAdPageState();
@@ -23,11 +29,25 @@ class _CreateAdPageState extends State<CreateAdPage> {
   final _formKey = GlobalKey<FormState>();
   late final _picker = widget.imagePicker ?? ImagePicker();
   final List<AdImageUpload> _images = [];
-  final _titleController = TextEditingController();
-  final _priceController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _phoneController = TextEditingController();
-  AdType _type = AdType.vente;
+  late final _titleController = TextEditingController(text: widget.ad?.title);
+  late final _priceController = TextEditingController(
+    text:
+        widget.ad == null ||
+            widget.ad!.type == AdType.recherche && widget.ad!.price == 0
+        ? null
+        : widget.ad!.price.toString().replaceAll('.', ','),
+  );
+  late final _descriptionController = TextEditingController(
+    text: widget.ad?.description,
+  );
+  late final _phoneController = TextEditingController(
+    text: widget.ad?.contactPhone,
+  );
+  late AdType _type = widget.ad?.type ?? AdType.vente;
+  late final _existingPhotos = [...?widget.ad?.photos];
+  final _removedPhotoIds = <int>[];
+  bool get _editing => widget.ad != null;
+  int get _photoCount => _existingPhotos.length + _images.length;
   bool _saving = false;
   bool _picking = false;
   String? _photoError;
@@ -43,7 +63,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
   }
 
   Future<void> _pickImage() async {
-    if (_picking || _saving || _images.length >= _maxPhotos) return;
+    if (_picking || _saving || _photoCount >= _maxPhotos) return;
     setState(() {
       _picking = true;
       _photoError = null;
@@ -83,7 +103,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
   }
 
   Future<void> _submit() async {
-    if (_saving || _picking) return;
+    if (_saving || _picking || widget.ad?.isOwner == false) return;
     if (!_formKey.currentState!.validate()) {
       FocusScope.of(context).unfocus();
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -100,25 +120,54 @@ class _CreateAdPageState extends State<CreateAdPage> {
 
     try {
       final phone = _phoneController.text.trim();
-      await widget.repository.createAd(
-        CreateAdInput(
-          type: _type,
-          title: _titleController.text.trim(),
-          description: _descriptionController.text.trim(),
-          price: _type == AdType.don
-              ? null
-              : _parsePrice(_priceController.text),
-          contactPhone: phone.isEmpty ? null : phone,
-        ),
-        List.of(_images),
+      final input = CreateAdInput(
+        type: _type,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        price: _type == AdType.don ? null : _parsePrice(_priceController.text),
+        contactPhone: phone.isEmpty ? null : phone,
       );
+      if (widget.ad case final ad?) {
+        await widget.repository.updateAd(ad.id, input);
+        await _savePhotoChanges(ad.id);
+      } else {
+        await widget.repository.createAd(input, List.of(_images));
+      }
       if (mounted) Navigator.pop(context, true);
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _saving = false;
-        _submitError = 'Impossible de publier l’annonce.';
+        _submitError = _editing
+            ? 'Enregistrement incomplet. Réessaie pour terminer les modifications.'
+            : 'Impossible de publier l’annonce.';
       });
+    }
+  }
+
+  Future<void> _savePhotoChanges(String id) async {
+    // Upload first when there is room, so a failed upload keeps existing photos.
+    while (_images.isNotEmpty &&
+        _removedPhotoIds.isNotEmpty &&
+        _existingPhotos.length + _removedPhotoIds.length + _images.length >
+            _maxPhotos) {
+      await widget.repository.deleteAdImage(id, _removedPhotoIds.first);
+      _removedPhotoIds.removeAt(0);
+    }
+
+    if (_images.isNotEmpty) {
+      final updated = await widget.repository.addAdImages(id, List.of(_images));
+      _existingPhotos
+        ..clear()
+        ..addAll(
+          updated.photos.where((photo) => !_removedPhotoIds.contains(photo.id)),
+        );
+      _images.clear();
+    }
+
+    while (_removedPhotoIds.isNotEmpty) {
+      await widget.repository.deleteAdImage(id, _removedPhotoIds.first);
+      _removedPhotoIds.removeAt(0);
     }
   }
 
@@ -148,7 +197,9 @@ class _CreateAdPageState extends State<CreateAdPage> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Text(
-                          'Nouvelle annonce',
+                          _editing
+                              ? 'Modifier mon annonce'
+                              : 'Nouvelle annonce',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
@@ -164,37 +215,39 @@ class _CreateAdPageState extends State<CreateAdPage> {
                           required: true,
                         ),
                         const SizedBox(height: 14),
-                        Text(
-                          'Type d’annonce',
-                          style: theme.textTheme.labelLarge,
-                        ),
-                        const SizedBox(height: 6),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
-                          children: [
-                            for (final (type, label) in [
-                              (AdType.vente, 'Vente'),
-                              (AdType.don, 'Don'),
-                              (AdType.recherche, 'Recherche'),
-                            ])
-                              ChoiceChip(
-                                label: Text(label),
-                                selected: _type == type,
-                                selectedColor: accent,
-                                backgroundColor: colors.surface,
-                                checkmarkColor: accentText,
-                                labelStyle: TextStyle(
-                                  color: _type == type
-                                      ? accentText
-                                      : colors.onSurface,
+                        if (!_editing) ...[
+                          Text(
+                            'Type d’annonce',
+                            style: theme.textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              for (final (type, label) in [
+                                (AdType.vente, 'Vente'),
+                                (AdType.don, 'Don'),
+                                (AdType.recherche, 'Recherche'),
+                              ])
+                                ChoiceChip(
+                                  label: Text(label),
+                                  selected: _type == type,
+                                  selectedColor: accent,
+                                  backgroundColor: colors.surface,
+                                  checkmarkColor: accentText,
+                                  labelStyle: TextStyle(
+                                    color: _type == type
+                                        ? accentText
+                                        : colors.onSurface,
+                                  ),
+                                  onSelected: _saving
+                                      ? null
+                                      : (_) => setState(() => _type = type),
                                 ),
-                                onSelected: _saving
-                                    ? null
-                                    : (_) => setState(() => _type = type),
-                              ),
-                          ],
-                        ),
+                            ],
+                          ),
+                        ],
                         if (_type != AdType.don) ...[
                           const SizedBox(height: 12),
                           _field(
@@ -217,25 +270,27 @@ class _CreateAdPageState extends State<CreateAdPage> {
                           maxLines: 3,
                           required: true,
                         ),
-                        const SizedBox(height: 20),
-                        Text('Contact', style: theme.textTheme.titleMedium),
-                        const SizedBox(height: 8),
-                        Card(
-                          margin: EdgeInsets.zero,
-                          child: const ListTile(
-                            leading: Icon(Icons.person_outline),
-                            title: Text('Annonceur'),
-                            subtitle: Text('Compte connecté'),
+                        if (!_editing) ...[
+                          const SizedBox(height: 20),
+                          Text('Contact', style: theme.textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          Card(
+                            margin: EdgeInsets.zero,
+                            child: const ListTile(
+                              leading: Icon(Icons.person_outline),
+                              title: Text('Annonceur'),
+                              subtitle: Text('Compte connecté'),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        _field(
-                          controller: _phoneController,
-                          label: 'Numéro de téléphone',
-                          hint: 'Facultatif',
-                          colors: colors,
-                          keyboardType: TextInputType.phone,
-                        ),
+                          const SizedBox(height: 12),
+                          _field(
+                            controller: _phoneController,
+                            label: 'Numéro de téléphone',
+                            hint: 'Facultatif',
+                            colors: colors,
+                            keyboardType: TextInputType.phone,
+                          ),
+                        ],
                         const SizedBox(height: 18),
                         if (_submitError case final error?) ...[
                           Text(error, style: TextStyle(color: colors.error)),
@@ -247,9 +302,18 @@ class _CreateAdPageState extends State<CreateAdPage> {
                             foregroundColor: accentText,
                             padding: const EdgeInsets.symmetric(vertical: 14),
                           ),
-                          onPressed: _saving || _picking ? null : _submit,
+                          onPressed:
+                              _saving || _picking || widget.ad?.isOwner == false
+                              ? null
+                              : _submit,
                           child: Text(
-                            _saving ? 'Publication…' : 'Publier mon annonce',
+                            _saving
+                                ? (_editing
+                                      ? 'Enregistrement…'
+                                      : 'Publication…')
+                                : (_editing
+                                      ? 'Enregistrer les modifications'
+                                      : 'Publier mon annonce'),
                           ),
                         ),
                       ],
@@ -310,7 +374,7 @@ class _CreateAdPageState extends State<CreateAdPage> {
   }
 
   Widget _photoSection(Color accent, ColorScheme colors) {
-    final canAdd = !_saving && !_picking && _images.length < _maxPhotos;
+    final canAdd = !_saving && !_picking && _photoCount < _maxPhotos;
     final canReorder = _images.length > 1;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -328,13 +392,53 @@ class _CreateAdPageState extends State<CreateAdPage> {
             title: Text(
               _picking ? 'Ouverture de la galerie…' : 'Ajouter des photos',
             ),
-            subtitle: Text('${_images.length}/$_maxPhotos photos'),
+            subtitle: Text('$_photoCount/$_maxPhotos photos'),
             trailing: const Icon(Icons.chevron_right),
           ),
         ),
         if (_photoError case final error?) ...[
           const SizedBox(height: 8),
           Text(error, style: TextStyle(color: colors.error)),
+        ],
+        if (_existingPhotos.isNotEmpty) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final (index, photo) in _existingPhotos.indexed)
+                SizedBox.square(
+                  dimension: 102,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        AdImage(url: photo.url),
+                        if (photo.id case final id?)
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: IconButton(
+                              tooltip: 'Retirer la photo publiée ${index + 1}',
+                              style: IconButton.styleFrom(
+                                backgroundColor: colors.surface,
+                              ),
+                              onPressed: _saving
+                                  ? null
+                                  : () => setState(() {
+                                      _existingPhotos.remove(photo);
+                                      _removedPhotoIds.add(id);
+                                    }),
+                              icon: const Icon(Icons.close, size: 18),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ],
         if (_images.isNotEmpty) ...[
           const SizedBox(height: 10),

@@ -10,13 +10,21 @@ import '../../data/services/mobile_ads_api_service.dart';
 import '../data/models/ad_model.dart';
 import '../widgets/ad_image.dart';
 import '../widgets/ad_photo_carousel.dart';
+import 'create_ad_page.dart';
 
 class AdDetailPage extends StatefulWidget {
   final AdModel ad;
 
   final AdsRepository? repository;
 
-  const AdDetailPage({super.key, required this.ad, this.repository});
+  final bool initiallyManage;
+
+  const AdDetailPage({
+    super.key,
+    required this.ad,
+    this.repository,
+    this.initiallyManage = false,
+  });
 
   @override
   State<AdDetailPage> createState() => _AdDetailPageState();
@@ -25,6 +33,7 @@ class AdDetailPage extends StatefulWidget {
 class _AdDetailPageState extends State<AdDetailPage> {
   late final _repository =
       widget.repository ?? MobileAdsApiService(ApiClient(AuthStorage()));
+  final _managementKey = GlobalKey();
   AdModel? _freshAd;
   bool _managingAd = false;
   int _requestVersion = 0;
@@ -34,6 +43,12 @@ class _AdDetailPageState extends State<AdDetailPage> {
     super.initState();
     profileUpdates.addListener(_reloadAd);
     _reloadAd();
+    if (widget.initiallyManage && widget.ad.isOwner) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final target = _managementKey.currentContext;
+        if (target != null) Scrollable.ensureVisible(target, alignment: .15);
+      });
+    }
   }
 
   Future<void> _reloadAd() async {
@@ -67,14 +82,28 @@ class _AdDetailPageState extends State<AdDetailPage> {
     }
   }
 
-  Future<void> _deleteSoldAd(BuildContext themedContext, AdModel ad) async {
+  Future<void> _editAd(AdModel ad) async {
+    if (!ad.isOwner || _managingAd) return;
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (_) => CreateAdPage(repository: _repository, ad: ad),
+      ),
+    );
+    if (mounted) await _reloadAd();
+  }
+
+  Future<void> _deleteAd(BuildContext themedContext, AdModel ad) async {
     if (!ad.isOwner || _managingAd) return;
     final confirmed = await showDialog<bool>(
       context: themedContext,
       builder: (dialogContext) {
         final colors = Theme.of(dialogContext).colorScheme;
         return AlertDialog(
-          title: const Text('Supprimer l’annonce vendue ?'),
+          title: Text(
+            ad.type == AdType.vente
+                ? 'Supprimer l’annonce vendue ?'
+                : 'Supprimer l’annonce ?',
+          ),
           content: const Text(
             'L’annonce et ses photos seront supprimées définitivement.',
           ),
@@ -188,104 +217,117 @@ class _AdDetailPageState extends State<AdDetailPage> {
               final canContact =
                   ad.contactPhone?.trim().isNotEmpty == true ||
                   ad.sellerEmail?.trim().isNotEmpty == true;
-              return ListView(
+              return SingleChildScrollView(
                 padding: PulseTheme.pagePadding,
-                children: [
-                  AdPhotoCarousel(
-                    key: ValueKey(ad.images.join('\n')),
-                    adId: ad.id,
-                    images: ad.images,
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: .14),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 5,
-                        ),
-                        child: Text(
-                          ad.typeLabel,
-                          style: TextStyle(color: accent),
-                        ),
-                      ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AdPhotoCarousel(
+                      key: ValueKey(ad.images.join('\n')),
+                      adId: ad.id,
+                      images: ad.images,
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    ad.title,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    ad.priceLabel,
-                    style: TextStyle(
-                      color: accent,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (ad.description.trim().isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Description',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      ad.description,
-                      style: TextStyle(color: colors.onSurfaceVariant),
-                    ),
-                  ],
-                  const SizedBox(height: 20),
-                  if (ad.isOwner) ...[
-                    const Text(
-                      'Gérer mon annonce',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(ad.visibilityLabel),
                     const SizedBox(height: 12),
-                    if (ad.isActive) ...[
-                      FilledButton.icon(
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: accent.withValues(alpha: .14),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          child: Text(
+                            ad.typeLabel,
+                            style: TextStyle(color: accent),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      ad.title,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    Text(
+                      ad.priceLabel,
+                      style: TextStyle(
+                        color: accent,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (ad.description.trim().isNotEmpty) ...[
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Description',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        ad.description,
+                        style: TextStyle(color: colors.onSurfaceVariant),
+                      ),
+                    ],
+                    const SizedBox(height: 20),
+                    if (ad.isOwner) ...[
+                      Text(
+                        'Gérer mon annonce',
+                        key: _managementKey,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(ad.visibilityLabel),
+                      const SizedBox(height: 12),
+                      FilledButton.tonalIcon(
                         style: FilledButton.styleFrom(
-                          backgroundColor: accent,
-                          foregroundColor: theme.brightness == Brightness.dark
-                              ? Colors.black
-                              : Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        onPressed: _managingAd
-                            ? null
-                            : () => _setStatus(
-                                ad,
-                                ad.status == AdStatus.active
-                                    ? AdStatus.closed
-                                    : AdStatus.active,
-                              ),
-                        icon: Icon(
-                          ad.status == AdStatus.active
-                              ? Icons.pause_circle_outline
-                              : Icons.play_circle_outline,
-                        ),
-                        label: Text(
-                          ad.status == AdStatus.active
-                              ? 'Mettre en pause'
-                              : 'Remettre en ligne',
-                        ),
+                        onPressed: _managingAd ? null : () => _editAd(ad),
+                        icon: const Icon(Icons.edit_outlined),
+                        label: const Text('Modifier mon annonce'),
                       ),
                       const SizedBox(height: 8),
-                    ],
-                    if (ad.type == AdType.vente)
+                      if (ad.isActive) ...[
+                        FilledButton.icon(
+                          style: FilledButton.styleFrom(
+                            backgroundColor: accent,
+                            foregroundColor: theme.brightness == Brightness.dark
+                                ? Colors.black
+                                : Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          onPressed: _managingAd
+                              ? null
+                              : () => _setStatus(
+                                  ad,
+                                  ad.status == AdStatus.active
+                                      ? AdStatus.closed
+                                      : AdStatus.active,
+                                ),
+                          icon: Icon(
+                            ad.status == AdStatus.active
+                                ? Icons.pause_circle_outline
+                                : Icons.play_circle_outline,
+                          ),
+                          label: Text(
+                            ad.status == AdStatus.active
+                                ? 'Mettre en pause'
+                                : 'Remettre en ligne',
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                       FilledButton.tonalIcon(
                         style: FilledButton.styleFrom(
                           backgroundColor: colors.errorContainer,
@@ -296,46 +338,49 @@ class _AdDetailPageState extends State<AdDetailPage> {
                         ),
                         onPressed: _managingAd
                             ? null
-                            : () => _deleteSoldAd(context, ad),
+                            : () => _deleteAd(context, ad),
                         icon: const Icon(Icons.delete_outline),
                         label: Text(
-                          ad.status == AdStatus.sold
+                          ad.type != AdType.vente
+                              ? 'Supprimer l’annonce'
+                              : ad.status == AdStatus.sold
                               ? 'Supprimer l’annonce vendue'
                               : 'Marquer comme vendue',
                         ),
                       ),
-                    const SizedBox(height: 20),
+                      const SizedBox(height: 20),
+                    ],
+                    const Text(
+                      'Le vendeur',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Card(
+                      margin: EdgeInsets.zero,
+                      child: ListTile(
+                        leading: MemberAvatar(
+                          radius: 20,
+                          url: ad.sellerAvatar,
+                          name: ad.sellerName,
+                        ),
+                        title: Text(
+                          ad.sellerName.isEmpty ? 'Membre' : ad.sellerName,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: accent,
+                        foregroundColor: theme.brightness == Brightness.dark
+                            ? Colors.black
+                            : Colors.white,
+                      ),
+                      onPressed: canContact ? () => _contactSeller(ad) : null,
+                      child: const Text('Contacter le vendeur'),
+                    ),
                   ],
-                  const Text(
-                    'Le vendeur',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 6),
-                  Card(
-                    margin: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: MemberAvatar(
-                        radius: 20,
-                        url: ad.sellerAvatar,
-                        name: ad.sellerName,
-                      ),
-                      title: Text(
-                        ad.sellerName.isEmpty ? 'Membre' : ad.sellerName,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    style: FilledButton.styleFrom(
-                      backgroundColor: accent,
-                      foregroundColor: theme.brightness == Brightness.dark
-                          ? Colors.black
-                          : Colors.white,
-                    ),
-                    onPressed: canContact ? () => _contactSeller(ad) : null,
-                    child: const Text('Contacter le vendeur'),
-                  ),
-                ],
+                ),
               );
             },
           ),

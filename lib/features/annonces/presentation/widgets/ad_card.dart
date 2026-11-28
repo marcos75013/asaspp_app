@@ -18,24 +18,30 @@ class AdCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    Future<void> open({bool manage = false}) async {
+      final cubit = context.read<AdsCubit>();
+      final deleted = await Navigator.of(context).push<bool>(
+        MaterialPageRoute<bool>(
+          builder: (_) => AdDetailPage(
+            ad: ad,
+            repository: repository,
+            initiallyManage: manage,
+          ),
+        ),
+      );
+      if (cubit.isClosed) return;
+      if (deleted == true) {
+        cubit.removeDeletedAd(ad.id);
+      } else if (ad.isOwner) {
+        await cubit.loadAds();
+      }
+    }
+
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () async {
-          final cubit = context.read<AdsCubit>();
-          final deleted = await Navigator.of(context).push<bool>(
-            MaterialPageRoute<bool>(
-              builder: (_) => AdDetailPage(ad: ad, repository: repository),
-            ),
-          );
-          if (cubit.isClosed) return;
-          if (deleted == true) {
-            cubit.removeDeletedAd(ad.id);
-          } else if (ad.isOwner) {
-            await cubit.loadAds();
-          }
-        },
+        onTap: open,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -47,12 +53,24 @@ class AdCard extends StatelessWidget {
                     tag: ad.id,
                     child: AdImage(url: ad.image),
                   ),
+                  if (ad.isOwner)
+                    Positioned(
+                      top: 4,
+                      left: 6,
+                      child: FilledButton.tonal(
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 10),
+                        ),
+                        onPressed: () => open(manage: true),
+                        child: const Text('Gérer'),
+                      ),
+                    ),
                   if (ad.isOwner &&
                       (!ad.isActive || ad.status != AdStatus.active))
                     Positioned(
                       left: 6,
-                      top: 6,
-                      right: 48,
+                      bottom: 6,
+                      right: 6,
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: DecoratedBox(

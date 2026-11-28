@@ -90,6 +90,7 @@ class AdsPage extends StatelessWidget {
                                       label: Text(label),
                                       selected:
                                           !state.favoritesOnly &&
+                                          !state.mineOnly &&
                                           state.selectedFilter == type,
                                       onSelected: (_) =>
                                           cubit.filterByType(type),
@@ -98,6 +99,11 @@ class AdsPage extends StatelessWidget {
                                     label: const Text('Favoris'),
                                     selected: state.favoritesOnly,
                                     onSelected: (_) => cubit.filterFavorites(),
+                                  ),
+                                  ChoiceChip(
+                                    label: const Text('Mes annonces'),
+                                    selected: state.mineOnly,
+                                    onSelected: (_) => cubit.filterMine(),
                                   ),
                                 ],
                               ),

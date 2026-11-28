@@ -9,6 +9,18 @@ class _FakeAdsRepository implements AdsRepository {
   _FakeAdsRepository(this.ads);
 
   @override
+  Future<AdModel> updateAd(String id, CreateAdInput input) =>
+      throw UnimplementedError();
+
+  @override
+  Future<AdModel> addAdImages(String id, List<AdImageUpload> images) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> deleteAdImage(String id, int photoId) =>
+      throw UnimplementedError();
+
+  @override
   Future<void> deleteAd(String id) => throw UnimplementedError();
 
   @override

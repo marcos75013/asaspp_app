@@ -42,6 +42,8 @@ class _DemoContext extends ContextCubit {
                 'EVENTS',
                 'CLUB_COMMUNICATION',
                 'CARPOOLING',
+                'PHOTO_GALLERY',
+                'MARKETPLACE',
               ],
             },
           ],
@@ -53,7 +55,7 @@ class _DemoContext extends ContextCubit {
 
 void main() {
   for (final brightness in Brightness.values) {
-    testWidgets('Accueil et Services à largeur mobile en $brightness', (
+    testWidgets('Parcours Pulse à largeur mobile en $brightness', (
       tester,
     ) async {
       await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -66,6 +68,7 @@ void main() {
         InterceptorsWrapper(
           onRequest: (request, handler) {
             final Object? data = switch (request.path) {
+              '/api/gallery' || '/api/marketplace' => <dynamic>[],
               '/api/mobile/trainings' => {
                 'last': true,
                 'content': [
@@ -216,7 +219,28 @@ void main() {
       await _capture(tester, capture, 'services-${brightness.name}');
       await tester.tap(find.text('Club'));
       await tester.pumpAndSettle();
-      expect(find.text('Actualités du club'), findsOneWidget);
+      expect(find.text('À la une'), findsOneWidget);
+      expect(find.text('Préparer la sortie'), findsOneWidget);
+      await tester.tap(find.text('Préparer la sortie'));
+      await tester.pumpAndSettle();
+      expect(find.text('— Le bureau'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Galerie'));
+      await tester.pumpAndSettle();
+      expect(find.text('Galerie'), findsOneWidget);
+      expect(find.text('Impossible de charger les albums.'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Annonces'));
+      await tester.pumpAndSettle();
+      expect(find.text('Leboncourant'), findsOneWidget);
+      expect(find.text('Aucune annonce trouvée'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('À la une'), findsOneWidget);
       await _capture(tester, capture, 'club-${brightness.name}');
       await tester.tap(find.text('Qui sommes-nous'));
       await tester.pumpAndSettle();

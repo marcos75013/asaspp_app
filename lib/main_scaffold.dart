@@ -14,9 +14,11 @@ import 'core/config/api_config.dart';
 import 'core/storage/auth_storage.dart';
 import 'core/theme/app_colors.dart';
 import 'core/theme/pulse_theme.dart';
+import 'features/annonces/data/services/mobile_ads_api_service.dart';
 import 'features/annonces/presentation/pages/ads_page.dart';
 import 'features/events/presentation/pages/training_calendar_page.dart';
 import 'features/home/presentation/pages/home_page.dart';
+import 'features/gallery/data/services/mobile_gallery_api_service.dart';
 import 'features/gallery/presentation/pages/gallery_page.dart';
 import 'features/home/data/services/mobile_event_api_service.dart';
 import 'features/home/presentation/cubit/home_cubit.dart';
@@ -265,18 +267,55 @@ class _TabLink extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final String? description;
-  const _TabLink(this.icon, this.label, this.onTap, {this.description});
+  final Color? accent;
+
+  const _TabLink(
+    this.icon,
+    this.label,
+    this.onTap, {
+    this.description,
+    this.accent,
+  });
 
   @override
-  Widget build(BuildContext context) => Card(
-    child: ListTile(
-      leading: Icon(icon),
-      title: Text(label),
-      subtitle: description == null ? null : Text(description!),
-      trailing: const Icon(Icons.chevron_right),
-      onTap: onTap,
-    ),
-  );
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final tint = accent;
+    return Card(
+      margin: tint == null ? null : const EdgeInsets.only(bottom: 10),
+      clipBehavior: Clip.antiAlias,
+      child: ListTile(
+        leading: tint == null
+            ? Icon(icon)
+            : DecoratedBox(
+                decoration: BoxDecoration(
+                  color: tint.withValues(alpha: .14),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(icon, color: tint, size: 22),
+                ),
+              ),
+        title: Text(
+          label,
+          style: tint == null
+              ? null
+              : theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+        ),
+        subtitle: description == null
+            ? null
+            : Text(
+                description!,
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: onTap,
+      ),
+    );
+  }
 }
 
 class _ClubTab extends StatelessWidget {
@@ -299,38 +338,84 @@ class _ClubTab extends StatelessWidget {
       ),
       children: [
         Builder(
-          builder: (context) => Text(
-            'La vie du club',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
+          builder: (context) {
+            final theme = Theme.of(context);
+            final colors = theme.colorScheme;
+            final dark = theme.brightness == Brightness.dark;
+            final purple = dark
+                ? const Color(0xFFD8B8FF)
+                : const Color(0xFF6934B6);
+            final teal = dark
+                ? const Color(0xFF63DBC7)
+                : const Color(0xFF00786B);
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text.rich(
+                  TextSpan(
+                    text: 'La vie du ',
+                    children: [
+                      TextSpan(
+                        text: 'club',
+                        style: TextStyle(color: colors.primary),
+                      ),
+                    ],
+                  ),
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Tout ce qui nous rassemble.',
+                  style: TextStyle(color: colors.onSurfaceVariant),
+                ),
+                const SizedBox(height: 20),
+                if (modules.contains('PHOTO_GALLERY'))
+                  _TabLink(
+                    Icons.photo_library_outlined,
+                    'Galerie',
+                    () => _openPage(
+                      context,
+                      GalleryPage(
+                        repository: MobileGalleryApiService(apiClient),
+                      ),
+                    ),
+                    description: 'Nos aventures en images',
+                    accent: purple,
+                  ),
+                if (modules.contains('MARKETPLACE'))
+                  _TabLink(
+                    Icons.storefront_outlined,
+                    'Annonces',
+                    () => _openPage(
+                      context,
+                      AdsPage(repository: MobileAdsApiService(apiClient)),
+                      title: 'Annonces',
+                    ),
+                    description: 'Vends, donne et partage',
+                    accent: teal,
+                  ),
+                _TabLink(
+                  Icons.groups_outlined,
+                  'Qui sommes-nous',
+                  () => _openPage(
+                    context,
+                    AboutUsPage(
+                      repository: AssociationAboutApiService(apiClient),
+                    ),
+                  ),
+                  description: 'Présentation, valeurs et organigramme',
+                  accent: colors.primary,
+                ),
+                if (modules.contains('CLUB_COMMUNICATION')) ...[
+                  const PulseSectionTitle('À la une'),
+                  const ClubMessageCard(showMessageLabel: true),
+                ],
+              ],
+            );
+          },
         ),
-        if (modules.contains('CLUB_COMMUNICATION')) ...[
-          const PulseSectionTitle('Actualités du club'),
-          const ClubMessageCard(),
-        ],
-        const PulseSectionTitle('Découvrir le club'),
-        _TabLink(
-          Icons.groups_outlined,
-          'Qui sommes-nous',
-          () => _openPage(
-            context,
-            AboutUsPage(repository: AssociationAboutApiService(apiClient)),
-          ),
-        ),
-        if (modules.contains('PHOTO_GALLERY'))
-          _TabLink(
-            Icons.photo_library_outlined,
-            'Galerie',
-            () => _openPage(context, const GalleryPage()),
-          ),
-        if (modules.contains('MARKETPLACE'))
-          _TabLink(
-            Icons.campaign_outlined,
-            'Annonces',
-            () => _openPage(context, const AdsPage(), title: 'Annonces'),
-          ),
       ],
     );
   }

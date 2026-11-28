@@ -37,14 +37,17 @@ class AdsPage extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        "Leboncourant",
-                        style: TextStyle(
-                          color: colors.onSurface,
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: Text(
+                          "Leboncourant",
+                          style: TextStyle(
+                            color: colors.onSurface,
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 12),
 
                       /// ➕ PUBLISH BUTTON
                       Tooltip(

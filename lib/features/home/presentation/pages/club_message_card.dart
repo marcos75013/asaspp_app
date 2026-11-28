@@ -7,7 +7,9 @@ import '../../../messages/data/models/mobile_message_model.dart';
 import '../../../../core/widgets/member_avatar.dart';
 
 class ClubMessageCard extends StatelessWidget {
-  const ClubMessageCard({super.key});
+  const ClubMessageCard({super.key, this.showMessageLabel = false});
+
+  final bool showMessageLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -17,15 +19,13 @@ class ClubMessageCard extends StatelessWidget {
           return Column(
             children: [
               for (final message in state.messages)
-                InkWell(
-                  borderRadius: BorderRadius.circular(30),
+                _MessageCard(
                   onTap: () => _showFullMessage(context, message),
-                  child: _MessageCard(
-                    title: message.title,
-                    content: message.content,
-                    author: _messageAuthor(message),
-                    avatarUrl: message.authorAvatarUrl,
-                  ),
+                  title: message.title,
+                  content: message.content,
+                  author: _messageAuthor(message),
+                  avatarUrl: message.authorAvatarUrl,
+                  showMessageLabel: showMessageLabel,
                 ),
             ],
           );
@@ -97,12 +97,16 @@ class _MessageCard extends StatelessWidget {
   final String content;
   final String author;
   final String? avatarUrl;
+  final VoidCallback? onTap;
+  final bool showMessageLabel;
 
   const _MessageCard({
     required this.title,
     required this.content,
     required this.author,
     required this.avatarUrl,
+    this.onTap,
+    this.showMessageLabel = false,
   });
 
   @override
@@ -110,30 +114,51 @@ class _MessageCard extends StatelessWidget {
     final theme = Theme.of(context);
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                MemberAvatar(radius: 18, url: avatarUrl, name: author),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(author, style: theme.textTheme.labelLarge),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  MemberAvatar(radius: 18, url: avatarUrl, name: author),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(author, style: theme.textTheme.labelLarge),
+                        if (showMessageLabel)
+                          Text(
+                            'Message du club',
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: showMessageLabel ? FontWeight.w700 : null,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(title, style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text(
-              content,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-            ),
-          ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                content,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -31,6 +31,23 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
     );
   }
 
+  Widget _photo(String url) {
+    final image = AdImage(url: url, fit: BoxFit.contain);
+    if (url.isEmpty) return image;
+    return Tooltip(
+      message: 'Agrandir la photo',
+      child: InkWell(
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(
+            fullscreenDialog: true,
+            builder: (_) => _FullScreenPhoto(url: url),
+          ),
+        ),
+        child: image,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final images = widget.images;
@@ -45,10 +62,7 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
             child: images.length <= 1
                 ? Hero(
                     tag: widget.adId,
-                    child: AdImage(
-                      url: images.firstOrNull ?? '',
-                      fit: BoxFit.contain,
-                    ),
+                    child: _photo(images.firstOrNull ?? ''),
                   )
                 : PageView.builder(
                     controller: _controller,
@@ -57,7 +71,7 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
                     itemBuilder: (context, index) => Semantics(
                       image: true,
                       label: 'Photo ${index + 1} sur ${images.length}',
-                      child: AdImage(url: images[index], fit: BoxFit.contain),
+                      child: _photo(images[index]),
                     ),
                   ),
           ),
@@ -86,6 +100,67 @@ class _AdPhotoCarouselState extends State<AdPhotoCarousel> {
             ],
           ),
       ],
+    );
+  }
+}
+
+class _FullScreenPhoto extends StatefulWidget {
+  const _FullScreenPhoto({required this.url});
+
+  final String url;
+
+  @override
+  State<_FullScreenPhoto> createState() => _FullScreenPhotoState();
+}
+
+class _FullScreenPhotoState extends State<_FullScreenPhoto> {
+  final _zoom = TransformationController();
+
+  @override
+  void dispose() {
+    _zoom.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        leading: IconButton(
+          tooltip: 'Fermer le plein écran',
+          onPressed: () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close),
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Réinitialiser le zoom',
+            onPressed: () => _zoom.value = Matrix4.identity(),
+            icon: const Icon(Icons.zoom_out_map),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SizedBox.expand(
+          child: InteractiveViewer(
+            transformationController: _zoom,
+            maxScale: 5,
+            child: Image.network(
+              widget.url,
+              fit: BoxFit.contain,
+              semanticLabel: 'Photo de l’annonce en plein écran',
+              errorBuilder: (_, _, _) => const Center(
+                child: Text(
+                  'Impossible d’afficher cette photo.',
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

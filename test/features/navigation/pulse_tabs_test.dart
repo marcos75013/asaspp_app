@@ -325,10 +325,33 @@ void main() {
       await tester.tap(find.byTooltip('Photo suivante'));
       await tester.pumpAndSettle();
       expect(find.text('2 / 2'), findsOneWidget);
-      await tester.drag(
-        find.bySemanticsLabel('Photo 2 sur 2'),
-        const Offset(300, 0),
+      await tester.tapAt(tester.getCenter(find.byType(PageView)));
+      await tester.pumpAndSettle();
+      final viewer = tester.widget<InteractiveViewer>(
+        find.byType(InteractiveViewer),
       );
+      final center = tester.getCenter(find.byType(InteractiveViewer));
+      final left = await tester.startGesture(
+        center - const Offset(25, 0),
+        pointer: 1,
+      );
+      final right = await tester.startGesture(
+        center + const Offset(25, 0),
+        pointer: 2,
+      );
+      await left.moveBy(const Offset(-50, 0));
+      await right.moveBy(const Offset(50, 0));
+      await left.up();
+      await right.up();
+      await tester.pumpAndSettle();
+      expect(
+        viewer.transformationController!.value.getMaxScaleOnAxis(),
+        greaterThan(1),
+      );
+      await tester.tap(find.byTooltip('Fermer le plein écran'));
+      await tester.pumpAndSettle();
+      expect(find.text('2 / 2'), findsOneWidget);
+      await tester.drag(find.byType(PageView), const Offset(300, 0));
       await tester.pumpAndSettle();
       expect(find.text('1 / 2'), findsOneWidget);
       await _capture(tester, capture, 'annonce-${brightness.name}');

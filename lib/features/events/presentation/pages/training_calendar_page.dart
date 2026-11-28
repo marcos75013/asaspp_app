@@ -1,10 +1,11 @@
-import '../../../../core/theme/pulse_theme.dart';
 import 'package:flutter/material.dart';
-import 'training_detail_page.dart';
+
 import '../../../../core/network/api_client.dart';
 import '../../../../core/storage/auth_storage.dart';
+import '../../../../core/theme/pulse_theme.dart';
 import '../../../home/data/models/next_event_model.dart';
 import '../../../home/data/services/mobile_event_api_service.dart';
+import 'training_detail_page.dart';
 
 class TrainingCalendarPage extends StatefulWidget {
   final ApiClient? apiClient;
@@ -120,21 +121,10 @@ class _TrainingCalendarPageState extends State<TrainingCalendarPage> {
                   ),
                 if (_trainings.isEmpty && _error == null)
                   const Text('Aucun entraînement pour le moment.'),
-                if (upcoming.isNotEmpty) ...[
-                  const Text(
-                    'À venir',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  ...upcoming.map((e) => _card(e, true)),
-                ],
-                if (past.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Terminés',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                  ...past.map((e) => _card(e, false)),
-                ],
+                if (upcoming.isNotEmpty)
+                  ..._section('À venir', upcoming, canRespond: true),
+                if (past.isNotEmpty)
+                  ..._section('Terminés', past, canRespond: false),
               ],
             ],
           ),
@@ -143,69 +133,202 @@ class _TrainingCalendarPageState extends State<TrainingCalendarPage> {
     );
   }
 
-  Widget _card(NextEventModel event, bool future) => Card(
-    margin: const EdgeInsets.symmetric(vertical: 8),
-    child: InkWell(
-      onTap: () => Navigator.of(context).push(
-        MaterialPageRoute<void>(
-          builder: (_) =>
-              TrainingDetailPage(training: event, apiClient: _client),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              event.title,
-              style: const TextStyle(fontSize: 19, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 6),
-            Text('${event.date} ${event.startDate.year} à ${event.time}'),
-            if (event.site.trim().isNotEmpty) Text(event.site),
-            TextButton.icon(
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) =>
-                      TrainingDetailPage(training: event, apiClient: _client),
-                ),
-              ),
-              icon: const Icon(Icons.group_outlined),
-              label: Text(
-                '${event.goingCount} présent(s) · Voir les participants',
-              ),
-            ),
-            if (event.participation == ParticipationStatus.waitlisted)
-              const Text('Inscrit sur liste d’attente'),
-            if (event.message.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(event.message),
-            ],
-            if (future)
-              Wrap(
-                spacing: 8,
-                children: [
-                  for (final option in [
-                    (ParticipationStatus.going, 'Présent'),
-                    (ParticipationStatus.notGoing, 'Absent'),
-                  ])
-                    OutlinedButton(
-                      onPressed: _saving == null
-                          ? () => _respond(event, option.$1)
-                          : null,
-                      style: OutlinedButton.styleFrom(
-                        backgroundColor: event.participation == option.$1
-                            ? Colors.green.withValues(alpha: .18)
-                            : null,
-                      ),
-                      child: Text(option.$2),
-                    ),
-                ],
-              ),
-          ],
+  List<Widget> _section(
+    String title,
+    List<NextEventModel> events, {
+    required bool canRespond,
+  }) => [
+    Padding(
+      padding: const EdgeInsets.only(top: 12, bottom: 10),
+      child: Builder(
+        builder: (context) => Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
     ),
-  );
+    for (final event in events)
+      _TrainingCard(
+        event: event,
+        onOpen: () => _open(event),
+        canRespond: canRespond,
+        onRespond: _saving == null ? (status) => _respond(event, status) : null,
+      ),
+  ];
+
+  void _open(NextEventModel event) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => TrainingDetailPage(training: event, apiClient: _client),
+      ),
+    );
+  }
 }
+
+class _TrainingCard extends StatelessWidget {
+  const _TrainingCard({
+    required this.event,
+    required this.onOpen,
+    required this.canRespond,
+    required this.onRespond,
+  });
+
+  final NextEventModel event;
+  final VoidCallback onOpen;
+  final bool canRespond;
+  final ValueChanged<ParticipationStatus>? onRespond;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final dark = theme.brightness == Brightness.dark;
+    final accent = dark ? const Color(0xFF80E4D4) : const Color(0xFF006A60);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Tooltip(
+                    message: '${event.date} ${event.startDate.year}',
+                    child: ExcludeSemantics(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: colors.primaryContainer,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          child: Column(
+                            children: [
+                              Text(
+                                '${event.startDate.day}',
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  color: colors.onPrimaryContainer,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                _shortMonth(event.month),
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: colors.onPrimaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          event.title,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          [
+                            if (event.site.trim().isNotEmpty) event.site,
+                            event.time,
+                          ].join(' · '),
+                          style: TextStyle(color: colors.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: colors.onSurfaceVariant),
+                ],
+              ),
+              TextButton.icon(
+                onPressed: onOpen,
+                style: TextButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  foregroundColor: accent,
+                  alignment: Alignment.centerLeft,
+                ),
+                icon: const Icon(Icons.group_outlined, size: 18),
+                label: Text(
+                  '${event.goingCount} présent(s) · Voir les participants',
+                ),
+              ),
+              if (event.participation == ParticipationStatus.waitlisted)
+                const Text('Inscrit sur liste d’attente'),
+              if (event.message.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(event.message),
+                ),
+              if (canRespond)
+                Row(
+                  children: [
+                    for (final (status, label) in [
+                      (ParticipationStatus.going, 'Présent'),
+                      (ParticipationStatus.notGoing, 'Absent'),
+                    ]) ...[
+                      if (status == ParticipationStatus.notGoing)
+                        const SizedBox(width: 8),
+                      Expanded(
+                        child: Semantics(
+                          selected: event.participation == status,
+                          child: OutlinedButton(
+                            onPressed: onRespond == null
+                                ? null
+                                : () => onRespond!(status),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: event.participation == status
+                                  ? (dark ? Colors.black : Colors.white)
+                                  : colors.onSurface,
+                              backgroundColor: event.participation == status
+                                  ? accent
+                                  : null,
+                              side: BorderSide(
+                                color: event.participation == status
+                                    ? accent
+                                    : colors.outlineVariant,
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(label, textAlign: TextAlign.center),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _shortMonth(String month) => switch (month) {
+  'mars' => 'MARS',
+  'juin' => 'JUIN',
+  'juillet' => 'JUIL',
+  _ => month.substring(0, 3).toUpperCase(),
+};

@@ -38,6 +38,7 @@ class Adapter implements HttpClientAdapter {
       {
         'id': 1,
         'title': 'Séance future',
+        'location': 'Piscine municipale',
         'goingCount': 1,
         'startDate': DateTime.now()
             .add(const Duration(days: 5))
@@ -79,6 +80,8 @@ void main() {
     testWidgets('opens the training detail and returns in ${brightness.name}', (
       tester,
     ) async {
+      await tester.binding.setSurfaceSize(const Size(360, 760));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
       SharedPreferences.setMockInitialValues({});
       FlutterSecureStorage.setMockInitialValues({});
       final client = ApiClient(
@@ -98,9 +101,27 @@ void main() {
       expect(find.text('Séance future'), findsOneWidget);
       expect(find.text('Séance passée'), findsOneWidget);
       expect(find.text('Présent'), findsOneWidget);
+      expect(find.text('Absent'), findsOneWidget);
+      expect(find.textContaining('Piscine municipale · '), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('À venir')).dy,
+        lessThan(tester.getTopLeft(find.text('Terminés')).dy),
+      );
       await tester.tap(find.text('Présent'));
       await tester.pumpAndSettle();
       expect(find.text('2 présent(s) · Voir les participants'), findsOneWidget);
+      final present = tester.widget<OutlinedButton>(
+        find.ancestor(
+          of: find.text('Présent'),
+          matching: find.byType(OutlinedButton),
+        ),
+      );
+      expect(
+        present.style?.backgroundColor?.resolve({}),
+        brightness == Brightness.dark
+            ? const Color(0xFF80E4D4)
+            : const Color(0xFF006A60),
+      );
       await tester.tap(find.text('2 présent(s) · Voir les participants'));
       await tester.pumpAndSettle();
       expect(find.text('Présents (1)'), findsOneWidget);

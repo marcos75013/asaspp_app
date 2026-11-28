@@ -39,6 +39,10 @@ class NextEventModel {
       'Samedi',
       'Dimanche',
     ];
+    return '${weekdays[startDate.weekday - 1]} ${startDate.day} $month';
+  }
+
+  String get month {
     const months = [
       'janvier',
       'février',
@@ -53,9 +57,7 @@ class NextEventModel {
       'novembre',
       'décembre',
     ];
-
-    return '${weekdays[startDate.weekday - 1]} '
-        '${startDate.day} ${months[startDate.month - 1]}';
+    return months[startDate.month - 1];
   }
 
   String get time {

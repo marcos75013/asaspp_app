@@ -7,6 +7,7 @@ import '../../../../core/storage/auth_storage.dart';
 import '../../../user/data/profile_updates.dart';
 import '../../data/services/mobile_ads_api_service.dart';
 import '../data/models/ad_model.dart';
+import '../widgets/ad_image.dart';
 
 class AdDetailPage extends StatefulWidget {
   final AdModel ad;
@@ -18,26 +19,13 @@ class AdDetailPage extends StatefulWidget {
 }
 
 class _AdDetailPageState extends State<AdDetailPage> {
-  final ScrollController _scrollController = ScrollController();
   AdModel? _freshAd;
-  double scrollOffset = 0;
 
   @override
   void initState() {
     super.initState();
     profileUpdates.addListener(_reloadAd);
     _reloadAd();
-
-    /// ⚡ Optimisation : limiter les rebuilds inutiles
-    _scrollController.addListener(() {
-      final offset = _scrollController.offset;
-
-      if ((offset - scrollOffset).abs() > 5) {
-        setState(() {
-          scrollOffset = offset;
-        });
-      }
-    });
   }
 
   Future<void> _reloadAd() async {
@@ -99,7 +87,6 @@ class _AdDetailPageState extends State<AdDetailPage> {
   @override
   void dispose() {
     profileUpdates.removeListener(_reloadAd);
-    _scrollController.dispose();
     super.dispose();
   }
 
@@ -112,176 +99,114 @@ class _AdDetailPageState extends State<AdDetailPage> {
     return Theme(
       data: theme,
       child: Scaffold(
-        body: Stack(
-          children: [
-            /// 🔥 PARALLAX IMAGE (léger)
-            Positioned(
-              top: -scrollOffset * 0.3,
-              left: 0,
-              right: 0,
-              child: Hero(
-                tag: ad.id,
-                child: ad.image.isEmpty
-                    ? Container(
-                        height: 450,
-                        color: const Color(0xFF16384F),
-                        child: const Icon(
-                          Icons.sell_outlined,
-                          color: Colors.white54,
-                          size: 64,
-                        ),
-                      )
-                    : Image.network(
-                        ad.image,
-                        height: 450,
-                        fit: BoxFit.cover,
-                        filterQuality: FilterQuality.low,
-                      ),
-              ),
-            ),
-
-            /// 🧊 CONTENT (sans blur runtime)
-            SingleChildScrollView(
-              controller: _scrollController,
-              child: Column(
-                children: [
-                  const SizedBox(height: 350),
-
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(30),
+        appBar: AppBar(
+          title: const Text('Annonce'),
+          leading: IconButton(
+            tooltip: 'Retour aux annonces',
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.arrow_back),
+          ),
+        ),
+        body: Builder(
+          builder: (context) {
+            final accent = marketplaceAccent(context);
+            final canContact =
+                ad.contactPhone?.trim().isNotEmpty == true ||
+                ad.sellerEmail?.trim().isNotEmpty == true;
+            return ListView(
+              padding: PulseTheme.pagePadding,
+              children: [
+                ClipRRect(
+                  borderRadius: PulseTheme.cardRadius,
+                  child: AspectRatio(
+                    aspectRatio: 1.65,
+                    child: Hero(
+                      tag: ad.id,
+                      child: AdImage(url: ad.image),
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.vertical(
-                          top: Radius.circular(30),
-                        ),
-
-                        color: colors.surface,
-                        border: Border.all(color: colors.outlineVariant),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            ad.title,
-                            style: TextStyle(
-                              color: colors.onSurface,
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-
-                          const SizedBox(height: 12),
-
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: colors.primaryContainer,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              ad.type == AdType.don
-                                  ? "Gratuit"
-                                  : ad.type == AdType.recherche
-                                  ? "Recherche"
-                                  : "${ad.price.toStringAsFixed(0)}€",
-                              style: TextStyle(
-                                color: colors.onPrimaryContainer,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          Text(
-                            ad.description,
-                            style: TextStyle(
-                              color: colors.onSurface,
-                              fontSize: 16,
-                            ),
-                          ),
-
-                          const SizedBox(height: 30),
-
-                          Row(
-                            children: [
-                              MemberAvatar(
-                                radius: 22,
-                                url: ad.sellerAvatar,
-                                name: ad.sellerName,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                ad.sellerName,
-                                style: TextStyle(
-                                  color: colors.onSurface,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 40),
-
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: colors.primary,
-                                foregroundColor: colors.onPrimary,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                              ),
-                              onPressed:
-                                  (ad.contactPhone?.trim().isNotEmpty == true ||
-                                      ad.sellerEmail?.trim().isNotEmpty == true)
-                                  ? () => _contactSeller(ad)
-                                  : null,
-                              child: const Text(
-                                "Contacter le vendeur",
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            ),
-                          ),
-
-                          const SizedBox(height: 80),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              top: 0,
-              left: 0,
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: 12, top: 8),
-                  child: IconButton(
-                    tooltip: 'Retour aux annonces',
-                    onPressed: () => Navigator.of(context).pop(),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.black.withValues(alpha: 0.4),
-                      foregroundColor: Colors.white,
-                    ),
-                    icon: const Icon(Icons.arrow_back),
                   ),
                 ),
-              ),
-            ),
-          ],
+                const SizedBox(height: 12),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: .14),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      child: Text(
+                        ad.typeLabel,
+                        style: TextStyle(color: accent),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  ad.title,
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Text(
+                  ad.priceLabel,
+                  style: TextStyle(
+                    color: accent,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (ad.description.trim().isNotEmpty) ...[
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Description',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    ad.description,
+                    style: TextStyle(color: colors.onSurfaceVariant),
+                  ),
+                ],
+                const SizedBox(height: 20),
+                const Text(
+                  'Le vendeur',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 6),
+                Card(
+                  margin: EdgeInsets.zero,
+                  child: ListTile(
+                    leading: MemberAvatar(
+                      radius: 20,
+                      url: ad.sellerAvatar,
+                      name: ad.sellerName,
+                    ),
+                    title: Text(
+                      ad.sellerName.isEmpty ? 'Membre' : ad.sellerName,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: accent,
+                    foregroundColor: theme.brightness == Brightness.dark
+                        ? Colors.black
+                        : Colors.white,
+                  ),
+                  onPressed: canContact ? () => _contactSeller(ad) : null,
+                  child: const Text('Contacter le vendeur'),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

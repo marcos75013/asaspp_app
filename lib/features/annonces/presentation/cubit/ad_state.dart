@@ -5,6 +5,7 @@ class AdsState {
   final AdType? selectedFilter;
   final String searchQuery;
   final bool isLoading;
+  final bool favoritesOnly;
   final String? errorMessage;
 
   AdsState({
@@ -12,6 +13,7 @@ class AdsState {
     required this.selectedFilter,
     required this.searchQuery,
     required this.isLoading,
+    this.favoritesOnly = false,
     required this.errorMessage,
   });
 
@@ -28,6 +30,7 @@ class AdsState {
     AdType? selectedFilter,
     String? searchQuery,
     bool? isLoading,
+    bool? favoritesOnly,
     String? errorMessage,
     bool clearError = false,
     bool clearSelectedFilter = false,
@@ -39,6 +42,7 @@ class AdsState {
           : selectedFilter ?? this.selectedFilter,
       searchQuery: searchQuery ?? this.searchQuery,
       isLoading: isLoading ?? this.isLoading,
+      favoritesOnly: favoritesOnly ?? this.favoritesOnly,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
     );
   }

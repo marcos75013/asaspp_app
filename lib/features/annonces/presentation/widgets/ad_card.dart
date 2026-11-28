@@ -1,137 +1,112 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+
 import '../../../../core/widgets/member_avatar.dart';
 import '../cubit/ad_cubit.dart';
 import '../data/models/ad_model.dart';
 import '../pages/ad_detail_page.dart';
+import 'ad_image.dart';
 
 class AdCard extends StatelessWidget {
-  final AdModel ad;
-
   const AdCard({super.key, required this.ad});
 
-  String getPriceLabel() {
-    if (ad.type == AdType.don) return "Gratuit";
-    if (ad.type == AdType.recherche) return "Recherche";
-    return "${ad.price.toStringAsFixed(0)}€";
-  }
+  final AdModel ad;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        /// ✅ Navigation locale (compatible MainScaffold)
-        Navigator.of(
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => Navigator.of(
           context,
-        ).push(MaterialPageRoute(builder: (_) => AdDetailPage(ad: ad)));
-      },
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(24),
-        child: Stack(
+        ).push(MaterialPageRoute<void>(builder: (_) => AdDetailPage(ad: ad))),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            /// HERO IMAGE
-            Hero(
-              tag: ad.id,
-              child: ad.image.isEmpty
-                  ? _emptyImage()
-                  : Image.network(
-                      ad.image,
-                      height: 220,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) =>
-                          _emptyImage(),
-                    ),
-            ),
-
-            /// FAVORITE BUTTON
-            Positioned(
-              top: 16,
-              right: 16,
-              child: GestureDetector(
-                onTap: () {
-                  context.read<AdsCubit>().toggleFavorite(ad.id);
-                },
-                child: AnimatedScale(
-                  scale: ad.isFavorite ? 1.2 : 1.0,
-                  duration: const Duration(milliseconds: 200),
-                  child: Icon(
-                    ad.isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: ad.isFavorite ? Colors.red : Colors.white,
+            Expanded(
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  Hero(
+                    tag: ad.id,
+                    child: AdImage(url: ad.image),
                   ),
-                ),
+                  Positioned(
+                    top: 4,
+                    right: 4,
+                    child: IconButton(
+                      tooltip: ad.isFavorite
+                          ? 'Retirer des favoris'
+                          : 'Ajouter aux favoris',
+                      style: IconButton.styleFrom(
+                        backgroundColor: colors.surface,
+                        foregroundColor: ad.isFavorite
+                            ? colors.error
+                            : colors.onSurface,
+                      ),
+                      onPressed: () =>
+                          context.read<AdsCubit>().toggleFavorite(ad.id),
+                      icon: Icon(
+                        ad.isFavorite ? Icons.favorite : Icons.favorite_border,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-
-            /// TITLE + SELLER
-            Positioned(
-              bottom: 16,
-              left: 16,
-              right: 16,
+            Padding(
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    ad.title,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
+                    ad.priceLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: marketplaceAccent(context),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 4),
+                  Text(
+                    ad.title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
                   Row(
                     children: [
                       MemberAvatar(
-                        radius: 12,
+                        radius: 9,
                         url: ad.sellerAvatar,
                         name: ad.sellerName,
                       ),
-                      const SizedBox(width: 8),
-                      Text(
-                        ad.sellerName,
-                        style: const TextStyle(color: Colors.white70),
+                      const SizedBox(width: 5),
+                      Expanded(
+                        child: Text(
+                          ad.sellerName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colors.onSurfaceVariant,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ],
               ),
             ),
-
-            /// PRICE BADGE
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF00B4D8),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  getPriceLabel(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _emptyImage() {
-    return Container(
-      height: 220,
-      width: double.infinity,
-      color: const Color(0xFF16384F),
-      child: const Icon(Icons.sell_outlined, color: Colors.white54, size: 48),
     );
   }
 }

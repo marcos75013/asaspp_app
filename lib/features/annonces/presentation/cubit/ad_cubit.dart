@@ -31,6 +31,10 @@ class AdsCubit extends Cubit<AdsState> {
           .toList();
     }
 
+    if (state.favoritesOnly) {
+      filtered = filtered.where((ad) => ad.isFavorite).toList();
+    }
+
     /// 🔹 Filtre recherche (dès 3 lettres)
     if (state.searchQuery.length >= 3) {
       final q = state.searchQuery.toLowerCase();
@@ -72,9 +76,17 @@ class AdsCubit extends Cubit<AdsState> {
     }
   }
 
+  void filterFavorites() {
+    emit(state.copyWith(favoritesOnly: true, clearSelectedFilter: true));
+  }
+
   void filterByType(AdType? type) {
     emit(
-      state.copyWith(selectedFilter: type, clearSelectedFilter: type == null),
+      state.copyWith(
+        selectedFilter: type,
+        clearSelectedFilter: type == null,
+        favoritesOnly: false,
+      ),
     );
   }
 }

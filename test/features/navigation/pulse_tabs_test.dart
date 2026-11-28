@@ -68,7 +68,19 @@ void main() {
         InterceptorsWrapper(
           onRequest: (request, handler) {
             final Object? data = switch (request.path) {
-              '/api/marketplace' => <dynamic>[],
+              '/api/marketplace' => [
+                {
+                  'id': 20,
+                  'type': 'SALE',
+                  'title': 'Masque de plongée',
+                  'description': 'Masque en bon état.',
+                  'price': 25.50,
+                  'authorFirstName': 'Camille',
+                  'authorEmail': 'membre@example.test',
+                  'favorite': true,
+                },
+                {'id': 21, 'type': 'GIFT', 'title': 'Palmes à donner'},
+              ],
               '/api/gallery' => [
                 {
                   'id': 19,
@@ -280,7 +292,30 @@ void main() {
       await tester.tap(find.text('Annonces'));
       await tester.pumpAndSettle();
       expect(find.text('Leboncourant'), findsOneWidget);
-      expect(find.text('Aucune annonce trouvée'), findsOneWidget);
+      expect(find.text('Dernières annonces'), findsOneWidget);
+      expect(find.text('Palmes à donner'), findsOneWidget);
+      expect(find.text('Publier une annonce'), findsOneWidget);
+      await _capture(tester, capture, 'annonces-${brightness.name}');
+      await tester.tap(find.text('Favoris'));
+      await tester.pumpAndSettle();
+      expect(find.text('Palmes à donner'), findsNothing);
+      await tester.tap(find.text('Masque de plongée'));
+      await tester.pumpAndSettle();
+      expect(find.text('25,50 €'), findsOneWidget);
+      expect(find.text('Le vendeur'), findsOneWidget);
+      await _capture(tester, capture, 'annonce-${brightness.name}');
+      await tester.ensureVisible(find.text('Contacter le vendeur'));
+      await tester.tap(find.text('Contacter le vendeur'));
+      await tester.pumpAndSettle();
+      expect(find.text('membre@example.test'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Retour aux annonces'));
+      await tester.pumpAndSettle();
+      expect(find.text('Palmes à donner'), findsNothing);
+      await tester.tap(find.text('Tous'));
+      await tester.pumpAndSettle();
+      expect(find.text('Palmes à donner'), findsOneWidget);
       expect(tester.takeException(), isNull);
       await tester.pageBack();
       await tester.pumpAndSettle();

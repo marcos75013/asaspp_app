@@ -31,6 +31,19 @@ class AdModel {
     this.isFavorite = false,
   });
 
+  String get priceLabel => switch (type) {
+    AdType.don => 'Gratuit',
+    AdType.recherche => 'Recherche',
+    AdType.vente =>
+      '${price.toStringAsFixed(price % 1 == 0 ? 0 : 2).replaceAll('.', ',')} €',
+  };
+
+  String get typeLabel => switch (type) {
+    AdType.vente => 'Vente',
+    AdType.don => 'Don',
+    AdType.recherche => 'Recherche',
+  };
+
   AdModel copyWith({bool? isFavorite}) {
     return AdModel(
       id: id,

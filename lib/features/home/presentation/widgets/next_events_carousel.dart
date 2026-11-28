@@ -66,7 +66,7 @@ class _NextEventsCarouselState extends State<NextEventsCarousel> {
           children: [
             SizedBox(
               height:
-                  320 +
+                  280 +
                   (MediaQuery.textScalerOf(context).scale(16) - 16).clamp(
                         0,
                         double.infinity,

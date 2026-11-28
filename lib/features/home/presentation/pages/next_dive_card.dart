@@ -96,27 +96,27 @@ class _NextDiveCardState extends State<NextDiveCard>
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                          if (event.site.trim().isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              event.site,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 12,
+                            runSpacing: 4,
+                            children: [
+                              if (event.site.trim().isNotEmpty)
+                                _InfoLine(
+                                  icon: Icons.location_on_outlined,
+                                  text: event.site,
+                                ),
+                              _InfoLine(
+                                icon: Icons.access_time,
+                                text: event.time,
                               ),
-                            ),
-                          ],
-                          const SizedBox(height: 8),
-                          _InfoLine(
-                            icon: Icons.calendar_today,
-                            text: event.date,
+                            ],
                           ),
-                          const SizedBox(height: 4),
-                          _InfoLine(icon: Icons.access_time, text: event.time),
                           TextButton.icon(
+                            style: TextButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              foregroundColor: _eventAccent(theme),
+                            ),
                             onPressed: () => Navigator.of(context).push(
                               MaterialPageRoute<void>(
                                 builder: (_) => TrainingDetailPage(
@@ -135,7 +135,7 @@ class _NextDiveCardState extends State<NextDiveCard>
                                 child: _MiniActionButton(
                                   label: 'Je viens',
                                   icon: Icons.check,
-                                  color: Colors.green,
+                                  primary: true,
                                   selected:
                                       event.participation ==
                                       ParticipationStatus.going,
@@ -152,7 +152,6 @@ class _NextDiveCardState extends State<NextDiveCard>
                                 child: _MiniActionButton(
                                   label: 'Peut-être',
                                   icon: Icons.help_outline,
-                                  color: Colors.orange,
                                   selected:
                                       event.participation ==
                                       ParticipationStatus.maybe,
@@ -169,7 +168,6 @@ class _NextDiveCardState extends State<NextDiveCard>
                                 child: _MiniActionButton(
                                   label: 'Non',
                                   icon: Icons.close,
-                                  color: Colors.red,
                                   selected:
                                       event.participation ==
                                       ParticipationStatus.notGoing,
@@ -224,25 +222,37 @@ class _NextDiveCardState extends State<NextDiveCard>
             left: 16,
             right: 16,
             bottom: 12,
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(
-                  _iconForDiveType(event.diveType),
-                  color: Colors.white,
-                  size: 18,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    (event.category.isEmpty ? 'Événement' : event.category)
-                        .toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                Row(
+                  children: [
+                    Icon(
+                      _iconForDiveType(event.diveType),
                       color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                      size: 16,
                     ),
-                  ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        (event.category.isEmpty ? 'Événement' : event.category)
+                            .toUpperCase(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  event.date,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ],
             ),
@@ -318,6 +328,7 @@ class _InfoLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           icon,
@@ -344,44 +355,54 @@ class _InfoLine extends StatelessWidget {
 class _MiniActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
-  final Color color;
+  final bool primary;
   final bool selected;
   final VoidCallback onTap;
 
   const _MiniActionButton({
     required this.label,
     required this.icon,
-    required this.color,
+    this.primary = false,
     required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-        decoration: BoxDecoration(
-          color: selected ? color.withValues(alpha: 0.2) : Colors.transparent,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color),
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final accent = _eventAccent(theme);
+    final foreground = primary
+        ? (theme.brightness == Brightness.dark ? Colors.black : Colors.white)
+        : colors.onSurface;
+    return Semantics(
+      selected: selected,
+      child: OutlinedButton(
+        onPressed: onTap,
+        style: OutlinedButton.styleFrom(
+          foregroundColor: foreground,
+          backgroundColor: primary
+              ? accent
+              : (selected ? colors.secondaryContainer : colors.surface),
+          side: BorderSide(
+            color: selected
+                ? colors.onSurface
+                : (primary ? accent : colors.outline),
+            width: selected ? 2 : 1,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              Icon(icon, size: 16),
+              const SizedBox(width: 4),
+              Text(label),
             ],
           ),
         ),
@@ -389,3 +410,7 @@ class _MiniActionButton extends StatelessWidget {
     );
   }
 }
+
+Color _eventAccent(ThemeData theme) => theme.brightness == Brightness.dark
+    ? const Color(0xFF80E4D4)
+    : const Color(0xFF006A60);

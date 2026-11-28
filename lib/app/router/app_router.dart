@@ -26,10 +26,20 @@ import '../../features/auth/presentation/pages/login_screen.dart';
 final GoRouter appRouter = GoRouter(
   initialLocation: '/splash',
   refreshListenable: sessionExpired,
-  redirect: (context, state) =>
-      sessionExpired.value && state.matchedLocation != '/login'
-      ? '/login'
-      : null,
+  redirect: (context, state) {
+    if (sessionExpired.value && state.matchedLocation != '/login') {
+      return '/login';
+    }
+    return switch (state.matchedLocation) {
+      '/association-selection' when state.extra is! MobileContextModel =>
+        '/splash',
+      '/covoiturage/create' ||
+      '/covoiturage/join' when state.extra is! NextEventModel => '/splash',
+      '/annonce/detail' when state.extra is! AdModel => '/splash',
+      '/quiz/game' when state.extra is! MemberQuiz => '/quiz',
+      _ => null,
+    };
+  },
   routes: [
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     GoRoute(

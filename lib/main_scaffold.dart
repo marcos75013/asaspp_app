@@ -67,7 +67,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         ],
         child: const HomePage(),
       ),
-      const TrainingCalendarPage(),
+      TrainingCalendarPage(apiClient: apiClient),
       BlocProvider(
         create: (_) =>
             MessageCubit(messageRepository: MobileMessageApiService(apiClient))

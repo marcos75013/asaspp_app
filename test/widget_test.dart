@@ -43,4 +43,15 @@ void main() {
     expect(find.text('Se connecter'), findsOneWidget);
     expect(appRouter.routeInformationProvider.value.uri.path, '/login');
   });
+  testWidgets(
+    'opening an occurrence link without arguments restores a safe screen',
+    (tester) async {
+      await tester.pumpWidget(const AsasppApp());
+      await tester.pumpAndSettle();
+      appRouter.go('/covoiturage/join');
+      await tester.pumpAndSettle();
+      expect(find.text('Se connecter'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

@@ -66,6 +66,17 @@ void main() {
         InterceptorsWrapper(
           onRequest: (request, handler) {
             final Object? data = switch (request.path) {
+              '/api/mobile/trainings' => {
+                'last': true,
+                'content': [
+                  {
+                    'id': 51,
+                    'title': 'Séance piscine',
+                    'startDate': '2099-06-08T19:00:00',
+                  },
+                ],
+              },
+              '/api/mobile/trainings/51/participants' => <dynamic>[],
               '/api/mobile/events' => {
                 'content': [
                   {
@@ -183,6 +194,18 @@ void main() {
       );
       expect(find.text('Préparer la sortie'), findsOneWidget);
       await _capture(tester, capture, 'accueil-actualites-${brightness.name}');
+      await tester.tap(find.text('Agenda'));
+      await tester.pumpAndSettle();
+      expectCentered(1);
+      await tester.tap(find.text('Séance piscine'));
+      await tester.pumpAndSettle();
+      expect(find.text('Participants'), findsOneWidget);
+      await tester.pageBack();
+      await tester.pumpAndSettle();
+      expect(find.text('Séance piscine'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.text('Salut, Camille !'), findsOneWidget);
       await tester.tap(find.text('Services'));
       await tester.pumpAndSettle();
       expect(find.text('Apprendre et progresser'), findsOneWidget);
